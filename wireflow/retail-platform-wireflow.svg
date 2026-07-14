@@ -1,0 +1,162 @@
+<svg viewBox="0 0 2468 558" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Sans, sans-serif">
+<defs>
+  <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+    <path d="M0,0 L7,3.5 L0,7 Z" fill="#161618"/>
+  </marker>
+  <marker id="arrowgray" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+    <path d="M0,0 L7,3.5 L0,7 Z" fill="#A0A0A6"/>
+  </marker>
+</defs>
+<rect x="0" y="0" width="2468" height="558" fill="#FFFFFF"/>
+<text x="50" y="38" font-family="Space Grotesk, sans-serif" font-size="22" font-weight="700" fill="#161618">Retail Performance Platform · Fluxo de navegação</text>
+<text x="50" y="60" font-size="13" fill="#6C6C73">Jornada completa — do login ao pós-venda, para lojista e representante</text>
+<rect x="20" y="120" width="2428" height="146" rx="8" fill="#F7F7F8"/>
+<rect x="20" y="290" width="2428" height="146" rx="8" fill="#F7F7F8"/>
+<text x="40" y="142" font-family="IBM Plex Mono, monospace" font-size="11" letter-spacing="1" fill="#A0A0A6">LOJISTA</text>
+<text x="40" y="312" font-family="IBM Plex Mono, monospace" font-size="11" letter-spacing="1" fill="#A0A0A6">REPRESENTANTE</text>
+<rect x="50" y="160" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1" stroke-dasharray="4,3"/>
+<rect x="60" y="170" width="26" height="18" rx="3" fill="#161618"/>
+<text x="73" y="183" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">0.1</text>
+<text x="62" y="208" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Seleção de</text>
+<text x="62" y="226" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Perfil</text>
+<rect x="234" y="160" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="244" y="170" width="26" height="18" rx="3" fill="#161618"/>
+<text x="257" y="183" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">0.2</text>
+<text x="246" y="208" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Login</text>
+<text x="246" y="226" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">(lojista)</text>
+<rect x="418" y="160" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="428" y="170" width="26" height="18" rx="3" fill="#161618"/>
+<text x="441" y="183" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">1-3</text>
+<text x="430" y="208" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Perfil da loja</text>
+<text x="430" y="226" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">(setup)</text>
+<rect x="602" y="160" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="612" y="170" width="26" height="18" rx="3" fill="#161618"/>
+<text x="625" y="183" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">4</text>
+<text x="614" y="208" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Radar Comercial</text>
+<text x="614" y="226" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">(lojista)</text>
+<rect x="786" y="160" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="796" y="170" width="26" height="18" rx="3" fill="#161618"/>
+<text x="809" y="183" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">6</text>
+<text x="798" y="208" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Catálogo</text>
+<text x="798" y="226" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Inteligente</text>
+<rect x="970" y="160" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="980" y="170" width="26" height="18" rx="3" fill="#161618"/>
+<text x="993" y="183" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">7</text>
+<text x="982" y="208" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Ficha de</text>
+<text x="982" y="226" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Decisão</text>
+<rect x="1154" y="160" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="1164" y="170" width="26" height="18" rx="3" fill="#161618"/>
+<text x="1177" y="183" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">8</text>
+<text x="1166" y="208" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Planejamento</text>
+<text x="1166" y="226" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">da Compra</text>
+<rect x="1338" y="160" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="1348" y="170" width="26" height="18" rx="3" fill="#161618"/>
+<text x="1361" y="183" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">9</text>
+<text x="1350" y="208" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Meus Pedidos</text>
+<rect x="1522" y="160" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#161618" stroke-width="2"/>
+<rect x="1532" y="170" width="26" height="18" rx="3" fill="#161618"/>
+<text x="1545" y="183" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">10</text>
+<text x="1534" y="208" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Carrinho</text>
+<text x="1534" y="226" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">(Pedido)</text>
+<rect x="1706" y="160" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="1716" y="170" width="26" height="18" rx="3" fill="#161618"/>
+<text x="1729" y="183" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">11</text>
+<text x="1718" y="208" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Pagamento</text>
+<rect x="1890" y="160" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="1900" y="170" width="26" height="18" rx="3" fill="#161618"/>
+<text x="1913" y="183" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">12</text>
+<text x="1902" y="208" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Confirmação</text>
+<rect x="2074" y="160" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#161618" stroke-width="2"/>
+<rect x="2084" y="170" width="26" height="18" rx="3" fill="#161618"/>
+<text x="2097" y="183" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">13</text>
+<text x="2086" y="208" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Acompanha-</text>
+<text x="2086" y="226" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">mento</text>
+<rect x="2258" y="160" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="2268" y="170" width="26" height="18" rx="3" fill="#161618"/>
+<text x="2281" y="183" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">14</text>
+<text x="2270" y="208" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Pós-venda</text>
+<text x="2270" y="226" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">(Fidelização)</text>
+<line x1="200" y1="203.0" x2="230" y2="203.0" stroke="#161618" stroke-width="1.6" marker-end="url(#arrow)"/>
+<line x1="384" y1="203.0" x2="414" y2="203.0" stroke="#161618" stroke-width="1.6" marker-end="url(#arrow)"/>
+<line x1="568" y1="203.0" x2="598" y2="203.0" stroke="#161618" stroke-width="1.6" marker-end="url(#arrow)"/>
+<line x1="752" y1="203.0" x2="782" y2="203.0" stroke="#161618" stroke-width="1.6" marker-end="url(#arrow)"/>
+<line x1="936" y1="203.0" x2="966" y2="203.0" stroke="#161618" stroke-width="1.6" marker-end="url(#arrow)"/>
+<line x1="1120" y1="203.0" x2="1150" y2="203.0" stroke="#161618" stroke-width="1.6" marker-end="url(#arrow)"/>
+<line x1="1304" y1="203.0" x2="1334" y2="203.0" stroke="#161618" stroke-width="1.6" marker-end="url(#arrow)"/>
+<line x1="1488" y1="203.0" x2="1518" y2="203.0" stroke="#161618" stroke-width="1.6" marker-end="url(#arrow)"/>
+<line x1="1672" y1="203.0" x2="1702" y2="203.0" stroke="#161618" stroke-width="1.6" marker-end="url(#arrow)"/>
+<line x1="1856" y1="203.0" x2="1886" y2="203.0" stroke="#161618" stroke-width="1.6" marker-end="url(#arrow)"/>
+<line x1="2040" y1="203.0" x2="2070" y2="203.0" stroke="#161618" stroke-width="1.6" marker-end="url(#arrow)"/>
+<line x1="2224" y1="203.0" x2="2254" y2="203.0" stroke="#161618" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="234" y="330" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="244" y="340" width="26" height="18" rx="3" fill="#161618"/>
+<text x="257" y="353" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">0.3</text>
+<text x="246" y="378" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Login</text>
+<text x="246" y="396" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">(representante)</text>
+<rect x="418" y="330" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="428" y="340" width="26" height="18" rx="3" fill="#161618"/>
+<text x="441" y="353" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">0.4</text>
+<text x="430" y="378" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Quem está</text>
+<text x="430" y="396" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">usando agora</text>
+<rect x="602" y="330" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="612" y="340" width="26" height="18" rx="3" fill="#161618"/>
+<text x="625" y="353" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">0.5</text>
+<text x="614" y="378" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Confirmar</text>
+<text x="614" y="396" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">PIN auxiliar</text>
+<rect x="786" y="330" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="796" y="340" width="26" height="18" rx="3" fill="#161618"/>
+<text x="809" y="353" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">5</text>
+<text x="798" y="378" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Radar Comercial</text>
+<text x="798" y="396" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">(representante)</text>
+<rect x="970" y="330" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="980" y="340" width="26" height="18" rx="3" fill="#161618"/>
+<text x="993" y="353" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">5a</text>
+<text x="982" y="378" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Carteira de</text>
+<text x="982" y="396" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Clientes</text>
+<rect x="1338" y="330" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<rect x="1348" y="340" width="26" height="18" rx="3" fill="#161618"/>
+<text x="1361" y="353" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">5b</text>
+<text x="1350" y="378" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Montar Pedido</text>
+<text x="1350" y="396" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Sugerido</text>
+<rect x="1522" y="330" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#161618" stroke-width="2"/>
+<rect x="1532" y="340" width="26" height="18" rx="3" fill="#161618"/>
+<text x="1545" y="353" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">10</text>
+<text x="1534" y="378" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Revisar /</text>
+<text x="1534" y="396" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Aprovar Pedido</text>
+<rect x="2074" y="330" width="150" height="86" rx="5" fill="#FFFFFF" stroke="#161618" stroke-width="2"/>
+<rect x="2084" y="340" width="26" height="18" rx="3" fill="#161618"/>
+<text x="2097" y="353" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="600" fill="#FFFFFF" text-anchor="middle">13</text>
+<text x="2086" y="378" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Acompanhar</text>
+<text x="2086" y="396" font-family="Space Grotesk, sans-serif" font-size="13" font-weight="600" fill="#161618">Pedido</text>
+<line x1="384" y1="373.0" x2="414" y2="373.0" stroke="#6C6C73" stroke-width="1.6" marker-end="url(#arrowgray)"/>
+<line x1="568" y1="373.0" x2="598" y2="373.0" stroke="#6C6C73" stroke-width="1.6" marker-end="url(#arrowgray)"/>
+<line x1="752" y1="373.0" x2="782" y2="373.0" stroke="#6C6C73" stroke-width="1.6" marker-end="url(#arrowgray)"/>
+<line x1="936" y1="373.0" x2="966" y2="373.0" stroke="#6C6C73" stroke-width="1.6" marker-end="url(#arrowgray)"/>
+<line x1="1120" y1="373.0" x2="1334" y2="373.0" stroke="#6C6C73" stroke-width="1.6" marker-end="url(#arrowgray)"/>
+<line x1="1488" y1="373.0" x2="1518" y2="373.0" stroke="#6C6C73" stroke-width="1.6" marker-end="url(#arrowgray)"/>
+<line x1="1672" y1="373.0" x2="2070" y2="373.0" stroke="#6C6C73" stroke-width="1.6" marker-end="url(#arrowgray)"/>
+<line x1="1597.0" y1="246" x2="1597.0" y2="330" stroke="#161618" stroke-width="1.6" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<rect x="1559.0" y="279.0" width="76" height="18" fill="#FFFFFF" stroke="#161618" stroke-width="1"/>
+<text x="1597.0" y="292.0" font-family="IBM Plex Mono, monospace" font-size="9" fill="#161618" text-anchor="middle">compartilhado</text>
+<line x1="2149.0" y1="246" x2="2149.0" y2="330" stroke="#161618" stroke-width="1.6" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+<rect x="2111.0" y="279.0" width="76" height="18" fill="#FFFFFF" stroke="#161618" stroke-width="1"/>
+<text x="2149.0" y="292.0" font-family="IBM Plex Mono, monospace" font-size="9" fill="#161618" text-anchor="middle">compartilhado</text>
+<line x1="125.0" y1="246" x2="295.0" y2="320" stroke="#161618" stroke-width="1.6" marker-end="url(#arrow)"/>
+<rect x="187.0" y="279.0" width="60" height="18" fill="#FFFFFF"/>
+<text x="217.0" y="293.0" font-family="IBM Plex Mono, monospace" font-size="10" fill="#161618" text-anchor="middle">ou</text>
+<path d="M 649.0 160 C 613.0 156, 613.0 128, 669.0 136" fill="none" stroke="#A0A0A6" stroke-width="1.4" stroke-dasharray="4,4" marker-end="url(#arrowgray)"/>
+<text x="579.0" y="132" font-family="IBM Plex Mono, monospace" font-size="9" fill="#A0A0A6">4.1 Ajustar foco</text>
+<text x="579.0" y="145" font-family="IBM Plex Mono, monospace" font-size="9" fill="#A0A0A6">(drawer, a qualquer momento)</text>
+<path d="M 2333.0 160 C 2333.0 92, 677.0 92, 677.0 160" fill="none" stroke="#161618" stroke-width="1.6" stroke-dasharray="2,5" marker-end="url(#arrow)"/>
+<rect x="1453.0" y="82" width="104" height="18" fill="#FFFFFF"/>
+<text x="1505.0" y="95" font-family="IBM Plex Mono, monospace" font-size="10" fill="#161618" text-anchor="middle">ciclo contínuo</text>
+<rect x="20" y="476" width="2428" height="52" rx="6" fill="#F7F7F8"/>
+<rect x="40" y="493" width="18" height="18" rx="4" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1"/>
+<text x="66" y="506" font-size="12" fill="#161618">Etapa individual</text>
+<rect x="210" y="493" width="18" height="18" rx="4" fill="#FFFFFF" stroke="#161618" stroke-width="2"/>
+<text x="236" y="506" font-size="12" fill="#161618">Ponto de convergência (compartilhado entre personas)</text>
+<rect x="600" y="493" width="18" height="18" rx="4" fill="#FFFFFF" stroke="#D3D3D7" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="626" y="506" font-size="12" fill="#161618">Ponto de entrada comum (login)</text>
+<line x1="900" y1="502" x2="932" y2="502" stroke="#A0A0A6" stroke-width="1.4" stroke-dasharray="4,4"/>
+<text x="940" y="506" font-size="12" fill="#161618">Acesso opcional / a qualquer momento</text>
+</svg>

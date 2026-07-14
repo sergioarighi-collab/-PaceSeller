@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Retail Performance Platform — Telas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-canvas:#EDEDEF;
+    --bg-app:#FFFFFF;
+    --surface:#FFFFFF;
+    --surface-2:#F4F4F5;
+    --surface-3:#E9E9EB;
+    --border:#E2E2E5;
+    --border-soft:#EBEBED;
+    --border-strong:#D3D3D7;
+    --text-primary:#161618;
+    --text-secondary:#6C6C73;
+    --text-tertiary:#A0A0A6;
+    --black:#161618;
+    --black-hover:#000000;
+    --on-black:#FFFFFF;
+    --positive:#1E8A54;
+    --positive-dim:#EAF5EE;
+    --risk:#C9392F;
+    --risk-dim:#FBEAE9;
+    --info:#3060C4;
+    --info-dim:#EBF0FB;
+    --display:'Space Grotesk',sans-serif;
+    --body:'IBM Plex Sans',sans-serif;
+    --mono:'IBM Plex Mono',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg-canvas);font-family:var(--body);}
+  .canvas-header{padding:48px 60px 12px;}
+  .canvas-header .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--text-tertiary);text-transform:uppercase;}
+  .canvas-header h1{font-family:var(--display);font-size:28px;font-weight:700;color:var(--text-primary);margin-top:6px;}
+  .canvas-header p{font-size:14px;color:var(--text-secondary);margin-top:6px;max-width:640px;line-height:1.6;}
+  .canvas{display:flex;flex-wrap:wrap;gap:56px;padding:20px 60px 100px;align-items:flex-start;}
+  .frame-block{display:flex;flex-direction:column;gap:14px;}
+  .frame-label{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--text-tertiary);letter-spacing:.02em;}
+  .frame-label .num{background:var(--black);color:var(--on-black);width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;}
+
+  /* PHONE FRAME */
+  .phone{width:340px;height:716px;background:var(--bg-app);border-radius:26px;border:7px solid var(--surface-3);box-shadow:0 18px 40px rgba(20,20,22,0.1);overflow:hidden;position:relative;display:flex;flex-direction:column;}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 4px;color:var(--text-primary);font-family:var(--mono);font-size:12px;flex-shrink:0;}
+  .statusbar .icons{display:flex;gap:5px;align-items:center;}
+  .dot-batt{width:18px;height:9px;border:1px solid var(--text-secondary);border-radius:2px;position:relative;}
+  .dot-batt::after{content:'';position:absolute;inset:1.5px;width:70%;background:var(--text-primary);border-radius:1px;}
+  .screen{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative;}
+  .scroll{flex:1;overflow-y:auto;padding:0 18px 18px;}
+
+  /* BOTTOM NAV */
+  .bottomnav{display:flex;justify-content:space-around;align-items:center;padding:10px 8px 16px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0;}
+  .navitem{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--text-tertiary);}
+  .navitem.active{color:var(--black);}
+  .navitem svg{width:20px;height:20px;}
+  .navitem span{font-size:9px;font-family:var(--body);}
+  .navitem.active span{font-weight:600;}
+
+  /* HEADER GREETING */
+  .greet{padding:10px 18px 16px;position:relative;overflow:hidden;}
+  .radar-motif{position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;border:1px solid var(--border-strong);}
+  .radar-motif::before{content:'';position:absolute;inset:22px;border-radius:50%;border:1px solid var(--border-strong);}
+  .radar-motif::after{content:'';position:absolute;inset:44px;border-radius:50%;border:1px solid var(--border-strong);background:var(--surface-2);}
+  .greet .hello{font-size:13px;color:var(--text-secondary);font-family:var(--body);}
+  .greet h2{font-family:var(--display);font-size:22px;font-weight:700;color:var(--text-primary);margin-top:4px;line-height:1.25;max-width:210px;}
+  .greet .sub{font-size:13px;color:var(--text-secondary);margin-top:6px;max-width:220px;line-height:1.5;}
+  .greet .focuslink{position:absolute;top:14px;right:18px;font-size:10.5px;font-family:var(--mono);color:var(--text-primary);background:var(--surface-2);border:1px solid var(--border);padding:6px 10px;border-radius:20px;display:flex;align-items:center;gap:5px;}
+
+  /* INSIGHT CARDS ROW */
+  .cardrow{display:flex;gap:10px;overflow-x:hidden;padding:2px 18px 4px;}
+  .icard{flex:0 0 208px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--border-strong);border-radius:4px;padding:14px;}
+  .icard.risk{border-left-color:var(--risk);}
+  .icard.positive{flex:0 0 220px;background:var(--surface);border:1.5px solid var(--black);border-left:1.5px solid var(--black);}
+  .icard.info{border-left-color:var(--info);}
+  .icard .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--text-tertiary);text-transform:uppercase;}
+  .icard.risk .eyebrow{color:var(--risk);}
+  .icard.positive .eyebrow{color:var(--text-tertiary);}
+  .icard.info .eyebrow{color:var(--info);}
+  .icard h3{font-family:var(--display);font-size:15px;font-weight:600;color:var(--text-primary);margin-top:6px;line-height:1.3;}
+  .icard.positive h3{color:var(--text-primary);}
+  .icard p{font-size:12px;color:var(--text-secondary);margin-top:5px;line-height:1.4;}
+  .icard.positive p{color:var(--text-secondary);}
+  .icard .cta{margin-top:10px;font-size:12px;font-weight:600;color:var(--text-primary);}
+  .icard.positive .cta{color:var(--text-primary);font-weight:700;}
+  .tag-black{display:inline-block;background:var(--black);color:#FFFFFF;font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;padding:3px 7px;border-radius:3px;margin-bottom:8px;}
+
+  /* LIST GROUP ROWS */
+  .listgroup{margin-top:14px;background:var(--surface);border-radius:4px;border:1px solid var(--border);overflow:hidden;}
+  .listrow{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-bottom:1px solid var(--border-soft);}
+  .listrow:last-child{border-bottom:none;}
+  .listrow .left{display:flex;align-items:center;gap:10px;}
+  .listrow .swatch{width:8px;height:8px;border-radius:50%;background:var(--border-strong);}
+  .listrow.risk .swatch{background:var(--risk);}
+  .listrow.positive .swatch{background:var(--positive);}
+  .listrow.info .swatch{background:var(--info);}
+  .listrow .label{font-size:13px;color:var(--text-primary);font-weight:500;}
+  .listrow .count{font-family:var(--mono);font-size:12px;color:var(--text-tertiary);}
+  .listrow .chev{color:var(--text-tertiary);font-size:14px;}
+
+  .section-title{font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin:18px 0 8px 2px;}
+
+  .stickybtn{padding:14px 18px;background:linear-gradient(0deg,var(--bg-app) 65%,transparent);flex-shrink:0;}
+  .btn-primary{display:block;width:100%;text-align:center;background:var(--black);color:var(--on-black);font-weight:600;font-size:14px;padding:13px;border-radius:4px;font-family:var(--body);}
+  .btn-secondary{display:block;width:100%;text-align:center;background:var(--surface);border:1px solid var(--border-strong);color:var(--text-primary);font-weight:500;font-size:14px;padding:12px;border-radius:4px;font-family:var(--body);}
+  .btnrow{display:flex;gap:10px;padding:12px 18px 16px;flex-shrink:0;border-top:1px solid var(--border);background:var(--surface);}
+  .btnrow .btn-secondary,.btnrow .btn-primary{flex:1;}
+
+  /* CLIENT ROWS (representante) */
+  .statpills{display:flex;gap:8px;padding:0 18px 6px;flex-wrap:wrap;}
+  .pill{font-size:11px;font-family:var(--mono);color:var(--text-secondary);background:var(--surface-2);border:1px solid var(--border);padding:6px 10px;border-radius:20px;}
+  .clientcard{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:14px;margin-top:10px;}
+  .clientcard.opportunity{background:var(--surface);border:1.5px solid var(--black);}
+  .clientcard .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .clientcard .name{font-family:var(--display);font-size:15px;font-weight:600;color:var(--text-primary);}
+  .scorebadge{font-family:var(--mono);font-size:11px;font-weight:500;padding:4px 8px;border-radius:4px;background:var(--positive-dim);color:var(--positive);}
+  .scorebadge.risk{background:var(--risk-dim);color:var(--risk);}
+  .scorebadge.info{background:var(--info-dim);color:var(--info);}
+  .clientcard .suggestion{font-size:12px;color:var(--text-secondary);margin-top:8px;line-height:1.4;}
+  .microbtn{margin-top:10px;display:inline-block;font-size:12px;font-weight:600;color:var(--on-black);background:var(--black);padding:8px 14px;border-radius:4px;}
+  .microbtn.outline{background:var(--surface);border:1px solid var(--border-strong);color:var(--text-primary);}
+
+  /* CATALOG */
+  .topbar{display:flex;gap:8px;padding:10px 18px 8px;flex-shrink:0;}
+  .searchbox{flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:10px 12px;font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:8px;}
+  .filterbtn{width:38px;height:38px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);flex-shrink:0;}
+  .chiprow{display:flex;gap:8px;padding:8px 18px 4px;overflow-x:hidden;}
+  .chip{font-size:11.5px;padding:7px 12px;border-radius:20px;border:1px solid var(--border);color:var(--text-secondary);background:var(--surface-2);white-space:nowrap;}
+  .chip.selected{background:var(--surface);border-color:var(--black);color:var(--text-primary);font-weight:600;}
+
+  .pcard{display:flex;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:12px;margin-top:10px;}
+  .thumb{width:74px;height:74px;border-radius:4px;flex-shrink:0;background:linear-gradient(155deg,var(--surface-3),var(--surface-2));display:flex;align-items:center;justify-content:center;}
+  .pcard .info{flex:1;min-width:0;}
+  .pcard .pname{font-family:var(--display);font-size:14px;font-weight:600;color:var(--text-primary);}
+  .badgerow{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;}
+  .badge{font-size:10px;font-family:var(--mono);padding:3px 7px;border-radius:4px;}
+  .badge.pos{background:var(--positive-dim);color:var(--positive);}
+  .badge.risk{background:var(--risk-dim);color:var(--risk);}
+  .badge.info{background:var(--info-dim);color:var(--info);}
+  .badge.neutral{background:var(--surface-2);color:var(--text-secondary);border:1px solid var(--border-soft);}
+
+  /* PRODUCT DETAIL */
+  .heroimg{height:230px;background:linear-gradient(155deg,var(--surface-3),var(--surface-2));position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .heroimg .topicon{position:absolute;top:16px;width:34px;height:34px;background:rgba(255,255,255,0.9);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--text-primary);}
+  .heroimg .back{left:14px;} .heroimg .fav{right:14px;}
+  .pdetailhead{padding:16px 18px 6px;}
+  .pdetailhead .cat{font-size:11px;color:var(--text-tertiary);font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;}
+  .pdetailhead h2{font-family:var(--display);font-size:20px;font-weight:700;color:var(--text-primary);margin-top:4px;}
+  .whybox{margin:14px 18px 0;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:14px;}
+  .whybox .title{font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary);margin-bottom:10px;}
+  .checkline{display:flex;align-items:flex-start;gap:8px;padding:6px 0;font-size:12.5px;color:var(--text-primary);}
+  .checkline .ck{width:15px;height:15px;border-radius:50%;background:var(--black);color:var(--on-black);display:flex;align-items:center;justify-content:center;font-size:9px;flex-shrink:0;margin-top:1px;}
+  .repobanner{margin:14px 18px 0;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:12px 14px;font-size:12.5px;color:var(--text-primary);font-weight:500;display:flex;align-items:center;gap:10px;}
+  .gradebox{margin:16px 18px 0;}
+  .gradebox .title{font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary);margin-bottom:10px;}
+  .sizerow{display:flex;gap:7px;flex-wrap:wrap;}
+  .sizechip{width:38px;height:38px;border-radius:4px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:var(--text-secondary);}
+  .sizechip.on{border-color:var(--black);background:var(--surface-2);color:var(--text-primary);font-weight:600;}
+
+  /* PLANNING */
+  .planhead{padding:16px 18px 4px;}
+  .planhead .kicker{font-size:11px;font-family:var(--mono);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;}
+  .planhead h2{font-family:var(--display);font-size:19px;font-weight:700;color:var(--text-primary);margin-top:5px;}
+  .planhead .invest{font-family:var(--mono);font-size:13px;color:var(--text-primary);font-weight:500;margin-top:4px;}
+  .mixbar{display:flex;height:14px;border-radius:4px;overflow:hidden;margin:14px 18px 8px;}
+  .mixseg-a{background:var(--black);width:60%;} .mixseg-b{background:var(--border-strong);width:25%;} .mixseg-c{background:var(--surface-3);width:15%;}
+  .legend{display:flex;gap:14px;padding:0 18px;flex-wrap:wrap;}
+  .legend .item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-secondary);}
+  .legend .sw{width:8px;height:8px;border-radius:2px;}
+  .sw.a{background:var(--black);} .sw.b{background:var(--border-strong);} .sw.c{background:var(--surface-3);border:1px solid var(--border);}
+  .stattiles{display:flex;gap:10px;padding:16px 18px 4px;}
+  .tile{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:12px 10px;}
+  .tile .tlabel{font-size:10px;color:var(--text-tertiary);font-family:var(--mono);text-transform:uppercase;}
+  .tile .tval{font-family:var(--mono);font-size:16px;font-weight:500;color:var(--text-primary);margin-top:5px;}
+  .mixitem{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:11px 13px;margin-top:8px;}
+  .mixitem .mname{font-size:13px;color:var(--text-primary);font-weight:500;}
+  .stepper{display:flex;align-items:center;gap:10px;}
+  .stepbtn{width:24px;height:24px;border-radius:4px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-size:13px;}
+  .stepper .qty{font-family:var(--mono);font-size:13px;color:var(--text-primary);min-width:18px;text-align:center;}
+
+  /* DESKTOP FRAME */
+  .desktop{width:1040px;background:var(--bg-app);border-radius:8px;overflow:hidden;box-shadow:0 24px 50px rgba(20,20,22,0.12);border:1px solid var(--border);}
+  .browserbar{background:var(--surface-2);padding:12px 16px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--border);}
+  .browserbar .dots{display:flex;gap:6px;}
+  .browserbar .dots span{width:10px;height:10px;border-radius:50%;background:var(--border-strong);}
+  .browserbar .url{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:6px 12px;font-family:var(--mono);font-size:11.5px;color:var(--text-tertiary);}
+  .applayout{display:flex;height:640px;}
+  .railnav{width:64px;background:var(--surface-2);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:22px;padding:22px 0;flex-shrink:0;}
+  .railnav .navitem{color:var(--text-tertiary);}
+  .railnav .navitem.active{color:var(--black);}
+  .railnav .navitem svg{width:20px;height:20px;}
+  .maincol{flex:1;overflow-y:auto;padding:24px 26px;background:var(--surface);}
+  .maincol h3{font-family:var(--display);font-size:18px;font-weight:600;color:var(--text-primary);margin-bottom:16px;}
+  .catgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .catgrid .pcard{margin-top:0;flex-direction:column;}
+  .catgrid .thumb{width:100%;height:120px;}
+
+  .sidebar-panel{width:296px;background:var(--surface-2);border-left:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;padding:22px 18px;}
+  .sidebar-panel .stitle{font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary);}
+  .sidebar-panel .stotal{font-family:var(--display);font-size:22px;font-weight:700;color:var(--text-primary);margin-top:8px;}
+  .sidebar-panel .ssub{font-family:var(--mono);font-size:12px;color:var(--text-secondary);margin-top:2px;}
+  .bubble{background:var(--surface);border:1px solid var(--border);border-radius:4px;border-top-left-radius:1px;padding:11px 13px;margin-top:14px;font-size:12.5px;color:var(--text-primary);line-height:1.5;}
+  .bubble b{color:var(--text-primary);font-weight:700;}
+  .sidebar-panel .sbtns{margin-top:auto;padding-top:16px;display:flex;flex-direction:column;gap:8px;}
+
+  /* CART */
+  .cartline{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:13px 15px;margin-bottom:9px;}
+  .cartline .cname{font-size:13px;color:var(--text-primary);font-weight:500;}
+  .cartline .cmeta{font-size:11px;color:var(--text-tertiary);font-family:var(--mono);margin-top:3px;}
+  .cartline .cval{font-family:var(--mono);font-size:13px;color:var(--text-primary);}
+  .qualitybox{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:14px;margin:16px 0;}
+  .qualitybox .qtitle{font-size:11px;font-family:var(--mono);text-transform:uppercase;color:var(--text-tertiary);letter-spacing:.05em;margin-bottom:10px;}
+  .qline{display:flex;align-items:center;justify-content:space-between;padding:7px 0;font-size:12.5px;color:var(--text-primary);}
+  .qline .qleft{display:flex;align-items:center;gap:8px;}
+  .miniaction{font-size:11.5px;font-weight:600;color:var(--on-black);background:var(--black);padding:5px 9px;border-radius:4px;}
+  .summarycard{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:16px;}
+  .sumrow{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:var(--text-secondary);}
+  .sumrow.total{border-top:1px solid var(--border);margin-top:6px;padding-top:12px;font-size:16px;color:var(--text-primary);font-weight:600;font-family:var(--mono);}
+
+  /* WIZARD - PERFIL */
+  .stepbar{display:flex;gap:6px;padding:18px 18px 0;flex-shrink:0;}
+  .stepseg{flex:1;height:3px;border-radius:2px;background:var(--border-strong);}
+  .stepseg.done{background:var(--black);}
+  .wizardhead{padding:16px 18px 4px;}
+  .wizardhead .kicker{font-size:11px;font-family:var(--mono);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;}
+  .wizardhead h2{font-family:var(--display);font-size:20px;font-weight:700;color:var(--text-primary);margin-top:7px;line-height:1.3;}
+  .wizardhead .sub{font-size:12.5px;color:var(--text-secondary);margin-top:6px;line-height:1.5;max-width:270px;}
+
+  .fieldgroup{margin-top:18px;padding:0 18px;}
+  .fieldgroup .flabel{font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary);margin-bottom:8px;}
+  .textinput{width:100%;background:var(--surface);border:1px solid var(--border-strong);border-radius:4px;padding:12px 13px;font-size:13.5px;color:var(--text-primary);font-family:var(--body);}
+  .textinput.ph{color:var(--text-tertiary);}
+  .selectrow{display:flex;align-items:center;justify-content:space-between;width:100%;background:var(--surface);border:1px solid var(--border-strong);border-radius:4px;padding:12px 13px;font-size:13.5px;color:var(--text-primary);}
+  .selectrow .ph{color:var(--text-tertiary);}
+  .fieldrow2{display:flex;gap:10px;}
+  .fieldrow2 .fieldgroup{flex:1;padding:0;margin-top:0;}
+  .chipselect{display:flex;flex-wrap:wrap;gap:8px;}
+
+  .optioncard{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border-strong);border-radius:4px;padding:14px;}
+  .optioncard .oicon{width:36px;height:36px;border-radius:4px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--text-primary);flex-shrink:0;}
+  .optioncard .otitle{font-size:13.5px;font-weight:600;color:var(--text-primary);}
+  .optioncard .osub{font-size:11.5px;color:var(--text-secondary);margin-top:2px;}
+  .optioncard .ochev{margin-left:auto;color:var(--text-tertiary);flex-shrink:0;}
+
+  .divider-text{display:flex;align-items:center;gap:10px;margin:20px 18px 4px;font-size:10.5px;color:var(--text-tertiary);font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;}
+  .divider-text::before,.divider-text::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  /* GOAL CARDS */
+  .goalcard{display:flex;align-items:center;gap:13px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:15px;margin-top:10px;}
+  .goalcard.selected{border:1px solid var(--black);background:var(--surface-2);}
+  .goalcard .gicon{width:38px;height:38px;border-radius:4px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--text-primary);flex-shrink:0;}
+  .goalcard.selected .gicon{background:var(--black);color:var(--on-black);}
+  .goalcard .gtitle{font-family:var(--display);font-size:14px;font-weight:600;color:var(--text-primary);}
+  .goalcard .gsub{font-size:11.5px;color:var(--text-secondary);margin-top:3px;line-height:1.4;}
+  .goalcard .gcheck{width:19px;height:19px;border-radius:50%;border:1.5px solid var(--border-strong);flex-shrink:0;margin-left:auto;}
+  .goalcard.selected .gcheck{background:var(--black);border-color:var(--black);color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:10px;}
+
+  /* DRAWER */
+  .scrim{position:absolute;inset:0;background:rgba(10,10,12,0.5);}
+  .drawer{position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:14px 14px 0 0;padding:12px 18px 22px;box-shadow:0 -14px 30px rgba(0,0,0,0.14);}
+  .drawer .handle{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:0 auto 16px;}
+  .drawer .dhead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+  .drawer .dhead h3{font-family:var(--display);font-size:16px;font-weight:600;color:var(--text-primary);}
+  .drawer .dhead .dsub{font-size:11.5px;color:var(--text-secondary);margin-top:3px;}
+  .drawer .dclose{color:var(--text-tertiary);width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:var(--surface-2);border-radius:50%;flex-shrink:0;}
+  .bg-behind{filter:blur(1.5px);opacity:0.5;}
+
+  /* MULTI-CARRINHO E COLABORACAO */
+  .cartswitcher{display:flex;gap:8px;margin-bottom:18px;overflow-x:auto;}
+  .cartswitcher .tab{font-size:12px;padding:8px 14px;border-radius:4px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);white-space:nowrap;flex-shrink:0;}
+  .cartswitcher .tab.active{background:var(--surface);border-color:var(--black);color:var(--text-primary);font-weight:600;}
+  .cartswitcher .tab.new{border-style:dashed;color:var(--text-tertiary);}
+  .sharebanner{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:10px 13px;margin-bottom:16px;font-size:12.5px;color:var(--text-primary);}
+  .sharebanner .avatar{width:26px;height:26px;border-radius:50%;background:var(--black);color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10.5px;font-weight:600;flex-shrink:0;}
+  .activitynote{display:flex;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:12px 13px;margin:14px 0;font-size:12.5px;color:var(--text-primary);line-height:1.5;}
+  .activitynote .aavatar{width:24px;height:24px;border-radius:50%;background:var(--surface-3);color:var(--text-primary);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:600;flex-shrink:0;}
+  .activitynote .aname{font-weight:600;}
+  .activitynote .atime{font-size:10.5px;color:var(--text-tertiary);margin-top:4px;}
+
+  /* TIMELINE DE STATUS */
+  .timeline{margin-top:4px;}
+  .tstep{display:flex;gap:14px;padding-bottom:22px;position:relative;}
+  .tstep::before{content:'';position:absolute;left:9px;top:20px;bottom:0;width:1px;background:var(--border);}
+  .tstep:last-child::before{display:none;}
+  .tdot{width:19px;height:19px;border-radius:50%;background:var(--surface);border:1.5px solid var(--border-strong);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-tertiary);z-index:1;}
+  .tstep.done .tdot{background:var(--black);border-color:var(--black);color:#FFFFFF;}
+  .tstep.current .tdot{border-color:var(--black);color:var(--black);font-size:8px;}
+  .tcontent .ttitle{font-size:13.5px;font-weight:600;color:var(--text-primary);}
+  .tstep:not(.done):not(.current) .tcontent .ttitle{color:var(--text-tertiary);font-weight:500;}
+  .tcontent .tdate{font-size:11px;font-family:var(--mono);color:var(--text-tertiary);margin-top:2px;}
+  .tcontent .tdesc{font-size:12px;color:var(--text-secondary);margin-top:4px;line-height:1.4;max-width:230px;}
+
+  /* LOGIN */
+  .loginwrap{padding:44px 20px 0;}
+  .logo{margin-bottom:26px;} .logo img{height:19px;width:auto;display:block;} .header-logo{height:16px;width:auto;display:block;margin-bottom:10px;}
+  .loginhead{margin-bottom:8px;}
+  .loginhead .kicker{font-family:var(--mono);font-size:11px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;}
+  .loginhead h2{font-family:var(--display);font-size:22px;font-weight:700;color:var(--text-primary);margin-top:7px;}
+  .loginhead .sub{font-size:12.5px;color:var(--text-secondary);margin-top:7px;line-height:1.5;max-width:260px;}
+
+  .personacard{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:18px;margin-top:14px;}
+  .personacard .picon{width:42px;height:42px;border-radius:4px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--text-primary);flex-shrink:0;}
+  .personacard .ptitle{font-family:var(--display);font-size:15px;font-weight:600;color:var(--text-primary);}
+  .personacard .psub{font-size:12px;color:var(--text-secondary);margin-top:3px;}
+  .personacard .pchev{margin-left:auto;color:var(--text-tertiary);flex-shrink:0;}
+
+  .passwordfield{position:relative;}
+  .passwordfield .eyeicon{position:absolute;right:13px;top:50%;transform:translateY(-50%);color:var(--text-tertiary);}
+
+  .forgotlink{text-align:right;font-size:11.5px;color:var(--text-secondary);margin-top:8px;}
+  .switchlink{text-align:center;font-size:12.5px;color:var(--text-secondary);margin-top:22px;}
+  .switchlink b{color:var(--text-primary);font-weight:600;}
+
+  .orrow{display:flex;align-items:center;gap:10px;margin:20px 0;font-size:10.5px;color:var(--text-tertiary);font-family:var(--mono);text-transform:uppercase;}
+  .orrow::before,.orrow::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  .usercard{display:flex;align-items:center;gap:13px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:14px;margin-top:10px;}
+  .usercard .uavatar{width:38px;height:38px;border-radius:50%;background:var(--surface-3);color:var(--text-primary);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;font-weight:600;flex-shrink:0;}
+  .usercard.titular .uavatar{background:var(--black);color:#FFFFFF;}
+  .usercard .uname{font-size:14px;font-weight:600;color:var(--text-primary);}
+  .usercard .urole{font-size:11px;color:var(--text-tertiary);margin-top:2px;}
+  .roletag{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;padding:3px 7px;border-radius:3px;background:var(--surface-2);color:var(--text-secondary);margin-left:auto;flex-shrink:0;}
+  .roletag.titular{background:var(--black);color:#FFFFFF;}
+  .addusercard{display:flex;align-items:center;justify-content:center;gap:8px;border:1.5px dashed var(--border-strong);border-radius:4px;padding:14px;margin-top:14px;color:var(--text-secondary);font-size:13px;font-weight:500;}
+
+  .pinhead{text-align:center;margin-top:12px;}
+  .pinavatar{width:52px;height:52px;border-radius:50%;background:var(--surface-3);color:var(--text-primary);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:16px;font-weight:600;margin:0 auto;}
+  .pindots{display:flex;justify-content:center;gap:16px;margin:26px 0 30px;}
+  .pindot{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--border-strong);}
+  .pindot.filled{background:var(--black);border-color:var(--black);}
+  .pinpad{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:0 20px;}
+  .pinkey{aspect-ratio:1;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:19px;font-weight:600;color:var(--text-primary);}
+  .pinkey.empty{background:transparent;}
+  .pinfallback{text-align:center;font-size:12px;color:var(--text-secondary);margin-top:26px;}
+  .pinfallback b{color:var(--text-primary);font-weight:600;}
+  .loginfooter{text-align:center;padding:16px 0 24px;}
+  .loginfooter img{height:17.5px;width:auto;opacity:0.5;}
+
+  /* TABLET FRAME */
+  .tablet{width:980px;background:var(--bg-app);border-radius:22px;border:9px solid var(--surface-3);box-shadow:0 22px 46px rgba(20,20,22,0.12);overflow:hidden;position:relative;}
+  .tablet-logo{position:absolute;top:22px;left:28px;z-index:2;}
+  .tablet-logo img{height:17px;width:auto;display:block;}
+  .tablet-status{padding:12px 26px 0;display:flex;justify-content:flex-end;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text-tertiary);flex-shrink:0;}
+  .tablet-layout{display:flex;height:700px;}
+  .tablet-railnav{width:76px;background:var(--surface-2);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:26px;padding:24px 0;flex-shrink:0;}
+  .tablet-railnav .navitem{color:var(--text-tertiary);}
+  .tablet-railnav .navitem.active{color:var(--black);}
+  .tablet-railnav .navitem svg{width:22px;height:22px;}
+  .tablet-main{flex:1;overflow-y:auto;padding:28px 32px;background:var(--surface);}
+  .tablet-main h3{font-family:var(--display);font-size:19px;font-weight:600;color:var(--text-primary);margin-bottom:4px;}
+
+  .tablet-auth{display:flex;align-items:center;justify-content:center;min-height:520px;}
+  .authcard{width:440px;}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+
+  .masterlist{width:360px;border-right:1px solid var(--border);flex-shrink:0;overflow-y:auto;padding:22px;background:var(--surface);}
+  .masterlist .mlrow{display:flex;gap:11px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:11px;margin-top:9px;cursor:pointer;}
+  .masterlist .mlrow.selected{border-color:var(--black);background:var(--surface-2);}
+  .masterlist .mlthumb{width:46px;height:46px;border-radius:4px;flex-shrink:0;background:linear-gradient(155deg,var(--surface-3),var(--surface-2));}
+  .masterlist .mlname{font-size:12.5px;font-weight:600;color:var(--text-primary);}
+  .masterlist .mlmeta{font-size:10.5px;color:var(--text-tertiary);margin-top:3px;font-family:var(--mono);}
+
+  .detailpane{flex:1;overflow-y:auto;padding:28px 34px;background:var(--surface);}
+  .detailpane .dhero{height:190px;border-radius:4px;background:linear-gradient(155deg,var(--surface-3),var(--surface-2));display:flex;align-items:center;justify-content:center;margin-bottom:20px;}
+
+  /* PERSONA TAG */
+  .persona-tag{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:3px;margin-left:8px;font-weight:600;}
+  .persona-tag.lojista{background:var(--info-dim);color:var(--info);}
+  .persona-tag.representante{background:var(--positive-dim);color:var(--positive);}
+  .persona-tag.ambos{background:var(--surface-3);color:var(--text-primary);border:1px solid var(--border-strong);}
+
+  /* MODAL (tablet) */
+  .tmodal-scrim{position:absolute;inset:0;background:rgba(10,10,12,0.45);display:flex;align-items:center;justify-content:center;}
+  .tmodal{width:400px;background:var(--surface);border-radius:8px;padding:24px;box-shadow:0 20px 40px rgba(0,0,0,0.18);}
+  .tmodal .mhead{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+  .tmodal .mclose{color:var(--text-tertiary);width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:var(--surface-2);border-radius:50%;flex-shrink:0;}
+</style>
+</head>
+<body>
+
+<div class="canvas-header">
+  <div class="eyebrow">Product design — high fidelity · tablet · completo</div>
+  <h1>Retail Performance Platform · Telas em Tablet (completo)</h1>
+  <p>Todas as 21 telas adaptadas pra tablet, seguindo os padrões: navegação em rail lateral, sidebar de pedido sempre visível quando relevante, formulários centralizados em cartão de largura fixa, catálogo e ficha de decisão combinados em master-detail, radar e pós-venda em grade. Duas telas do conjunto mobile foram absorvidas por combinação: "Catálogo" + "Ficha de Decisão" viraram uma única tela master-detail (6+7), e "Meus Pedidos" + "Carrinho" viraram uma única tela de lista+detalhe (9+10) — o padrão de tablet elimina a navegação extra que fazia sentido no celular. A tela "Catálogo + Sidebar" (6.1) foi descontinuada nesta versão por ficar redundante com a 6+7. Cada tela traz uma etiqueta indicando o perfil: <span class="persona-tag lojista" style="margin-left:4px;">LOJISTA</span> <span class="persona-tag representante">REPRESENTANTE</span> <span class="persona-tag ambos">COMPARTILHADO</span> (telas onde as duas personas interagem no mesmo objeto).</p>
+</div>
+
+<div class="canvas">
+  <!-- FRAME: LOGIN TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">0.1</span>Login — Tablet (layout centralizado)<span class="persona-tag ambos">COMPARTILHADO</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-auth">
+        <div class="authcard">
+          <div class="loginhead" style="text-align:center;">
+            <h2>Bem-vindo</h2>
+            <div class="sub" style="margin:7px auto 0;">Como você acessa a plataforma?</div>
+          </div>
+          <div class="personacard">
+            <div class="picon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16l-1.4 10.3a2 2 0 0 1-2 1.7H7.4a2 2 0 0 1-2-1.7L4 7Z"/><path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h3A2.5 2.5 0 0 1 16 5.5V7"/></svg></div>
+            <div><div class="ptitle">Sou lojista</div><div class="psub">Comprar, planejar e acompanhar pedidos</div></div>
+            <div class="pchev"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></div>
+          </div>
+          <div class="personacard">
+            <div class="picon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><circle cx="17" cy="8" r="2.4"/><path d="M15.5 14c2.6.3 4.5 2 4.5 5"/></svg></div>
+            <div><div class="ptitle">Sou representante</div><div class="psub">Gerenciar carteira de clientes e pedidos</div></div>
+            <div class="pchev"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></div>
+          </div>
+          <div class="switchlink">Ainda não tem conta? <b>Fale com a indústria</b></div>
+        </div>
+      </div>
+      <div class="loginfooter"><img src="data:image/png;base64,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" alt="PaceSeller"></div>
+    </div>
+  </div>
+  <!-- FRAME: LOGIN LOJISTA TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">0.2</span>Login — Lojista — Tablet<span class="persona-tag lojista">LOJISTA</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-auth">
+        <div class="authcard">
+          <div class="loginhead" style="text-align:center;">
+            <div class="kicker">Lojista</div>
+            <h2>Entrar</h2>
+            <div class="sub" style="margin:7px auto 0;">Acesse sua conta pra ver as oportunidades de hoje</div>
+          </div>
+          <div class="fieldgroup" style="padding:0;margin-top:22px;"><div class="flabel">E-mail</div><div class="textinput ph">carlos@radicalskate.com.br</div></div>
+          <div class="fieldgroup" style="padding:0;">
+            <div class="flabel">Senha</div>
+            <div class="passwordfield"><div class="textinput">••••••••••</div><div class="eyeicon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div></div>
+            <div class="forgotlink">Esqueci minha senha</div>
+          </div>
+          <div class="fieldgroup" style="padding:0;margin-top:22px;"><div class="btn-primary">Entrar</div></div>
+          <div class="orrow">ou</div>
+          <div class="btn-secondary">Entrar com Google</div>
+          <div class="switchlink">É representante? <b>Entrar aqui</b></div>
+        </div>
+      </div>
+      <div class="loginfooter"><img src="data:image/png;base64,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" alt="PaceSeller"></div>
+    </div>
+  </div>
+
+  <!-- FRAME: LOGIN REPRESENTANTE TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">0.3</span>Login — Representante — Tablet<span class="persona-tag representante">REPRESENTANTE</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-auth">
+        <div class="authcard">
+          <div class="loginhead" style="text-align:center;">
+            <div class="kicker">Representante</div>
+            <h2>Entrar</h2>
+            <div class="sub" style="margin:7px auto 0;">Acesse a conta da sua carteira de clientes</div>
+          </div>
+          <div class="fieldgroup" style="padding:0;margin-top:22px;"><div class="flabel">E-mail</div><div class="textinput ph">ana@vendasnorte.com.br</div></div>
+          <div class="fieldgroup" style="padding:0;">
+            <div class="flabel">Senha</div>
+            <div class="passwordfield"><div class="textinput">••••••••••</div><div class="eyeicon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></div></div>
+            <div class="forgotlink">Esqueci minha senha</div>
+          </div>
+          <div class="fieldgroup" style="padding:0;margin-top:22px;"><div class="btn-primary">Entrar</div></div>
+          <div class="switchlink">É lojista? <b>Entrar aqui</b></div>
+        </div>
+      </div>
+      <div class="loginfooter"><img src="data:image/png;base64,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" alt="PaceSeller"></div>
+    </div>
+  </div>
+  <!-- FRAME: QUEM ESTA USANDO TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">0.4</span>Login — Quem Está Usando Agora — Tablet<span class="persona-tag representante">REPRESENTANTE</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-auth">
+        <div class="authcard" style="width:460px;">
+          <div class="loginhead" style="text-align:center;">
+            <div class="kicker">Conta: Ana Silva</div>
+            <h2>Quem está usando agora?</h2>
+            <div class="sub" style="margin:7px auto 0;">Isso identifica cada ação feita dentro da conta — pedidos, comentários e mensagens</div>
+          </div>
+          <div class="usercard titular" style="margin-top:22px;">
+            <div class="uavatar">AN</div>
+            <div><div class="uname">Ana Silva</div><div class="urole">Titular da conta</div></div>
+            <div class="roletag titular">Titular</div>
+          </div>
+          <div class="usercard">
+            <div class="uavatar">BR</div>
+            <div><div class="uname">Bruno Costa</div><div class="urole">Auxiliar</div></div>
+            <div class="roletag">Auxiliar</div>
+          </div>
+          <div class="usercard">
+            <div class="uavatar">CA</div>
+            <div><div class="uname">Carla Nunes</div><div class="urole">Auxiliar</div></div>
+            <div class="roletag">Auxiliar</div>
+          </div>
+          <div class="addusercard">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Adicionar auxiliar
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FRAME: PIN TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">0.5</span>Login — Confirmar PIN do Auxiliar — Tablet<span class="persona-tag representante">REPRESENTANTE</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-auth">
+        <div class="authcard" style="width:340px;">
+          <div class="pinhead">
+            <div class="pinavatar">BR</div>
+            <div class="loginhead" style="margin-top:14px;">
+              <h2>Oi, Bruno</h2>
+              <div class="sub" style="max-width:240px;margin:7px auto 0;">Confirme seu PIN de 4 dígitos pra continuar como auxiliar de Ana</div>
+            </div>
+          </div>
+          <div class="pindots">
+            <div class="pindot filled"></div><div class="pindot filled"></div><div class="pindot"></div><div class="pindot"></div>
+          </div>
+          <div class="pinpad">
+            <div class="pinkey">1</div><div class="pinkey">2</div><div class="pinkey">3</div>
+            <div class="pinkey">4</div><div class="pinkey">5</div><div class="pinkey">6</div>
+            <div class="pinkey">7</div><div class="pinkey">8</div><div class="pinkey">9</div>
+            <div class="pinkey empty"></div><div class="pinkey">0</div>
+            <div class="pinkey"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 4H9l-6 8 6 8h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/><path d="M14 9l4 6M18 9l-4 6"/></svg></div>
+          </div>
+          <div class="pinfallback">Esqueceu o PIN? <b>Entrar como Ana</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FRAME: PERFIL ETAPA 1 TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">1</span>Perfil da Loja — Dados básicos (1/3) — Tablet<span class="persona-tag lojista">LOJISTA</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-auth">
+        <div class="authcard" style="width:560px;">
+          <div class="stepbar" style="padding:0;margin-bottom:18px;"><div class="stepseg done"></div><div class="stepseg"></div><div class="stepseg"></div></div>
+          <div class="loginhead">
+            <div class="kicker">Configuração de perfil</div>
+            <h2>Conte sobre sua loja</h2>
+            <div class="sub">Isso ajuda o radar a trazer oportunidades mais precisas pra você</div>
+          </div>
+          <div class="fieldgroup" style="padding:0;margin-top:20px;"><div class="flabel">Nome da loja</div><div class="textinput">Radical Skate</div></div>
+          <div class="fieldrow2" style="margin-top:18px;">
+            <div class="fieldgroup"><div class="flabel">Segmento</div>
+              <div class="chipselect"><div class="chip selected">Streetwear</div><div class="chip">Casual</div><div class="chip">Esportivo</div></div>
+            </div>
+            <div class="fieldgroup"><div class="flabel">Porte da loja</div>
+              <div class="chipselect"><div class="chip">Pequena</div><div class="chip selected">Média</div><div class="chip">Grande</div></div>
+            </div>
+          </div>
+          <div class="fieldgroup" style="padding:0;margin-top:18px;"><div class="flabel">Região</div>
+            <div class="selectrow"><span>Porto Alegre, RS · Rua de comércio</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></div>
+          </div>
+          <div class="fieldgroup" style="padding:0;margin-top:18px;"><div class="flabel">Público-alvo</div>
+            <div class="chipselect"><div class="chip selected">Jovem adulto</div><div class="chip selected">Teen</div><div class="chip">Adulto</div><div class="chip">Família</div></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:26px;">
+            <div class="btn-secondary" style="width:170px;">Pular por agora</div>
+            <div class="btn-primary" style="flex:1;">Continuar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FRAME: PERFIL ETAPA 2 TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">2</span>Perfil da Loja — Dados de vendas (2/3) — Tablet<span class="persona-tag lojista">LOJISTA</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-auth">
+        <div class="authcard" style="width:560px;">
+          <div class="stepbar" style="padding:0;margin-bottom:18px;"><div class="stepseg done"></div><div class="stepseg done"></div><div class="stepseg"></div></div>
+          <div class="loginhead">
+            <div class="kicker">Configuração de perfil</div>
+            <h2>Fale sobre suas vendas</h2>
+            <div class="sub">Quanto mais dados, mais preciso fica o seu radar</div>
+          </div>
+          <div class="fieldgroup" style="padding:0;margin-top:18px;">
+            <div class="optioncard">
+              <div class="oicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v4H4zM4 12h16v4H4zM8 8v4M16 8v4"/></svg></div>
+              <div><div class="otitle">Conectar meu sistema de vendas</div><div class="osub">Importa e atualiza os dados automaticamente</div></div>
+              <div class="ochev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></div>
+            </div>
+          </div>
+          <div class="divider-text" style="margin:20px 0 4px;">ou preencha manualmente</div>
+          <div class="fieldrow2" style="margin-top:14px;">
+            <div class="fieldgroup"><div class="flabel">Ticket médio</div><div class="textinput">R$ 180,00</div></div>
+            <div class="fieldgroup"><div class="flabel">Categorias mais vendidas</div>
+              <div class="chipselect"><div class="chip selected">Calçados</div><div class="chip selected">Acessórios</div></div>
+            </div>
+          </div>
+          <div class="fieldgroup" style="padding:0;margin-top:18px;"><div class="flabel">Sazonalidade forte</div>
+            <div class="chipselect"><div class="chip selected">Inverno</div><div class="chip">Verão</div><div class="chip">Volta às aulas</div><div class="chip">Black Friday</div></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:26px;">
+            <div class="btn-secondary" style="width:130px;">Voltar</div>
+            <div class="btn-primary" style="flex:1;">Continuar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FRAME: OBJETIVO TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">3</span>Qual o Objetivo Agora — Etapa Final (3/3) — Tablet<span class="persona-tag lojista">LOJISTA</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-auth">
+        <div class="authcard" style="width:560px;">
+          <div class="stepbar" style="padding:0;margin-bottom:18px;"><div class="stepseg done"></div><div class="stepseg done"></div><div class="stepseg done"></div></div>
+          <div class="loginhead">
+            <div class="kicker">Última etapa</div>
+            <h2>O que você quer fazer agora?</h2>
+            <div class="sub">Isso ajusta o que aparece primeiro no seu radar hoje — você pode mudar quando quiser</div>
+          </div>
+          <div class="grid2" style="margin-top:18px;">
+            <div class="goalcard selected" style="margin-top:0;">
+              <div class="gicon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V10M11 19V5M18 19v-6"/></svg></div>
+              <div><div class="gtitle">Repor estoque</div><div class="gsub">Focar em produtos acabando</div></div>
+              <div class="gcheck">✓</div>
+            </div>
+            <div class="goalcard" style="margin-top:0;">
+              <div class="gicon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg></div>
+              <div><div class="gtitle">Planejar a coleção</div><div class="gsub">Montar mix com orçamento</div></div>
+              <div class="gcheck"></div>
+            </div>
+            <div class="goalcard" style="margin-top:0;">
+              <div class="gicon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><circle cx="17" cy="8" r="2.4"/><path d="M15.5 14c2.6.3 4.5 2 4.5 5"/></svg></div>
+              <div><div class="gtitle">Recuperar clientes</div><div class="gsub">Reativar quem parou de comprar</div></div>
+              <div class="gcheck"></div>
+            </div>
+            <div class="goalcard" style="margin-top:0;">
+              <div class="gicon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg></div>
+              <div><div class="gtitle">Só olhar geral</div><div class="gsub">Entender como está o negócio</div></div>
+              <div class="gcheck"></div>
+            </div>
+          </div>
+          <div class="btn-primary" style="margin-top:26px;">Ir para o meu radar</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FRAME: RADAR TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">4</span>Radar Comercial — Lojista — Tablet<span class="persona-tag lojista">LOJISTA</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-layout">
+        <div class="tablet-railnav">
+          <div class="navitem active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V10M11 19V5M18 19v-6"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16l-1.4 10.3a2 2 0 0 1-2 1.7H7.4a2 2 0 0 1-2-1.7L4 7Z"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><circle cx="17" cy="8" r="2.4"/><path d="M15.5 14c2.6.3 4.5 2 4.5 5"/></svg></div>
+        </div>
+        <div class="tablet-main">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div style="font-size:13px;color:var(--text-secondary);">Bom dia, Carlos</div>
+              <h3 style="font-size:24px;margin-top:4px;">Sua loja está saudável</h3>
+              <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">5 oportunidades identificadas hoje</div>
+            </div>
+            <div class="focuslink" style="position:static;">Ajustar foco</div>
+          </div>
+
+          <div class="grid3" style="margin-top:22px;">
+            <div class="icard positive"><div class="tag-black">Oportunidade</div><div class="eyebrow">Alta demanda</div><h3 style="font-size:15px;">Tênis Vulcanizado</h3><p>+34% de vendas na sua região neste mês</p><div class="cta">Ver produto →</div></div>
+            <div class="icard risk"><div class="eyebrow">Estoque baixo</div><h3 style="font-size:15px;">Linha Street</h3><p>Vendendo mais rápido que a reposição atual</p><div class="cta">Repor agora →</div></div>
+            <div class="icard info"><div class="eyebrow">Benchmark</div><h3 style="font-size:15px;">Lojas parecidas venderam +30%</h3><p>Modelo Street Pro, mesma faixa de porte</p><div class="cta">Comparar →</div></div>
+          </div>
+
+          <div class="section-title" style="margin-top:26px;">Painel do dia</div>
+          <div class="grid2">
+            <div class="tile" style="text-align:left;padding:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;font-weight:600;color:var(--text-primary);">Reposição necessária</span><span class="count" style="font-family:var(--mono);color:var(--text-tertiary);">3 ›</span></div>
+            </div>
+            <div class="tile" style="text-align:left;padding:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;font-weight:600;color:var(--text-primary);">Lançamentos</span><span class="count" style="font-family:var(--mono);color:var(--text-tertiary);">2 ›</span></div>
+            </div>
+            <div class="tile" style="text-align:left;padding:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;font-weight:600;color:var(--text-primary);">Produtos em alta</span><span class="count" style="font-family:var(--mono);color:var(--text-tertiary);">6 ›</span></div>
+            </div>
+            <div class="tile" style="text-align:left;padding:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:13px;font-weight:600;color:var(--text-primary);">Alertas</span><span class="count" style="font-family:var(--mono);color:var(--text-tertiary);">1 ›</span></div>
+            </div>
+          </div>
+
+          <div class="btn-primary" style="width:260px;margin-top:24px;">Ver planejamento de compra</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FRAME: AJUSTAR FOCO MODAL TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">4.1</span>Ajustar Foco — Modal — Tablet<span class="persona-tag lojista">LOJISTA</span></div>
+    <div class="tablet" style="position:relative;">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-layout" style="filter:blur(1.5px);opacity:0.6;">
+        <div class="tablet-railnav">
+          <div class="navitem active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.2"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V10M11 19V5M18 19v-6"/></svg></div>
+        </div>
+        <div class="tablet-main">
+          <div style="font-size:13px;color:var(--text-secondary);">Bom dia, Carlos</div>
+          <h3 style="font-size:24px;margin-top:4px;">Sua loja está saudável</h3>
+        </div>
+      </div>
+      <div class="tmodal-scrim" style="position:absolute;">
+        <div class="tmodal">
+          <div class="mhead">
+            <div><h3 style="font-size:16px;">Ajustar seu foco</h3><div style="font-size:11.5px;color:var(--text-secondary);margin-top:3px;">Isso reordena o que aparece primeiro hoje</div></div>
+            <div class="mclose"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6 6 18"/></svg></div>
+          </div>
+          <div class="goalcard" style="margin-top:0;">
+            <div class="gicon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V10M11 19V5M18 19v-6"/></svg></div>
+            <div><div class="gtitle">Repor estoque</div><div class="gsub">Produtos acabando primeiro</div></div>
+            <div class="gcheck"></div>
+          </div>
+          <div class="goalcard selected">
+            <div class="gicon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><circle cx="17" cy="8" r="2.4"/><path d="M15.5 14c2.6.3 4.5 2 4.5 5"/></svg></div>
+            <div><div class="gtitle">Recuperar clientes parados</div><div class="gsub">Priorizar reativação hoje</div></div>
+            <div class="gcheck">✓</div>
+          </div>
+          <div class="btn-primary" style="margin-top:16px;">Aplicar</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FRAME: RADAR REPRESENTANTE TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">5</span>Radar Comercial — Representante — Tablet<span class="persona-tag representante">REPRESENTANTE</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-layout">
+        <div class="tablet-railnav">
+          <div class="navitem active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><circle cx="17" cy="8" r="2.4"/><path d="M15.5 14c2.6.3 4.5 2 4.5 5"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></div>
+        </div>
+        <div class="tablet-main">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div style="font-size:13px;color:var(--text-secondary);">Bom dia, Ana</div>
+              <h3 style="font-size:24px;margin-top:4px;">Sua carteira hoje</h3>
+              <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">12 clientes ativos · 4 prioridades</div>
+            </div>
+            <div class="focuslink" style="position:static;">Ajustar foco</div>
+          </div>
+          <div class="statpills" style="padding:0;margin-top:16px;">
+            <div class="pill">4 · alta recompra</div>
+            <div class="pill">2 · perderam volume</div>
+            <div class="pill">6 · sem nova coleção</div>
+          </div>
+          <div class="section-title" style="margin-top:22px;">Clientes priorizados</div>
+          <div class="grid3">
+            <div class="clientcard opportunity" style="margin-top:0;">
+              <div class="tag-black" style="margin-bottom:8px;">Oportunidade</div>
+              <div class="top"><div class="name">Radical Skate</div><div class="scorebadge">92%</div></div>
+              <div class="suggestion">Sugestão: pedido de R$ 4.200, com base no histórico de inverno</div>
+              <div class="microbtn">Montar pedido</div>
+            </div>
+            <div class="clientcard" style="margin-top:0;">
+              <div class="top"><div class="name">Loja Vertex</div><div class="scorebadge risk">-22%</div></div>
+              <div class="suggestion">Queda de compra nos últimos 30 dias. Sugestão: ligar hoje</div>
+              <div class="microbtn outline">Ligar agora</div>
+            </div>
+            <div class="clientcard" style="margin-top:0;">
+              <div class="top"><div class="name">Casa Esporte</div><div class="scorebadge info">Novo</div></div>
+              <div class="suggestion">Ainda não visualizou o lançamento Urban Winter</div>
+              <div class="microbtn outline">Enviar coleção</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FRAME: CATALOGO MASTER DETAIL TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">6+7</span>Catálogo + Ficha de Decisão — Master-Detail — Tablet<span class="persona-tag lojista">LOJISTA</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-layout">
+        <div class="tablet-railnav">
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.2"/></svg></div>
+          <div class="navitem active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V10M11 19V5M18 19v-6"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16l-1.4 10.3a2 2 0 0 1-2 1.7H7.4a2 2 0 0 1-2-1.7L4 7Z"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><circle cx="17" cy="8" r="2.4"/><path d="M15.5 14c2.6.3 4.5 2 4.5 5"/></svg></div>
+        </div>
+
+        <div class="masterlist">
+          <div class="searchbox" style="margin-bottom:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>Buscar produtos</div>
+          <div class="chiprow" style="padding:8px 0 4px;">
+            <div class="chip selected">Recomendado</div><div class="chip">Alto giro</div>
+          </div>
+          <div class="mlrow selected">
+            <div class="mlthumb"></div>
+            <div><div class="mlname">Tênis Street Pro</div><div class="mlmeta">+18% · reposição 45d</div></div>
+          </div>
+          <div class="mlrow">
+            <div class="mlthumb"></div>
+            <div><div class="mlname">Sandália Feminina X</div><div class="mlmeta">oportunidade perdida</div></div>
+          </div>
+          <div class="mlrow">
+            <div class="mlthumb"></div>
+            <div><div class="mlname">Bota Urban Trail</div><div class="mlmeta">alto giro · margem 44%</div></div>
+          </div>
+          <div class="mlrow">
+            <div class="mlthumb"></div>
+            <div><div class="mlname">Meia Cano Alto</div><div class="mlmeta">margem 48%</div></div>
+          </div>
+        </div>
+
+        <div class="detailpane">
+          <div class="dhero">
+            <svg width="70" height="70" viewBox="0 0 24 24" fill="none" stroke="#C7C9CF" stroke-width="1.2"><path d="M3 15c0-1 1-1.6 2-2l3-1.4c1-.5 1.6-1.4 2-2.3.4-1 1.2-1.3 2-1 .8.4 1.6 1.6 3 2.3 1.2.6 3 .7 4.4 1 1 .2 1.6.9 1.6 1.9v2.3c0 .7-.5 1.2-1.2 1.2H4.2C3.5 17 3 16.5 3 15.8Z"/></svg>
+          </div>
+          <div class="cat" style="font-size:11px;color:var(--text-tertiary);font-family:var(--mono);text-transform:uppercase;">Calçados · Linha Street</div>
+          <h3 style="margin-top:6px;">Tênis Street Pro</h3>
+
+          <div class="whybox" style="margin:16px 0 0;padding:16px;">
+            <div class="title">Por que comprar este produto</div>
+            <div class="checkline"><span class="ck">✓</span>Vendendo acima da média — crescimento de 18% no trimestre</div>
+            <div class="checkline"><span class="ck">✓</span>Alta recompra — 72% dos clientes recompram em 60 dias</div>
+            <div class="checkline"><span class="ck">✓</span>Margem estimada de 42% no seu perfil de loja</div>
+          </div>
+
+          <div class="gradebox" style="margin:16px 0 0;">
+            <div class="title">Grade sugerida</div>
+            <div class="sizerow">
+              <div class="sizechip">36</div><div class="sizechip on">37</div><div class="sizechip on">38</div><div class="sizechip on">39</div><div class="sizechip on">40</div><div class="sizechip on">41</div><div class="sizechip">42</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:10px;margin-top:22px;">
+            <div class="btn-secondary" style="width:160px;">Planejar</div>
+            <div class="btn-primary" style="width:200px;">Adicionar ao carrinho</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FRAME: PLANEJAMENTO TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">8</span>Planejamento da Compra — Tablet<span class="persona-tag lojista">LOJISTA</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-layout">
+        <div class="tablet-railnav">
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.2"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg></div>
+          <div class="navitem active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V10M11 19V5M18 19v-6"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16l-1.4 10.3a2 2 0 0 1-2 1.7H7.4a2 2 0 0 1-2-1.7L4 7Z"/></svg></div>
+        </div>
+        <div class="tablet-main">
+          <h3>Coleção de Inverno</h3>
+          <div style="font-family:var(--mono);font-size:13px;color:var(--text-primary);margin-top:4px;">Investimento: R$ 18.000</div>
+          <div class="mixbar" style="margin:18px 0 8px;">
+            <div class="mixseg-a"></div><div class="mixseg-b"></div><div class="mixseg-c"></div>
+          </div>
+          <div class="legend">
+            <div class="item"><span class="sw a"></span>Calçados 60%</div>
+            <div class="item"><span class="sw b"></span>Acessórios 25%</div>
+            <div class="item"><span class="sw c"></span>Vestuário 15%</div>
+          </div>
+          <div class="grid3" style="margin-top:20px;">
+            <div class="tile"><div class="tlabel">Giro previsto</div><div class="tval">42 dias</div></div>
+            <div class="tile"><div class="tlabel">Margem est.</div><div class="tval">39%</div></div>
+            <div class="tile"><div class="tlabel">Cobertura</div><div class="tval">92%</div></div>
+          </div>
+          <div class="section-title">Itens do mix</div>
+          <div class="grid2">
+            <div class="mixitem" style="margin-top:0;"><div class="mname">Tênis Street Pro</div><div class="stepper"><div class="stepbtn">−</div><div class="qty">24</div><div class="stepbtn">+</div></div></div>
+            <div class="mixitem" style="margin-top:0;"><div class="mname">Bota Urban Trail</div><div class="stepper"><div class="stepbtn">−</div><div class="qty">12</div><div class="stepbtn">+</div></div></div>
+            <div class="mixitem" style="margin-top:0;"><div class="mname">Sandália Feminina X</div><div class="stepper"><div class="stepbtn">−</div><div class="qty">18</div><div class="stepbtn">+</div></div></div>
+          </div>
+        </div>
+        <div class="sidebar-panel">
+          <div class="stitle">Resumo do plano</div>
+          <div class="stotal">R$ 17.640</div>
+          <div class="ssub">de R$ 18.000 disponíveis</div>
+          <div class="bubble">Seu mix está <b>60/25/15</b> — alinhado com o padrão de inverno da sua loja</div>
+          <div class="bubble">Ainda restam <b>R$ 360</b> pra usar no orçamento</div>
+          <div class="sbtns"><div class="btn-secondary">Ajustar mix</div><div class="btn-primary">Enviar ao carrinho</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FRAME: CARRINHO TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">9+10</span>Carrinho Inteligente — Multi-pedido — Tablet<span class="persona-tag ambos">COMPARTILHADO</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-layout">
+        <div class="tablet-railnav">
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.2"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V10M11 19V5M18 19v-6"/></svg></div>
+          <div class="navitem active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16l-1.4 10.3a2 2 0 0 1-2 1.7H7.4a2 2 0 0 1-2-1.7L4 7Z"/></svg></div>
+        </div>
+        <div class="tablet-main">
+          <h3>Meus pedidos</h3>
+          <div class="cartswitcher" style="margin-top:14px;">
+            <div class="tab active">Coleção Inverno · Ana</div>
+            <div class="tab">Reposição rápida · Ana</div>
+            <div class="tab">Lançamento Urban · Marcos</div>
+            <div class="tab new">+ Novo pedido</div>
+          </div>
+          <div class="sharebanner">
+            <div class="avatar">AN</div>
+            <div>Compartilhado com <b>Ana</b> (representante) · ela pode ver e ajustar este pedido</div>
+          </div>
+          <div class="cartline"><div><div class="cname">Tênis Street Pro</div><div class="cmeta">qtd 24 · grade 37–41</div></div><div class="cval">R$ 6.480,00</div></div>
+          <div class="cartline"><div><div class="cname">Bota Urban Trail</div><div class="cmeta">qtd 12 · grade 38–42</div></div><div class="cval">R$ 4.320,00</div></div>
+          <div class="cartline"><div><div class="cname">Sandália Feminina X</div><div class="cmeta">qtd 18 · grade 35–39</div></div><div class="cval">R$ 3.400,00</div></div>
+          <div class="activitynote">
+            <div class="aavatar">AN</div>
+            <div><span class="aname">Ana:</span> ajustei a grade da sandália pra cobrir os números que mais giram aí, confere? <div class="atime">há 40 min</div></div>
+          </div>
+        </div>
+        <div class="sidebar-panel">
+          <div class="stitle">Pedido: coleção inverno</div>
+          <div class="stotal">18 itens</div>
+          <div class="ssub">R$ 13.880,00 · margem 38%</div>
+          <div class="bubble">Pedido pronto para revisão do representante</div>
+          <div class="bubble">Prazo de entrega estimado: <b>7 dias úteis</b></div>
+          <div class="sbtns"><div class="btn-secondary">Salvar como rascunho</div><div class="btn-primary">Ir para pagamento</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FRAME: PAGAMENTO TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">11</span>Pagamento e Entrega — Tablet<span class="persona-tag lojista">LOJISTA</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-auth">
+        <div class="authcard" style="width:480px;">
+          <div class="loginhead">
+            <div class="kicker">Pedido: coleção inverno</div>
+            <h2>Pagamento e entrega</h2>
+            <div class="sub">Confira as condições antes de confirmar</div>
+          </div>
+          <div class="fieldgroup" style="padding:0;margin-top:18px;">
+            <div class="optioncard" style="border-color:var(--black);">
+              <div class="oicon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg></div>
+              <div><div class="otitle">R$ 13.880,00</div><div class="osub">Valor total do pedido</div></div>
+            </div>
+          </div>
+          <div class="fieldgroup" style="padding:0;margin-top:16px;"><div class="flabel">Condição de pagamento</div>
+            <div class="chipselect"><div class="chip selected">30/60/90 dias</div><div class="chip">Boleto à vista −3%</div><div class="chip">Cartão</div></div>
+          </div>
+          <div class="fieldrow2" style="margin-top:16px;">
+            <div class="fieldgroup"><div class="flabel">Endereço de entrega</div>
+              <div class="selectrow"><span style="font-size:12px;">Rua das Palmeiras, 210</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></div>
+            </div>
+            <div class="fieldgroup"><div class="flabel">Prazo estimado</div>
+              <div class="selectrow"><span style="font-size:12px;">Até 7 dias úteis</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:26px;">
+            <div class="btn-secondary" style="width:170px;">Voltar ao carrinho</div>
+            <div class="btn-primary" style="flex:1;">Confirmar pedido</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FRAME: CONFIRMADO TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">12</span>Pedido Confirmado — Tablet<span class="persona-tag lojista">LOJISTA</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-auth">
+        <div class="authcard" style="width:400px;text-align:center;">
+          <div style="width:56px;height:56px;border-radius:50%;background:var(--black);color:#FFFFFF;display:flex;align-items:center;justify-content:center;margin:0 auto;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 13l4 4L19 7"/></svg>
+          </div>
+          <h2 style="font-family:var(--display);font-size:20px;font-weight:700;color:var(--text-primary);margin-top:18px;">Pedido confirmado</h2>
+          <p style="font-size:13px;color:var(--text-secondary);margin-top:8px;line-height:1.5;">Seu pedido foi enviado para produção. Ana também foi avisada e vai acompanhar com você.</p>
+          <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:16px;margin-top:22px;text-align:left;">
+            <div class="sumrow"><span>Número do pedido</span><span style="font-family:var(--mono);color:var(--text-primary);">#4821</span></div>
+            <div class="sumrow"><span>Valor total</span><span style="font-family:var(--mono);color:var(--text-primary);">R$ 13.880,00</span></div>
+            <div class="sumrow"><span>Prazo estimado</span><span style="font-family:var(--mono);color:var(--text-primary);">7 dias úteis</span></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:22px;">
+            <div class="btn-secondary" style="flex:1;">Voltar ao radar</div>
+            <div class="btn-primary" style="flex:1;">Acompanhar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FRAME: ACOMPANHAMENTO TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">13</span>Acompanhamento do Pedido — Tablet<span class="persona-tag ambos">COMPARTILHADO</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-layout">
+        <div class="tablet-railnav">
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.2"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg></div>
+          <div class="navitem active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16l-1.4 10.3a2 2 0 0 1-2 1.7H7.4a2 2 0 0 1-2-1.7L4 7Z"/></svg></div>
+        </div>
+        <div class="tablet-main">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text-tertiary);text-transform:uppercase;">Pedido #4821</div>
+          <h3 style="margin-top:6px;">Coleção Inverno</h3>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">18 itens · R$ 13.880,00 · Representante: Ana</div>
+
+          <div class="fieldgroup" style="padding:0;margin-top:22px;">
+            <div class="timeline">
+              <div class="tstep done">
+                <div class="tdot">✓</div>
+                <div class="tcontent"><div class="ttitle">Pedido confirmado</div><div class="tdate">12 jul, 09:40</div></div>
+              </div>
+              <div class="tstep current">
+                <div class="tdot">●</div>
+                <div class="tcontent"><div class="ttitle">Em produção</div><div class="tdate">Previsão: 15 jul</div><div class="tdesc">Fábrica está separando e produzindo os itens do pedido</div></div>
+              </div>
+              <div class="tstep">
+                <div class="tdot"></div>
+                <div class="tcontent"><div class="ttitle">Enviado</div><div class="tdate">Previsão: 17 jul</div></div>
+              </div>
+              <div class="tstep">
+                <div class="tdot"></div>
+                <div class="tcontent"><div class="ttitle">Entregue na loja</div><div class="tdate">Previsão: 19 jul</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-panel">
+          <div class="stitle">Transportadora</div>
+          <div class="stotal" style="font-size:16px;">Rápido Sul</div>
+          <div class="ssub">Rastreio: BR84212209</div>
+          <div class="bubble">Ana também está acompanhando esse pedido em tempo real</div>
+          <div class="sbtns"><div class="btn-secondary">Falar com Ana</div><div class="btn-primary">Ver pedido completo</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FRAME: POS VENDA TABLET -->
+  <div class="frame-block">
+    <div class="frame-label"><span class="num">14</span>Pós-venda — Radar de Fidelização — Tablet<span class="persona-tag lojista">LOJISTA</span></div>
+    <div class="tablet">
+      <div class="tablet-status">9:41</div>
+      <div class="tablet-layout">
+        <div class="tablet-railnav">
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.2"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.2"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V10M11 19V5M18 19v-6"/></svg></div>
+          <div class="navitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16l-1.4 10.3a2 2 0 0 1-2 1.7H7.4a2 2 0 0 1-2-1.7L4 7Z"/></svg></div>
+          <div class="navitem active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3 2.7-5 6-5s6 2 6 5"/><circle cx="17" cy="8" r="2.4"/><path d="M15.5 14c2.6.3 4.5 2 4.5 5"/></svg></div>
+        </div>
+        <div class="tablet-main">
+          <div style="font-size:13px;color:var(--text-secondary);">Seus clientes</div>
+          <h3 style="font-size:24px;margin-top:4px;">32 consumidores cadastrados</h3>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">3 oportunidades de fidelização hoje</div>
+
+          <div class="grid3" style="margin-top:22px;">
+            <div class="icard positive"><div class="tag-black">Oportunidade</div><div class="eyebrow">Datas especiais</div><h3 style="font-size:15px;">5 aniversários esta semana</h3><p>Bom momento pra oferecer um cupom especial</p><div class="cta">Ver clientes →</div></div>
+            <div class="icard risk"><div class="eyebrow">Sumidos</div><h3 style="font-size:15px;">8 clientes sem compra</h3><p>Mais de 90 dias sem passar na loja</p><div class="cta">Reativar →</div></div>
+            <div class="icard info"><div class="eyebrow">Mais recomprado</div><h3 style="font-size:15px;">Tênis Street Pro</h3><p>72% dos clientes recompram em 60 dias</p><div class="cta">Ver detalhes →</div></div>
+          </div>
+
+          <div class="section-title" style="margin-top:26px;">Sua carteira de clientes</div>
+          <div class="grid2">
+            <div class="tile" style="text-align:left;padding:16px;"><div style="display:flex;justify-content:space-between;"><span style="font-size:13px;font-weight:600;">Aniversariantes</span><span style="font-family:var(--mono);color:var(--text-tertiary);">5 ›</span></div></div>
+            <div class="tile" style="text-align:left;padding:16px;"><div style="display:flex;justify-content:space-between;"><span style="font-size:13px;font-weight:600;">Sem contato há 90+ dias</span><span style="font-family:var(--mono);color:var(--text-tertiary);">8 ›</span></div></div>
+            <div class="tile" style="text-align:left;padding:16px;"><div style="display:flex;justify-content:space-between;"><span style="font-size:13px;font-weight:600;">Alta chance de recompra</span><span style="font-family:var(--mono);color:var(--text-tertiary);">6 ›</span></div></div>
+            <div class="tile" style="text-align:left;padding:16px;"><div style="display:flex;justify-content:space-between;"><span style="font-size:13px;font-weight:600;">Avaliações pendentes</span><span style="font-family:var(--mono);color:var(--text-tertiary);">4 ›</span></div></div>
+          </div>
+
+          <div class="btn-primary" style="width:280px;margin-top:24px;">Enviar campanha personalizada</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
