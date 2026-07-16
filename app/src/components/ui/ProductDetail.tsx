@@ -14,7 +14,8 @@ export function ProductDetailContent({
 }) {
   return (
     <div>
-      <div className="h-[230px] md:h-[190px] md:rounded-[8px] bg-gradient-to-br from-surface-3 to-surface-2 relative flex items-center justify-center">
+      <div className="h-[230px] md:h-[190px] md:rounded-[8px] bg-surface-2 relative flex items-center justify-center overflow-hidden">
+        <img src={product.image} alt={product.name} className="w-full h-full object-contain p-4" />
         {onBack && (
           <button
             onClick={onBack}
@@ -27,7 +28,10 @@ export function ProductDetailContent({
 
       <div className="px-4.5 md:px-0 pt-4">
         <div className="eyebrow">{product.category}</div>
-        <h2 className="font-display text-xl font-bold text-text-primary mt-1">{product.name}</h2>
+        <div className="flex items-center gap-2 mt-1">
+          <h2 className="font-display text-xl font-bold text-text-primary">{product.name}</h2>
+        </div>
+        <div className="font-mono text-[11px] text-text-tertiary mt-0.5">SKU {product.sku}</div>
 
         <div className="mt-3.5 bg-surface border border-border rounded-[4px] p-3.5">
           <div className="eyebrow mb-2.5">Por que comprar este produto</div>

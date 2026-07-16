@@ -5,6 +5,7 @@ const tones: Record<string, string> = {
   risk: 'bg-risk-dim text-risk',
   info: 'bg-info-dim text-info',
   neutral: 'bg-surface-2 text-text-secondary border border-border-soft',
+  premium: 'bg-gold-dim text-gold',
 }
 
 export function Badge({ label, tone }: { label: string; tone: Severity }) {

@@ -70,101 +70,135 @@ export const loyaltyPanel = [
   { id: 'lp-4', tone: 'neutral' as const, label: 'Avaliações pendentes', count: 4 },
 ]
 
-export const products: Product[] = [
-  {
-    id: 'p1',
-    name: 'Tênis Street Pro',
-    category: 'Calçados · Linha Street',
-    line: 'street',
-    badges: [
-      { label: '+18% crescimento', tone: 'positive' },
-      { label: 'Alta recompra', tone: 'neutral' },
-      { label: 'Reposição 45d', tone: 'info' },
-    ],
-    why: [
-      'Vendendo acima da média — crescimento de 18% no trimestre',
-      'Alta recompra — 72% dos clientes recompram em 60 dias',
-      'Indicado para lojas especializadas em streetwear',
-      'Margem estimada de 42% no seu perfil de loja',
-    ],
-    restockDays: 45,
-    suggestedSizes: [
-      { size: '36', suggested: false },
-      { size: '37', suggested: true },
-      { size: '38', suggested: true },
-      { size: '39', suggested: true },
-      { size: '40', suggested: true },
-      { size: '41', suggested: true },
-      { size: '42', suggested: false },
-    ],
+interface RawProduct {
+  sku: string
+  colorway: string
+  collection: 'COIL' | 'HERTZ' | 'HERTZ ART' | 'FLOW' | 'FLOW XL'
+  growthPct: number
+  restockDays: number
+  marginPct: number
+  premium?: boolean
+  riskCallout?: string
+}
+
+const collectionMeta: Record<
+  RawProduct['collection'],
+  { category: string; line: string; blurb: string }
+> = {
+  COIL: {
+    category: 'Calçados · Linha Coil',
+    line: 'coil',
+    blurb: 'perfil baixo, inspirado em skate street',
   },
-  {
-    id: 'p2',
-    name: 'Sandália Feminina X',
-    category: 'Calçados · Linha Feminina',
-    line: 'feminina',
-    badges: [
-      { label: 'Oportunidade perdida', tone: 'risk' },
-      { label: 'Categoria feminina', tone: 'neutral' },
-    ],
-    why: [
-      'Sua loja ainda não vende este modelo',
-      'Lojas parecidas venderam 30% mais deste item',
-      'Categoria feminina sub-representada no seu mix',
-    ],
-    restockDays: 30,
-    suggestedSizes: [
-      { size: '34', suggested: false },
-      { size: '35', suggested: true },
-      { size: '36', suggested: true },
-      { size: '37', suggested: true },
-      { size: '38', suggested: true },
-      { size: '39', suggested: true },
-      { size: '40', suggested: false },
-    ],
+  HERTZ: {
+    category: 'Calçados · Linha Hertz',
+    line: 'hertz',
+    blurb: 'clássico atemporal, base de vulcanizado',
   },
-  {
-    id: 'p3',
-    name: 'Bota Urban Trail',
-    category: 'Calçados · Linha Urban',
-    line: 'urban',
-    badges: [
-      { label: 'Alto giro', tone: 'positive' },
-      { label: 'Margem 44%', tone: 'neutral' },
-    ],
-    why: [
-      'Giro previsto de 38 dias, acima da média da categoria',
-      'Margem estimada de 44% no seu perfil de loja',
-      'Recomendado para reposição contínua',
-    ],
-    restockDays: 38,
-    suggestedSizes: [
-      { size: '37', suggested: false },
-      { size: '38', suggested: true },
-      { size: '39', suggested: true },
-      { size: '40', suggested: true },
-      { size: '41', suggested: true },
-      { size: '42', suggested: true },
-      { size: '43', suggested: false },
-    ],
+  'HERTZ ART': {
+    category: 'Calçados · Linha Hertz Art',
+    line: 'hertz-art',
+    blurb: 'edição gráfica com bordado grafitti exclusivo',
   },
-  {
-    id: 'p4',
-    name: 'Meia Cano Alto',
-    category: 'Acessórios',
-    line: 'acessorios',
-    badges: [{ label: 'Margem 48%', tone: 'neutral' }],
-    why: [
-      'Item complementar de alta margem',
-      'Combina com o mix atual da sua loja',
-      'Baixo investimento, alto giro',
-    ],
-    restockDays: 20,
-    suggestedSizes: [
-      { size: 'Único', suggested: true },
-    ],
+  FLOW: {
+    category: 'Calçados · Linha Flow',
+    line: 'flow',
+    blurb: 'perfil baixo, entressola leve',
   },
+  'FLOW XL': {
+    category: 'Calçados · Linha Flow XL',
+    line: 'flow-xl',
+    blurb: 'perfil alto, entressola reforçada',
+  },
+}
+
+const raw: RawProduct[] = [
+  // COIL — 1901
+  { sku: '1901-06', colorway: 'Black Reflect', collection: 'COIL', growthPct: 18, restockDays: 45, marginPct: 42 },
+  { sku: '1901-10', colorway: 'All Black Reflect', collection: 'COIL', growthPct: 9, restockDays: 40, marginPct: 40 },
+  { sku: '1901-16', colorway: 'Off White Furta Cor', collection: 'COIL', growthPct: -6, restockDays: 30, marginPct: 39, riskCallout: 'Oportunidade perdida — sua loja ainda não vende este modelo' },
+  { sku: '1901-18', colorway: 'Black Purple', collection: 'COIL', growthPct: 14, restockDays: 35, marginPct: 41 },
+  { sku: '1901-19', colorway: 'Black Reflect Mesclado', collection: 'COIL', growthPct: 22, restockDays: 32, marginPct: 43, premium: true },
+  { sku: '1901-21', colorway: 'All White', collection: 'COIL', growthPct: 11, restockDays: 28, marginPct: 38 },
+  { sku: '1901-30', colorway: 'Black Rose', collection: 'COIL', growthPct: 27, restockDays: 33, marginPct: 44 },
+  { sku: '1901-66', colorway: 'Denim', collection: 'COIL', growthPct: 31, restockDays: 26, marginPct: 45, premium: true },
+  { sku: '1901-67', colorway: 'Black White', collection: 'COIL', growthPct: 16, restockDays: 36, marginPct: 40 },
+  { sku: '1901-68', colorway: 'Off White', collection: 'COIL', growthPct: 8, restockDays: 34, marginPct: 39 },
+  // HERTZ — 2101
+  { sku: '2101-02', colorway: 'Black Reflect', collection: 'HERTZ', growthPct: 12, restockDays: 48, marginPct: 37 },
+  { sku: '2101-16', colorway: 'All White', collection: 'HERTZ', growthPct: 6, restockDays: 44, marginPct: 36 },
+  { sku: '2101-25', colorway: 'Black Gold', collection: 'HERTZ', growthPct: 24, restockDays: 30, marginPct: 46, premium: true },
+  { sku: '2101-30', colorway: 'Black', collection: 'HERTZ', growthPct: 10, restockDays: 42, marginPct: 37 },
+  // HERTZ ART — 2101
+  { sku: '2101-36', colorway: 'Black Art', collection: 'HERTZ ART', growthPct: 29, restockDays: 25, marginPct: 47, premium: true },
+  { sku: '2101-39', colorway: 'White Art', collection: 'HERTZ ART', growthPct: 19, restockDays: 27, marginPct: 45, premium: true },
+  { sku: '2101-40', colorway: 'Black Purple', collection: 'HERTZ ART', growthPct: 33, restockDays: 24, marginPct: 47, premium: true },
+  // FLOW — 2502
+  { sku: '2502-01', colorway: 'Black White', collection: 'FLOW', growthPct: 15, restockDays: 38, marginPct: 40 },
+  { sku: '2502-03', colorway: 'All White', collection: 'FLOW', growthPct: 7, restockDays: 41, marginPct: 38 },
+  { sku: '2502-05', colorway: 'Denim', collection: 'FLOW', growthPct: 26, restockDays: 29, marginPct: 43 },
+  { sku: '2502-07', colorway: 'Black', collection: 'FLOW', growthPct: 13, restockDays: 39, marginPct: 39 },
+  { sku: '2502-08', colorway: 'Black Gold', collection: 'FLOW', growthPct: 28, restockDays: 26, marginPct: 46, premium: true },
+  // FLOW XL — 2502
+  { sku: '2502-10', colorway: 'Black Reflect', collection: 'FLOW XL', growthPct: 17, restockDays: 37, marginPct: 41 },
+  { sku: '2502-12', colorway: 'White Aqua', collection: 'FLOW XL', growthPct: 21, restockDays: 31, marginPct: 41 },
+  { sku: '2502-13', colorway: 'Grey Tiffany', collection: 'FLOW XL', growthPct: 20, restockDays: 33, marginPct: 42 },
+  { sku: '2502-14', colorway: 'Black Purple', collection: 'FLOW XL', growthPct: 23, restockDays: 30, marginPct: 42 },
+  { sku: '2502-16', colorway: 'Black White', collection: 'FLOW XL', growthPct: 9, restockDays: 40, marginPct: 39 },
+  { sku: '2502-17', colorway: 'Black', collection: 'FLOW XL', growthPct: 5, restockDays: 43, marginPct: 37, riskCallout: 'Estoque parado — sem giro nos últimos 30 dias' },
+  { sku: '2502-18', colorway: 'All White', collection: 'FLOW XL', growthPct: 4, restockDays: 44, marginPct: 36 },
+  { sku: '2502-19', colorway: 'Denim', collection: 'FLOW XL', growthPct: 25, restockDays: 28, marginPct: 43 },
+  { sku: '2502-20', colorway: 'All Black Reflect', collection: 'FLOW XL', growthPct: 12, restockDays: 36, marginPct: 40 },
+  { sku: '2502-21', colorway: 'Purple', collection: 'FLOW XL', growthPct: 30, restockDays: 27, marginPct: 45, premium: true },
+  { sku: '2502-22', colorway: 'All Black Tiffany', collection: 'FLOW XL', growthPct: 18, restockDays: 34, marginPct: 41 },
 ]
+
+function buildSizes(): { size: string; suggested: boolean }[] {
+  const sizes = ['36', '37', '38', '39', '40', '41', '42']
+  return sizes.map((size, i) => ({ size, suggested: i > 0 && i < sizes.length - 1 }))
+}
+
+export const products: Product[] = raw.map((r) => {
+  const meta = collectionMeta[r.collection]
+  const badges: Product['badges'] = []
+  if (r.riskCallout) {
+    badges.push({ label: 'Oportunidade perdida', tone: 'risk' })
+  } else if (r.growthPct >= 20) {
+    badges.push({ label: `+${r.growthPct}% crescimento`, tone: 'positive' })
+  } else if (r.growthPct >= 0) {
+    badges.push({ label: `+${r.growthPct}% crescimento`, tone: 'neutral' })
+  } else {
+    badges.push({ label: `${r.growthPct}% no período`, tone: 'risk' })
+  }
+  if (r.premium) badges.push({ label: 'Lançamento', tone: 'premium' })
+  badges.push({ label: `Margem ${r.marginPct}%`, tone: 'neutral' })
+
+  const why = [
+    r.growthPct >= 0
+      ? `Vendendo acima da média — crescimento de ${r.growthPct}% no trimestre na coleção ${r.collection}`
+      : `Queda de ${Math.abs(r.growthPct)}% no período — candidato a ação de reativação`,
+    `Margem estimada de ${r.marginPct}% no seu perfil de loja`,
+    `Modelo ${meta.blurb}`,
+    r.premium
+      ? 'Peça de lançamento — estoque ainda limitado nos representantes'
+      : `Giro previsto de ${r.restockDays} dias, dentro do padrão da linha ${r.collection}`,
+  ]
+  if (r.riskCallout) why.unshift(r.riskCallout)
+
+  return {
+    id: r.sku,
+    sku: r.sku,
+    collection: r.collection,
+    name: `${r.collection} — ${r.colorway}`,
+    category: meta.category,
+    line: meta.line,
+    image: `/products/${r.sku}.jpg`,
+    badges,
+    why,
+    restockDays: r.restockDays,
+    suggestedSizes: buildSizes(),
+  }
+})
 
 export const clients: Client[] = [
   {

@@ -1,6 +1,6 @@
 export type Persona = 'lojista' | 'representante'
 
-export type Severity = 'positive' | 'risk' | 'info' | 'neutral'
+export type Severity = 'positive' | 'risk' | 'info' | 'neutral' | 'premium'
 
 export interface InsightCardData {
   id: string
@@ -14,9 +14,12 @@ export interface InsightCardData {
 
 export interface Product {
   id: string
+  sku: string
+  collection: string
   name: string
   category: string
   line: string
+  image: string
   badges: { label: string; tone: Severity }[]
   why: string[]
   restockDays: number

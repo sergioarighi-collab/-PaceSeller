@@ -17,9 +17,12 @@ export function ProductCard({
         selected ? 'border-black' : 'border-border'
       }`}
     >
-      <div className="w-[74px] h-[74px] rounded-[4px] shrink-0 bg-gradient-to-br from-surface-3 to-surface-2" />
+      <div className="w-[74px] h-[74px] rounded-[4px] shrink-0 bg-surface-2 overflow-hidden flex items-center justify-center">
+        <img src={product.image} alt={product.name} className="w-full h-full object-contain" loading="lazy" />
+      </div>
       <div className="flex-1 min-w-0">
         <div className="font-display text-sm font-semibold text-text-primary">{product.name}</div>
+        <div className="font-mono text-[10.5px] text-text-tertiary mt-0.5">{product.sku}</div>
         <div className="flex flex-wrap gap-1.5 mt-1.5">
           {product.badges.map((b) => (
             <Badge key={b.label} label={b.label} tone={b.tone} />
