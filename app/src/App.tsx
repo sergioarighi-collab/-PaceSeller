@@ -3,12 +3,12 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ProfileSelect } from './screens/shared/ProfileSelect'
 import { LoginLojista } from './screens/shared/LoginLojista'
 import { LoginRepresentante } from './screens/shared/LoginRepresentante'
+import { ForgotPassword } from './screens/shared/ForgotPassword'
+import { ResetSent } from './screens/shared/ResetSent'
+import { NewPassword } from './screens/shared/NewPassword'
+import { PasswordChanged } from './screens/shared/PasswordChanged'
 import { WhoIsUsing } from './screens/shared/WhoIsUsing'
 import { ConfirmPin } from './screens/shared/ConfirmPin'
-import { Orders } from './screens/shared/Orders'
-import { Payment } from './screens/shared/Payment'
-import { OrderConfirmed } from './screens/shared/OrderConfirmed'
-import { Tracking } from './screens/shared/Tracking'
 
 import { WizardStep1 } from './screens/lojista/WizardStep1'
 import { WizardStep2 } from './screens/lojista/WizardStep2'
@@ -16,6 +16,10 @@ import { GoalSelect } from './screens/lojista/GoalSelect'
 import { Radar } from './screens/lojista/Radar'
 import { Catalog } from './screens/lojista/Catalog'
 import { Planning } from './screens/lojista/Planning'
+import { MeusCarrinhos } from './screens/lojista/MeusCarrinhos'
+import { CarrinhoDetail } from './screens/lojista/CarrinhoDetail'
+import { Payment } from './screens/lojista/Payment'
+import { OrderConfirmed } from './screens/lojista/OrderConfirmed'
 import { Loyalty } from './screens/lojista/Loyalty'
 
 import { RepRadar } from './screens/representante/Radar'
@@ -31,6 +35,10 @@ function App() {
         <Route path="/login/representante" element={<LoginRepresentante />} />
         <Route path="/login/quem-esta-usando" element={<WhoIsUsing />} />
         <Route path="/login/pin/:userId" element={<ConfirmPin />} />
+        <Route path="/recuperar-senha" element={<ForgotPassword />} />
+        <Route path="/recuperar-senha/enviado" element={<ResetSent />} />
+        <Route path="/recuperar-senha/nova" element={<NewPassword />} />
+        <Route path="/recuperar-senha/sucesso" element={<PasswordChanged />} />
 
         <Route path="/onboarding/loja" element={<WizardStep1 />} />
         <Route path="/onboarding/vendas" element={<WizardStep2 />} />
@@ -42,15 +50,14 @@ function App() {
         <Route path="/planejamento" element={<Planning />} />
         <Route path="/fidelizacao" element={<Loyalty />} />
 
+        <Route path="/carrinhos" element={<MeusCarrinhos />} />
+        <Route path="/carrinhos/:cartId" element={<CarrinhoDetail />} />
+        <Route path="/carrinhos/:cartId/:pedidoId/pagamento" element={<Payment />} />
+        <Route path="/carrinhos/:cartId/:pedidoId/confirmado" element={<OrderConfirmed />} />
+
         <Route path="/rep/radar" element={<RepRadar />} />
         <Route path="/rep/carteira" element={<Wallet />} />
         <Route path="/rep/carteira/:clientId/pedido" element={<SuggestedOrder />} />
-
-        <Route path="/pedidos" element={<Orders />} />
-        <Route path="/pedidos/:id" element={<Orders />} />
-        <Route path="/pedidos/:id/pagamento" element={<Payment />} />
-        <Route path="/pedidos/:id/confirmado" element={<OrderConfirmed />} />
-        <Route path="/pedidos/:id/acompanhamento" element={<Tracking />} />
       </Routes>
     </BrowserRouter>
   )

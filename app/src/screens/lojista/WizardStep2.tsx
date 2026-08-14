@@ -1,74 +1,93 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AuthShell } from '../../components/layout/AuthShell'
-import { StepBar } from '../../components/ui/StepBar'
-import { OptionCard } from '../../components/ui/OptionCard'
-import { TextInput, FieldGroup, FieldRow2, ChipSelect } from '../../components/ui/Field'
-import { Chip } from '../../components/ui/Chip'
-import { Button } from '../../components/ui/Button'
-import { OrdersIcon } from '../../components/layout/icons'
+import { OnboardShell } from '../../components/desktop/OnboardShell'
+
+const categorias = ['Coil', 'Hertz', 'Flow', 'Fusion']
+const sazonalidades = ['Inverno', 'Verão', 'Volta às aulas', 'Black Friday']
 
 export function WizardStep2() {
   const navigate = useNavigate()
-  const [categories, setCategories] = useState<string[]>(['Calçados', 'Acessórios'])
-  const [season, setSeason] = useState('Inverno')
+  const [ticket, setTicket] = useState('R$ 180,00')
+  const [cats, setCats] = useState<string[]>(['Coil', 'Hertz'])
+  const [saz, setSaz] = useState<string[]>(['Inverno'])
 
-  const toggleCat = (v: string) =>
-    setCategories((a) => (a.includes(v) ? a.filter((x) => x !== v) : [...a, v]))
+  function toggle(list: string[], setList: (v: string[]) => void, value: string) {
+    setList(list.includes(value) ? list.filter((x) => x !== value) : [...list, value])
+  }
 
   return (
-    <AuthShell width={560}>
-      <StepBar step={2} />
-      <div className="eyebrow">Configuração de perfil</div>
-      <h2 className="font-display text-xl font-bold text-text-primary mt-2">Fale sobre suas vendas</h2>
-      <div className="text-[12.5px] text-text-secondary mt-1.5 leading-relaxed max-w-[420px]">
-        Quanto mais dados, mais preciso fica o seu radar
+    <OnboardShell step={2}>
+      <div className="omhead">
+        <h2>Fale sobre suas vendas</h2>
+        <div className="omsub">Quanto mais dados, mais preciso fica o seu radar — pode conectar automaticamente ou preencher na mão.</div>
       </div>
-
-      <div className="mt-5">
-        <OptionCard
-          icon={<OrdersIcon />}
-          title="Conectar meu sistema de vendas"
-          sub="Importa e atualiza os dados automaticamente"
-          highlighted
-        />
-      </div>
-
-      <div className="flex items-center gap-2.5 my-5 text-[10.5px] text-text-tertiary font-mono uppercase">
-        <div className="flex-1 h-px bg-border" />
-        ou preencha manualmente
-        <div className="flex-1 h-px bg-border" />
-      </div>
-
-      <FieldRow2>
-        <FieldGroup label="Ticket médio">
-          <TextInput value="R$ 180,00" />
-        </FieldGroup>
-        <FieldGroup label="Categorias mais vendidas">
-          <ChipSelect>
-            {['Calçados', 'Acessórios', 'Vestuário', 'Meias'].map((s) => (
-              <Chip key={s} label={s} selected={categories.includes(s)} onClick={() => toggleCat(s)} />
+      <div className="onboard-form">
+        <div className="fieldgroup" style={{ marginTop: 0 }}>
+          <div className="optioncard" style={{ maxWidth: 520, cursor: 'pointer' }}>
+            <div className="oicon">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M4 4h16v4H4zM4 12h16v4H4zM8 8v4M16 8v4" />
+              </svg>
+            </div>
+            <div>
+              <div className="otitle">Conectar meu sistema de vendas</div>
+              <div className="osub">Importa e atualiza os dados automaticamente todo dia</div>
+            </div>
+            <div className="ochev">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m9 6 6 6-6 6" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div className="divider-text" style={{ maxWidth: 520, marginLeft: 0 }}>
+          ou preencha manualmente
+        </div>
+        <div className="fieldrow2">
+          <div className="fieldgroup">
+            <div className="flabel">Ticket médio</div>
+            <input className="textinput" value={ticket} onChange={(e) => setTicket(e.target.value)} />
+          </div>
+          <div className="fieldgroup">
+            <div className="flabel">Categorias mais vendidas</div>
+            <div className="chipselect">
+              {categorias.map((c) => (
+                <div
+                  key={c}
+                  className={`chip ${cats.includes(c) ? 'selected' : ''}`}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => toggle(cats, setCats, c)}
+                >
+                  {c}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="fieldgroup">
+          <div className="flabel">Sazonalidade forte</div>
+          <div className="chipselect">
+            {sazonalidades.map((s) => (
+              <div
+                key={s}
+                className={`chip ${saz.includes(s) ? 'selected' : ''}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => toggle(saz, setSaz, s)}
+              >
+                {s}
+              </div>
             ))}
-          </ChipSelect>
-        </FieldGroup>
-      </FieldRow2>
-
-      <FieldGroup label="Sazonalidade forte">
-        <ChipSelect>
-          {['Inverno', 'Verão', 'Volta às aulas', 'Black Friday'].map((s) => (
-            <Chip key={s} label={s} selected={season === s} onClick={() => setSeason(s)} />
-          ))}
-        </ChipSelect>
-      </FieldGroup>
-
-      <div className="flex gap-2.5 mt-7">
-        <Button variant="secondary" className="w-[130px]" onClick={() => navigate('/onboarding/loja')}>
-          Voltar
-        </Button>
-        <Button variant="primary" className="flex-1" onClick={() => navigate('/onboarding/objetivo')}>
-          Continuar
-        </Button>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 12, marginTop: 36 }}>
+          <div className="btn-secondary" style={{ width: 130, cursor: 'pointer' }} onClick={() => navigate('/onboarding/loja')}>
+            Voltar
+          </div>
+          <div className="btn-primary" style={{ width: 180, cursor: 'pointer' }} onClick={() => navigate('/onboarding/objetivo')}>
+            Continuar
+          </div>
+        </div>
       </div>
-    </AuthShell>
+    </OnboardShell>
   )
 }

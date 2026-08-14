@@ -1,4 +1,4 @@
-import type { Client, InsightCardData, Product, CartOrder, User } from './types'
+import type { Client, InsightCardData, Product, User, Carrinho } from './types'
 
 export const lojistaRadarInsights: InsightCardData[] = [
   {
@@ -6,25 +6,35 @@ export const lojistaRadarInsights: InsightCardData[] = [
     severity: 'positive',
     opportunity: true,
     eyebrow: 'Alta demanda',
-    title: 'Tênis Vulcanizado',
+    title: 'Tênis Tesla Fusion Black Red',
     text: '+34% de vendas na sua região neste mês',
     cta: 'Ver produto',
+    productId: '2601-01',
   },
   {
     id: 'ins-2',
     severity: 'risk',
     eyebrow: 'Estoque baixo',
-    title: 'Linha Street',
+    title: 'Linha Coil',
     text: 'Vendendo mais rápido que a reposição atual',
     cta: 'Repor agora',
+    suggestedQty: 32,
   },
   {
     id: 'ins-3',
     severity: 'info',
     eyebrow: 'Benchmark',
     title: 'Lojas parecidas venderam +30%',
-    text: 'Modelo Street Pro, mesma faixa de porte',
+    text: 'Modelo Coil Black White, mesma faixa de porte',
     cta: 'Comparar',
+  },
+  {
+    id: 'ins-4',
+    severity: 'positive',
+    eyebrow: 'Lançamento',
+    title: 'Linha Fusion',
+    text: 'Ainda não chegou no seu mix — 6 lojas parecidas já compraram',
+    cta: 'Ver coleção',
   },
 ]
 
@@ -73,43 +83,72 @@ export const loyaltyPanel = [
 interface RawProduct {
   sku: string
   colorway: string
-  collection: 'COIL' | 'HERTZ' | 'HERTZ ART' | 'FLOW' | 'FLOW XL'
+  collection: 'COIL' | 'HERTZ' | 'HERTZ ART' | 'FLOW' | 'FLOW XL' | 'FUSION' | 'TG II'
   growthPct: number
   restockDays: number
   marginPct: number
   premium?: boolean
   riskCallout?: string
+  /** Preço fábrica (o que o lojista paga). Quando ausente, é calculado a partir da base da coleção. */
+  priceFactory?: number
+  /** PDV sugerido explícito (quando o mockup mostra um valor específico, não a fórmula genérica). */
+  pricePdv?: number
 }
 
 const collectionMeta: Record<
   RawProduct['collection'],
-  { category: string; line: string; blurb: string }
+  { category: string; line: string; blurb: string; baseFactory: number }
 > = {
   COIL: {
     category: 'Calçados · Linha Coil',
     line: 'coil',
     blurb: 'perfil baixo, inspirado em skate street',
+    baseFactory: 280,
   },
   HERTZ: {
     category: 'Calçados · Linha Hertz',
     line: 'hertz',
     blurb: 'clássico atemporal, base de vulcanizado',
+    baseFactory: 220,
   },
   'HERTZ ART': {
     category: 'Calçados · Linha Hertz Art',
     line: 'hertz-art',
     blurb: 'edição gráfica com bordado grafitti exclusivo',
+    baseFactory: 320,
   },
   FLOW: {
     category: 'Calçados · Linha Flow',
     line: 'flow',
     blurb: 'perfil baixo, entressola leve',
+    baseFactory: 260,
   },
   'FLOW XL': {
     category: 'Calçados · Linha Flow XL',
     line: 'flow-xl',
     blurb: 'perfil alto, entressola reforçada',
+    baseFactory: 290,
   },
+  FUSION: {
+    category: 'Calçados · Linha Fusion',
+    line: 'fusion',
+    blurb: 'lançamento mais recente, entressola tecnológica',
+    baseFactory: 300,
+  },
+  'TG II': {
+    category: 'Calçados · Linha TG II',
+    line: 'tg-ii',
+    blurb: 'perfil técnico, base reforçada',
+    baseFactory: 300,
+  },
+}
+
+/** PDV sugerido = fábrica × 1,65 (fórmula ilustrativa do mockup — a fórmula real de precificação precisa vir do cliente). */
+function calcPdv(factory: number): number {
+  const raw = factory * 1.65
+  const hasNinetyCents = Math.round(factory * 100) % 100 === 90
+  const rounded = Math.round(raw / 10) * 10
+  return hasNinetyCents ? rounded - 0.1 : rounded
 }
 
 const raw: RawProduct[] = [
@@ -122,13 +161,15 @@ const raw: RawProduct[] = [
   { sku: '1901-21', colorway: 'All White', collection: 'COIL', growthPct: 11, restockDays: 28, marginPct: 38 },
   { sku: '1901-30', colorway: 'Black Rose', collection: 'COIL', growthPct: 27, restockDays: 33, marginPct: 44 },
   { sku: '1901-66', colorway: 'Denim', collection: 'COIL', growthPct: 31, restockDays: 26, marginPct: 45, premium: true },
-  { sku: '1901-67', colorway: 'Black White', collection: 'COIL', growthPct: 16, restockDays: 36, marginPct: 40 },
+  { sku: '1901-67', colorway: 'Black White', collection: 'COIL', growthPct: 16, restockDays: 36, marginPct: 40, priceFactory: 310, pricePdv: 510 },
   { sku: '1901-68', colorway: 'Off White', collection: 'COIL', growthPct: 8, restockDays: 34, marginPct: 39 },
   // HERTZ — 2101
   { sku: '2101-02', colorway: 'Black Reflect', collection: 'HERTZ', growthPct: 12, restockDays: 48, marginPct: 37 },
   { sku: '2101-16', colorway: 'All White', collection: 'HERTZ', growthPct: 6, restockDays: 44, marginPct: 36 },
   { sku: '2101-25', colorway: 'Black Gold', collection: 'HERTZ', growthPct: 24, restockDays: 30, marginPct: 46, premium: true },
-  { sku: '2101-30', colorway: 'Black', collection: 'HERTZ', growthPct: 10, restockDays: 42, marginPct: 37 },
+  { sku: '2101-30', colorway: 'Black', collection: 'HERTZ', growthPct: 10, restockDays: 42, marginPct: 37, priceFactory: 270, pricePdv: 450 },
+  { sku: '2101-31', colorway: 'Rose', collection: 'HERTZ', growthPct: -4, restockDays: 50, marginPct: 40, priceFactory: 145, pricePdv: 240, riskCallout: 'Oportunidade perdida — sua loja ainda não vende este modelo' },
+  { sku: '2101-33', colorway: 'All Black Furta Cor', collection: 'HERTZ', growthPct: 21, restockDays: 34, marginPct: 40, premium: true, priceFactory: 329.9 },
   // HERTZ ART — 2101
   { sku: '2101-36', colorway: 'Black Art', collection: 'HERTZ ART', growthPct: 29, restockDays: 25, marginPct: 47, premium: true },
   { sku: '2101-39', colorway: 'White Art', collection: 'HERTZ ART', growthPct: 19, restockDays: 27, marginPct: 45, premium: true },
@@ -151,15 +192,43 @@ const raw: RawProduct[] = [
   { sku: '2502-20', colorway: 'All Black Reflect', collection: 'FLOW XL', growthPct: 12, restockDays: 36, marginPct: 40 },
   { sku: '2502-21', colorway: 'Purple', collection: 'FLOW XL', growthPct: 30, restockDays: 27, marginPct: 45, premium: true },
   { sku: '2502-22', colorway: 'All Black Tiffany', collection: 'FLOW XL', growthPct: 18, restockDays: 34, marginPct: 41 },
+  // FUSION — 2601 (linha mais recente)
+  { sku: '2601-01', colorway: 'Black Red', collection: 'FUSION', growthPct: 34, restockDays: 22, marginPct: 40, premium: true, priceFactory: 339.9 },
+  { sku: '2601-02', colorway: 'All White', collection: 'FUSION', growthPct: 20, restockDays: 30, marginPct: 39, priceFactory: 389.9 },
+  { sku: '2601-03', colorway: 'Off White Tiffany', collection: 'FUSION', growthPct: 15, restockDays: 33, marginPct: 39, priceFactory: 299.9 },
+  { sku: '2601-04', colorway: 'BW Pink', collection: 'FUSION', growthPct: 25, restockDays: 27, marginPct: 40, priceFactory: 379.9 },
+  // TG II — 2304
+  { sku: '2304-01', colorway: 'Black Reflect', collection: 'TG II', growthPct: 10, restockDays: 41, marginPct: 40, priceFactory: 299.9, pricePdv: 499.9 },
+  { sku: '2304-02', colorway: 'All White', collection: 'TG II', growthPct: 7, restockDays: 45, marginPct: 38, priceFactory: 279.9 },
 ]
 
+// Grade real confirmada com o cliente: numeração 34 a 44
 function buildSizes(): { size: string; suggested: boolean }[] {
-  const sizes = ['36', '37', '38', '39', '40', '41', '42']
-  return sizes.map((size, i) => ({ size, suggested: i > 0 && i < sizes.length - 1 }))
+  const sizes = ['34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44']
+  return sizes.map((size, i) => ({ size, suggested: i > 1 && i < sizes.length - 2 }))
 }
+
+const collectionTitle: Record<RawProduct['collection'], string> = {
+  COIL: 'Coil',
+  HERTZ: 'Hertz',
+  'HERTZ ART': 'Hertz Art',
+  FLOW: 'Flow',
+  'FLOW XL': 'Flow XL',
+  FUSION: 'Fusion',
+  'TG II': 'TG II',
+}
+
+const collectionCounters: Partial<Record<RawProduct['collection'], number>> = {}
 
 export const products: Product[] = raw.map((r) => {
   const meta = collectionMeta[r.collection]
+  const priceFactory = r.priceFactory ?? meta.baseFactory
+  const pricePdv = r.pricePdv ?? calcPdv(priceFactory)
+
+  // Referência no formato Linha-Ano-NúmeroLançamentoNoAno-Cor (ex: Fusion-2026-3-01), confirmado com o cliente
+  const seq = (collectionCounters[r.collection] = (collectionCounters[r.collection] ?? 0) + 1)
+  const reference = `${collectionTitle[r.collection].replace(/\s+/g, '')}-2026-${seq}-${String(seq).padStart(2, '0')}`
+
   const badges: Product['badges'] = []
   if (r.riskCallout) {
     badges.push({ label: 'Oportunidade perdida', tone: 'risk' })
@@ -188,11 +257,14 @@ export const products: Product[] = raw.map((r) => {
   return {
     id: r.sku,
     sku: r.sku,
+    reference,
     collection: r.collection,
-    name: `${r.collection} — ${r.colorway}`,
+    name: `Tênis Tesla ${collectionTitle[r.collection]} ${r.colorway}`,
     category: meta.category,
     line: meta.line,
     image: `/products/${r.sku}.jpg`,
+    priceFactory,
+    pricePdv,
     badges,
     why,
     restockDays: r.restockDays,
@@ -240,46 +312,64 @@ export const users: User[] = [
   { id: 'u3', name: 'Carla Nunes', initials: 'CA', role: 'auxiliar' },
 ]
 
-export const orders: CartOrder[] = [
+// Carrinho → Pedido: um carrinho é compartilhado com o representante fixo da loja (Ana)
+// e pode ter 1+ pedidos, cada um com prazo/condição de pagamento próprios (confirmado em reunião real).
+export const carrinhos: Carrinho[] = [
   {
-    id: 'o1',
+    id: 'colecao-inverno',
     name: 'Coleção Inverno',
-    status: 'aguardando',
     representative: 'Ana',
     updatedAt: 'há 2h',
-    items: [
-      { name: 'Tênis Street Pro', qty: 24, grade: '37–41', value: 6480 },
-      { name: 'Bota Urban Trail', qty: 12, grade: '38–42', value: 4320 },
-      { name: 'Sandália Feminina X', qty: 18, grade: '35–39', value: 3400 },
+    pedidos: [
+      {
+        id: '4821-1',
+        label: 'Pedido 1',
+        status: 'rascunho',
+        items: [
+          { productId: '2101-30', name: 'Tênis Tesla Hertz Black', qty: 24, grade: '37–41', value: 6480 },
+          { productId: '1901-67', name: 'Tênis Tesla Coil Black White', qty: 12, grade: '38–42', value: 4320 },
+        ],
+        subtotal: 10800,
+        discount: 0,
+        total: 10800,
+        marginPct: 38,
+        paymentCondition: '30',
+        deliveryEstimateDays: 7,
+      },
+      {
+        id: '4821-2',
+        label: 'Pedido 2',
+        status: 'rascunho',
+        items: [{ productId: '2101-31', name: 'Tênis Tesla Hertz Rose', qty: 18, grade: '35–39', value: 3400 }],
+        subtotal: 3400,
+        discount: 102,
+        total: 3298,
+        marginPct: 40,
+        paymentCondition: 'a-vista',
+        deliveryEstimateDays: 0,
+      },
     ],
-    subtotal: 14200,
-    discount: 320,
-    total: 13880,
-    marginPct: 38,
   },
   {
-    id: 'o2',
+    id: 'reposicao-rapida',
     name: 'Reposição rápida',
-    status: 'rascunho',
     representative: 'Ana',
     updatedAt: 'ontem',
-    items: [{ name: 'Tênis Street Pro', qty: 6, grade: '38–40', value: 2140 }],
-    subtotal: 2140,
-    discount: 0,
-    total: 2140,
-    marginPct: 41,
-  },
-  {
-    id: 'o3',
-    name: 'Lançamento Urban',
-    status: 'aprovado',
-    representative: 'Marcos',
-    updatedAt: 'há 3 dias',
-    items: [{ name: 'Bota Urban Trail', qty: 24, grade: '38–43', value: 9760 }],
-    subtotal: 9760,
-    discount: 0,
-    total: 9760,
-    marginPct: 44,
+    pedidos: [
+      {
+        id: '4790-1',
+        label: 'Pedido 1',
+        status: 'pago',
+        items: [{ productId: '2101-30', name: 'Tênis Tesla Hertz Black', qty: 6, grade: '38–40', value: 2140 }],
+        subtotal: 2140,
+        discount: 0,
+        total: 2140,
+        marginPct: 41,
+        paymentCondition: '30',
+        paymentMethod: 'boleto',
+        deliveryEstimateDays: 7,
+      },
+    ],
   },
 ]
 
@@ -287,17 +377,18 @@ export const mixPlan = {
   planName: 'Coleção de Inverno',
   investment: 18000,
   mix: [
-    { label: 'Calçados', pct: 60 },
-    { label: 'Acessórios', pct: 25 },
-    { label: 'Vestuário', pct: 15 },
+    { label: 'Coil', pct: 60 },
+    { label: 'Hertz', pct: 25 },
+    { label: 'Flow', pct: 15 },
   ],
   turnoverDays: 42,
   marginPct: 39,
   coveragePct: 92,
   items: [
-    { productId: 'p1', name: 'Tênis Street Pro', qty: 24 },
-    { productId: 'p3', name: 'Bota Urban Trail', qty: 12 },
-    { productId: 'p2', name: 'Sandália Feminina X', qty: 18 },
+    { productId: '2101-30', name: 'Tênis Tesla Hertz Black', qty: 24 },
+    { productId: '1901-67', name: 'Tênis Tesla Coil Black White', qty: 12 },
+    { productId: '2101-31', name: 'Tênis Tesla Hertz Rose', qty: 18 },
+    { productId: '2304-01', name: 'Tênis Tesla TG II Black Reflect', qty: 40 },
   ],
 }
 
@@ -315,8 +406,8 @@ export const trackingSteps = [
 ]
 
 export const goals = [
-  { id: 'g1', title: 'Repor estoque', sub: 'Focar em produtos que estão acabando' },
-  { id: 'g2', title: 'Planejar a próxima coleção', sub: 'Montar um mix novo com orçamento definido' },
-  { id: 'g3', title: 'Recuperar clientes parados', sub: 'Reativar quem reduziu ou parou de comprar' },
-  { id: 'g4', title: 'Só dar uma olhada geral', sub: 'Entender como está meu negócio hoje' },
+  { id: 'g1', title: 'Repor estoque', sub: 'Focar em produtos acabando' },
+  { id: 'g2', title: 'Planejar a coleção', sub: 'Montar mix com orçamento' },
+  { id: 'g3', title: 'Recuperar clientes', sub: 'Reativar quem parou de comprar' },
+  { id: 'g4', title: 'Só olhar geral', sub: 'Entender como está o negócio' },
 ]

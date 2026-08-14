@@ -1,75 +1,184 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AppShell } from '../../components/layout/AppShell'
-import { Tile } from '../../components/ui/Tile'
-import { Stepper } from '../../components/ui/Avatar'
-import { Button } from '../../components/ui/Button'
-import { mixPlan } from '../../lib/data'
+import { DesktopPage } from '../../components/desktop/DesktopPage'
+import { WebTopNav } from '../../components/desktop/WebTopNav'
+import { Breadcrumb } from '../../components/desktop/Breadcrumb'
+import { WebModal } from '../../components/desktop/WebModal'
+import { mixPlan, products } from '../../lib/data'
+import { formatBRL } from '../../lib/format'
 
-const swatch = ['bg-black', 'bg-border-strong', 'bg-surface-3 border border-border']
+const segClass = ['mixseg-a', 'mixseg-b', 'mixseg-c']
+const swClass = ['a', 'b', 'c']
 
 export function Planning() {
   const navigate = useNavigate()
-  const [items, setItems] = useState(mixPlan.items)
+  const [qty, setQty] = useState<Record<string, number>>(
+    Object.fromEntries(mixPlan.items.map((i) => [i.productId, i.qty]))
+  )
+  const [mixModalOpen, setMixModalOpen] = useState(false)
+  const [mixPct, setMixPct] = useState(mixPlan.mix.map((m) => m.pct))
+
+  function updateQty(id: string, delta: number) {
+    setQty((s) => ({ ...s, [id]: Math.max(0, (s[id] ?? 0) + delta) }))
+  }
+
+  const totalPct = mixPct.reduce((a, b) => a + b, 0)
+  const spent = Object.entries(qty).reduce((sum, [id, q]) => {
+    const product = products.find((p) => p.id === id)
+    return sum + (product ? q * product.priceFactory : 0)
+  }, 0)
 
   return (
-    <AppShell>
-      <div className="px-4.5 md:px-8 pt-4 md:pt-8 pb-6 max-w-3xl">
-        <div className="eyebrow">Plano de compra</div>
-        <h2 className="font-display text-[19px] font-bold text-text-primary mt-1.5">{mixPlan.planName}</h2>
-        <div className="font-mono text-[13px] text-text-primary font-medium mt-1">
-          Investimento: R$ {mixPlan.investment.toLocaleString('pt-BR')}
-        </div>
-
-        <div className="flex h-3.5 rounded-[4px] overflow-hidden mt-4">
-          {mixPlan.mix.map((m, i) => (
-            <div key={m.label} className={swatch[i]} style={{ width: `${m.pct}%` }} />
-          ))}
-        </div>
-        <div className="flex gap-3.5 flex-wrap mt-2.5">
-          {mixPlan.mix.map((m, i) => (
-            <div key={m.label} className="flex items-center gap-1.5 text-[11px] text-text-secondary">
-              <span className={`w-2 h-2 rounded-sm ${swatch[i]}`} />
-              {m.label} {m.pct}%
+    <DesktopPage>
+      <WebTopNav />
+      <Breadcrumb items={[{ label: 'Radar', to: '/radar' }, { label: `Planejamento — ${mixPlan.planName}` }]} />
+      <div className="web-app-layout">
+        <div className="web-content">
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+              Plano de compra
             </div>
-          ))}
-        </div>
-
-        <div className="flex gap-2.5 mt-4">
-          <Tile label="Giro previsto" value={`${mixPlan.turnoverDays} dias`} />
-          <Tile label="Margem est." value={`${mixPlan.marginPct}%`} />
-          <Tile label="Cobertura" value={`${mixPlan.coveragePct}%`} />
-        </div>
-
-        <div className="text-[11px] font-mono uppercase tracking-wide text-text-tertiary mt-5 mb-1">
-          Itens do mix
-        </div>
-        <div className="md:grid md:grid-cols-2 gap-2.5">
-          {items.map((it) => (
-            <div
-              key={it.productId}
-              className="flex items-center justify-between bg-surface border border-border rounded-[4px] px-3.5 py-2.5 mt-2 md:mt-0"
-            >
-              <div className="text-[13px] text-text-primary font-medium">{it.name}</div>
-              <Stepper
-                qty={it.qty}
-                onChange={(n) =>
-                  setItems((prev) => prev.map((p) => (p.productId === it.productId ? { ...p, qty: n } : p)))
-                }
-              />
+            <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--text-primary)', marginTop: 8 }}>{mixPlan.planName}</h1>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 14, color: 'var(--text-primary)', fontWeight: 500, marginTop: 6 }}>
+              Investimento: {formatBRL(mixPlan.investment)}
             </div>
-          ))}
+          </div>
+
+          <div className="mixbar" style={{ margin: '20px 0 8px', maxWidth: 640 }}>
+            {mixPlan.mix.map((m, i) => (
+              <div className={segClass[i]} key={m.label} style={{ width: `${m.pct}%` }} />
+            ))}
+          </div>
+          <div className="legend">
+            {mixPlan.mix.map((m, i) => (
+              <div className="item" key={m.label}>
+                <span className={`sw ${swClass[i]}`} />
+                {m.label} {m.pct}%
+              </div>
+            ))}
+          </div>
+
+          <div className="stattiles" style={{ maxWidth: 640, marginTop: 22 }}>
+            <div className="tile">
+              <div className="tlabel">Giro previsto</div>
+              <div className="tval">{mixPlan.turnoverDays} dias</div>
+            </div>
+            <div className="tile">
+              <div className="tlabel">Margem est.</div>
+              <div className="tval">{mixPlan.marginPct}%</div>
+            </div>
+            <div className="tile">
+              <div className="tlabel">Cobertura</div>
+              <div className="tval">{mixPlan.coveragePct}%</div>
+            </div>
+          </div>
+
+          <div className="web-section-title">Itens do mix</div>
+          <div style={{ maxWidth: 640, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {mixPlan.items.map((item) => (
+              <div className="mixitem" style={{ marginTop: 0 }} key={item.productId}>
+                <div className="mname">{item.name}</div>
+                <div className="stepper">
+                  <div className="stepbtn" style={{ cursor: 'pointer' }} onClick={() => updateQty(item.productId, -1)}>
+                    −
+                  </div>
+                  <div className="qty">{qty[item.productId]}</div>
+                  <div className="stepbtn" style={{ cursor: 'pointer' }} onClick={() => updateQty(item.productId, 1)}>
+                    +
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, marginTop: 28, maxWidth: 640 }}>
+            <div className="btn-secondary" style={{ width: 160, cursor: 'pointer' }} onClick={() => setMixModalOpen(true)}>
+              Ajustar mix
+            </div>
+            <div className="btn-primary" style={{ flex: 1, cursor: 'pointer' }} onClick={() => navigate('/carrinhos')}>
+              Enviar ao carrinho
+            </div>
+          </div>
         </div>
 
-        <div className="flex gap-2.5 mt-6">
-          <Button variant="secondary" className="flex-1">
-            Ajustar mix
-          </Button>
-          <Button variant="primary" className="flex-1" onClick={() => navigate('/pedidos/o1')}>
-            Enviar ao carrinho
-          </Button>
+        <div className="web-sidebar">
+          <div className="stitle">Resumo do plano</div>
+          <div className="stotal">{formatBRL(spent)}</div>
+          <div className="ssub">de {formatBRL(mixPlan.investment)} disponíveis</div>
+          <div className="nudge-progress">
+            <div className="np-label">
+              <span>Mix ideal pro seu perfil</span>
+              <span style={{ fontFamily: 'var(--mono)' }}>88%</span>
+            </div>
+            <div className="nudge-bar">
+              <div className="nudge-bar-fill" style={{ width: '88%' }} />
+            </div>
+          </div>
+          <div className="bubble">
+            Seu mix está <b>{mixPlan.mix.map((m) => m.pct).join('/')}</b> — alinhado com o padrão de inverno da sua loja
+          </div>
+          <div className="bubble">
+            {spent > mixPlan.investment ? (
+              <>
+                Orçamento estourado em <b style={{ color: 'var(--risk)' }}>{formatBRL(spent - mixPlan.investment)}</b>
+              </>
+            ) : (
+              <>
+                Ainda restam <b>{formatBRL(mixPlan.investment - spent)}</b> pra usar no orçamento
+              </>
+            )}
+          </div>
+          <div className="sbtns">
+            <div className="btn-secondary" style={{ cursor: 'pointer' }}>
+              Salvar como rascunho
+            </div>
+          </div>
         </div>
       </div>
-    </AppShell>
+
+      {mixModalOpen && (
+        <WebModal
+          title="Ajustar mix"
+          subtitle="O investimento total não muda — só a proporção entre linhas"
+          onClose={() => setMixModalOpen(false)}
+          width={440}
+          footer={
+            <>
+              <span style={{ fontFamily: 'var(--mono)', fontSize: 12, color: totalPct === 100 ? 'var(--positive)' : 'var(--risk)' }}>
+                Total: {totalPct}%
+              </span>
+              <div className="btn-primary" style={{ width: 120, cursor: 'pointer' }} onClick={() => setMixModalOpen(false)}>
+                Aplicar
+              </div>
+            </>
+          }
+        >
+          <div style={{ padding: '8px 20px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {mixPlan.mix.map((m, i) => (
+              <div className="mixitem" style={{ marginTop: 0 }} key={m.label}>
+                <div className="mname">{m.label}</div>
+                <div className="stepper">
+                  <div
+                    className="stepbtn"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setMixPct((s) => s.map((v, idx) => (idx === i ? Math.max(0, v - 5) : v)))}
+                  >
+                    −
+                  </div>
+                  <div className="qty">{mixPct[i]}%</div>
+                  <div
+                    className="stepbtn"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setMixPct((s) => s.map((v, idx) => (idx === i ? v + 5 : v)))}
+                  >
+                    +
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </WebModal>
+      )}
+    </DesktopPage>
   )
 }

@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { AppShell } from '../../components/layout/AppShell'
-import { Chip } from '../../components/ui/Chip'
-import { ProductCard } from '../../components/ui/ProductCard'
-import { ProductDetailContent } from '../../components/ui/ProductDetail'
+import { DesktopPage } from '../../components/desktop/DesktopPage'
+import { WebTopNav } from '../../components/desktop/WebTopNav'
+import { Breadcrumb } from '../../components/desktop/Breadcrumb'
+import { OrderSidebar } from '../../components/desktop/OrderSidebar'
+import { useAppStore } from '../../lib/store'
 import { products } from '../../lib/data'
+import { formatBRL } from '../../lib/format'
 
 const filters = ['Recomendado p/ você', 'Alto giro', 'Boa margem', 'Lançamentos']
 
@@ -22,67 +24,226 @@ function applyFilter(list: typeof products, filter: string, query: string) {
   return out
 }
 
+const badgeToneClass: Record<string, string> = {
+  positive: 'pos',
+  risk: 'risk',
+  info: 'info',
+  neutral: 'neutral',
+  premium: 'info',
+}
+
 export function Catalog() {
   const navigate = useNavigate()
   const { id } = useParams()
   const [filter, setFilter] = useState(filters[0])
   const [query, setQuery] = useState('')
-  const filteredProducts = applyFilter(products, filter, query)
+  const toggleCart = useAppStore((s) => s.toggleCart)
+  const isInCart = useAppStore((s) => s.isInCart)
+  const addToCart = useAppStore((s) => s.addToCart)
+
   const selectedProduct = products.find((p) => p.id === id)
 
   if (selectedProduct) {
+    const p = selectedProduct
+    const inCart = isInCart(p.id)
+    const margin = Math.round(((p.pricePdv - p.priceFactory) / p.pricePdv) * 100)
     return (
-      <AppShell>
-        <div className="max-w-2xl mx-auto md:pt-8">
-          <ProductDetailContent
-            product={selectedProduct}
-            onBack={() => navigate('/catalogo')}
-            onPlan={() => navigate('/planejamento')}
-            onAddToCart={() => navigate('/pedidos/o1')}
-          />
-          <button
-            onClick={() => navigate('/catalogo')}
-            className="hidden md:block text-sm text-text-secondary mt-2 mb-6"
-          >
-            ← Voltar ao catálogo
-          </button>
+      <DesktopPage>
+        <WebTopNav />
+        <Breadcrumb items={[{ label: 'Radar', to: '/radar' }, { label: 'Catálogo', to: '/catalogo' }, { label: p.name }]} />
+        <div className="web-app-layout">
+          <div className="web-content" style={{ display: 'flex', gap: 40 }}>
+            <div style={{ width: 420, flexShrink: 0 }}>
+              <div
+                style={{
+                  height: 420,
+                  background: 'linear-gradient(155deg,var(--surface-3),var(--surface-2))',
+                  borderRadius: 6,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <svg width="140" height="140" viewBox="0 0 24 24" fill="none" stroke="#C7C9CF" strokeWidth="1.1">
+                  <path d="M3 15c0-1 1-1.6 2-2l3-1.4c1-.5 1.6-1.4 2-2.3.4-1 1.2-1.3 2-1 .8.4 1.6 1.6 3 2.3 1.2.6 3 .7 4.4 1 1 .2 1.6.9 1.6 1.9v2.3c0 .7-.5 1.2-1.2 1.2H4.2C3.5 17 3 16.5 3 15.8Z" />
+                </svg>
+              </div>
+            </div>
+
+            <div style={{ flex: 1, minWidth: 0, paddingTop: 4 }}>
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                {p.category} · {p.reference}
+              </div>
+              <h1 style={{ fontFamily: 'var(--display)', fontSize: 28, fontWeight: 700, color: 'var(--text-primary)', marginTop: 8 }}>{p.name}</h1>
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 18, color: 'var(--text-primary)', fontWeight: 600 }}>
+                  {formatBRL(p.priceFactory)}{' '}
+                  <span style={{ fontFamily: 'var(--body)', fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 400 }}>fábrica</span>
+                </div>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--positive)', fontWeight: 500, marginTop: 2 }}>
+                  PDV sugerido: {formatBRL(p.pricePdv)} (+{formatBRL(p.pricePdv - p.priceFactory)} · {margin}%)
+                </div>
+              </div>
+
+              <div className="whybox" style={{ margin: '24px 0 0', maxWidth: 520 }}>
+                <div className="title">Por que comprar este produto</div>
+                {p.why.slice(0, 4).map((w, i) => (
+                  <div className="checkline" key={i}>
+                    <span className="ck">✓</span>
+                    {w}
+                  </div>
+                ))}
+              </div>
+
+              <div className="repobanner" style={{ margin: '16px 0 0', maxWidth: 520 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" />
+                  <path d="M3 8l9 5 9-5M12 13v8" />
+                </svg>
+                Reposição recomendada em {p.restockDays} dias
+              </div>
+
+              <div className="gradebox" style={{ margin: '24px 0 0' }}>
+                <div className="title">Grade sugerida</div>
+                <div className="sizerow">
+                  {p.suggestedSizes.map((s) => (
+                    <div className={`sizechip ${s.suggested ? 'on' : ''}`} key={s.size}>
+                      {s.size}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--border)', maxWidth: 520 }}>
+                <div style={{ fontSize: 11, fontFamily: 'var(--mono)', textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--text-tertiary)', marginBottom: 12 }}>
+                  Como você quer seguir?
+                </div>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  <div
+                    className="btn-primary"
+                    style={{ flex: 1, cursor: 'pointer' }}
+                    onClick={() => {
+                      if (!inCart) addToCart(p.id, 12)
+                      navigate('/carrinhos')
+                    }}
+                  >
+                    {inCart ? 'No carrinho ✓ — ver carrinho' : 'Adicionar ao carrinho'}
+                  </div>
+                  <div className="btn-secondary" style={{ flex: 1, cursor: 'pointer' }} onClick={() => navigate('/planejamento')}>
+                    Adicionar ao planejamento
+                  </div>
+                </div>
+                <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 10 }}>
+                  Carrinho: compra imediata deste item · Planejamento: monta um mix completo antes de decidir quantidade
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <OrderSidebar nudges={[`Esse produto já tem <b>alta recompra</b> na sua loja — bom pra fechar o mix`]} />
         </div>
-      </AppShell>
+      </DesktopPage>
     )
   }
 
+  const filteredProducts = applyFilter(products, filter, query)
+
   return (
-    <AppShell>
-      <div className="max-w-5xl mx-auto px-4.5 md:px-8 pt-4 md:pt-8 pb-8">
-        <h2 className="hidden md:block font-display text-lg font-bold text-text-primary mb-4">
-          Catálogo Inteligente
-        </h2>
-        <div className="flex gap-2">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar produtos ou SKU"
-            className="flex-1 bg-surface-2 border border-border rounded-[4px] px-3 py-2.5 text-[13px] text-text-primary placeholder:text-text-tertiary outline-none"
-          />
-          <div className="w-9.5 h-9.5 bg-surface-2 border border-border rounded-[4px] flex items-center justify-center text-text-secondary shrink-0">
-            ⚙
+    <DesktopPage>
+      <WebTopNav />
+      <Breadcrumb items={[{ label: 'Radar', to: '/radar' }, { label: 'Catálogo Inteligente' }]} />
+      <div className="web-app-layout">
+        <div className="web-content">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div>
+              <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--text-primary)' }}>Catálogo Inteligente</h1>
+              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
+                {products.length} produtos · ordenado por recomendado pra você
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="flex gap-2 overflow-x-auto no-scrollbar mt-2.5">
-          {filters.map((f) => (
-            <Chip key={f} label={f} selected={filter === f} onClick={() => setFilter(f)} />
-          ))}
+
+          <div className="filterbar">
+            <div className="searchbox">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar produtos"
+                style={{ background: 'transparent', border: 'none', outline: 'none', width: '100%', font: 'inherit', color: 'inherit' }}
+              />
+            </div>
+            {filters.map((f) => (
+              <div key={f} className={`chip ${filter === f ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setFilter(f)}>
+                {f}
+              </div>
+            ))}
+          </div>
+
+          <div className="catgrid-web">
+            {filteredProducts.map((p) => {
+              const inCart = isInCart(p.id)
+              const margin = Math.round(((p.pricePdv - p.priceFactory) / p.pricePdv) * 100)
+              const contextBadge = p.badges.find((b) => b.tone === 'premium')?.label ?? (p.restockDays <= 32 ? 'Alto giro' : null)
+              return (
+                <div className="pcard-web" key={p.id}>
+                  <div className="pw-thumb" style={{ cursor: 'pointer' }} onClick={() => navigate(`/catalogo/${p.id}`)}>
+                    {contextBadge && <div className="pw-instock">{contextBadge}</div>}
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#B0B3BA" strokeWidth="1.2">
+                      <path d="M3 15c0-1 1-1.6 2-2l3-1.4c1-.5 1.6-1.4 2-2.3.4-1 1.2-1.3 2-1 .8.4 1.6 1.6 3 2.3 1.2.6 3 .7 4.4 1 1 .2 1.6.9 1.6 1.9v2.3c0 .7-.5 1.2-1.2 1.2H4.2C3.5 17 3 16.5 3 15.8Z" />
+                    </svg>
+                  </div>
+                  <div className="pw-body">
+                    <div className="pw-name" style={{ cursor: 'pointer' }} onClick={() => navigate(`/catalogo/${p.id}`)}>
+                      {p.name}
+                    </div>
+                    <div className="pw-priceblock">
+                      <div className="pw-pricemain">
+                        {formatBRL(p.priceFactory)}
+                        <span className="pw-tax-tag">fábrica</span>
+                      </div>
+                      <div className="pw-pricesub">
+                        PDV sugerido: {formatBRL(p.pricePdv)} (+{formatBRL(p.pricePdv - p.priceFactory)} · {margin}%)
+                      </div>
+                    </div>
+                    <div className="pw-badgerow">
+                      {p.badges.slice(0, 2).map((b, i) => (
+                        <span className={`badge ${badgeToneClass[b.tone]}`} key={i}>
+                          {b.label}
+                        </span>
+                      ))}
+                    </div>
+                    <div
+                      className={`pw-addbtn ${inCart ? 'in-cart' : ''}`}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => toggleCart(p.id)}
+                    >
+                      {inCart ? (
+                        <>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                            <path d="M5 13l4 4L19 7" />
+                          </svg>
+                          No carrinho
+                        </>
+                      ) : (
+                        'Adicionar ao carrinho'
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          {filteredProducts.length === 0 && (
+            <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-secondary)', padding: '64px 0' }}>Nenhum produto encontrado</div>
+          )}
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 mt-5">
-          {filteredProducts.map((p) => (
-            <ProductCard key={p.id} product={p} onClick={() => navigate(`/catalogo/${p.id}`)} />
-          ))}
-        </div>
-        {filteredProducts.length === 0 && (
-          <div className="text-center text-sm text-text-secondary py-16">Nenhum produto encontrado</div>
-        )}
+        <OrderSidebar />
       </div>
-    </AppShell>
+    </DesktopPage>
   )
 }

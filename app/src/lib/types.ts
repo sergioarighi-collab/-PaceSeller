@@ -10,16 +10,21 @@ export interface InsightCardData {
   title: string
   text: string
   cta: string
+  productId?: string
+  suggestedQty?: number
 }
 
 export interface Product {
   id: string
   sku: string
+  reference: string
   collection: string
   name: string
   category: string
   line: string
   image: string
+  priceFactory: number
+  pricePdv: number
   badges: { label: string; tone: Severity }[]
   why: string[]
   restockDays: number
@@ -44,17 +49,39 @@ export interface MixItem {
   qty: number
 }
 
-export interface CartOrder {
-  id: string
+export const GRADE_MINIMA_PARES = 36
+
+export type PaymentCondition = '30' | '60' | '90' | 'a-vista'
+export type PaymentMethod = 'pix' | 'cartao' | 'boleto'
+
+export interface PedidoItem {
+  productId: string
   name: string
-  status: 'rascunho' | 'aguardando' | 'aprovado'
-  representative: string
-  updatedAt: string
-  items: { name: string; qty: number; grade: string; value: number }[]
+  qty: number
+  grade: string
+  value: number
+}
+
+export interface Pedido {
+  id: string
+  label: string
+  status: 'rascunho' | 'aguardando' | 'aprovado' | 'pago'
+  items: PedidoItem[]
   subtotal: number
   discount: number
   total: number
   marginPct: number
+  paymentCondition?: PaymentCondition
+  paymentMethod?: PaymentMethod
+  deliveryEstimateDays: number
+}
+
+export interface Carrinho {
+  id: string
+  name: string
+  representative: string
+  updatedAt: string
+  pedidos: Pedido[]
 }
 
 export interface User {
