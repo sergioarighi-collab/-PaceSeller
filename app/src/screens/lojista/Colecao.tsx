@@ -3,6 +3,7 @@ import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { OrderSidebar } from '../../components/desktop/OrderSidebar'
+import { ProductThumb } from '../../components/desktop/ProductThumb'
 import { useAppStore } from '../../lib/store'
 import { products } from '../../lib/data'
 import { formatBRL } from '../../lib/format'
@@ -55,9 +56,7 @@ export function Colecao() {
                 <div className="pcard-web" key={p.id}>
                   <div className="pw-thumb" style={{ cursor: 'pointer' }} onClick={() => navigate(`/catalogo/${p.id}`)}>
                     <div className="pw-instock">Lançamento</div>
-                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#B0B3BA" strokeWidth="1.2">
-                      <path d="M3 15c0-1 1-1.6 2-2l3-1.4c1-.5 1.6-1.4 2-2.3.4-1 1.2-1.3 2-1 .8.4 1.6 1.6 3 2.3 1.2.6 3 .7 4.4 1 1 .2 1.6.9 1.6 1.9v2.3c0 .7-.5 1.2-1.2 1.2H4.2C3.5 17 3 16.5 3 15.8Z" />
-                    </svg>
+                    <ProductThumb src={p.image} alt={p.name} />
                   </div>
                   <div className="pw-body">
                     <div className="pw-name" style={{ cursor: 'pointer' }} onClick={() => navigate(`/catalogo/${p.id}`)}>
