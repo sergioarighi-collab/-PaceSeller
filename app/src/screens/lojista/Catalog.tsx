@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
@@ -9,6 +9,42 @@ import { products } from '../../lib/data'
 import { formatBRL } from '../../lib/format'
 
 const filters = ['Recomendado p/ você', 'Alto giro', 'Boa margem', 'Lançamentos']
+
+const contextConfig = {
+  benchmark: {
+    chip: 'Benchmark: lojas parecidas',
+    bannerIcon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M3 3v18h18" />
+        <path d="m7 14 4-4 4 4 5-6" />
+      </svg>
+    ),
+    bannerTitle: 'Comparando com lojas parecidas com a sua',
+    bannerSub: 'Mesma faixa de porte e região — essas lojas venderam 30% mais destes produtos no último mês',
+    heading: '6 produtos em alta entre lojas parecidas com a sua',
+    productIds: ['2101-30', '1901-67', '2601-01'],
+    cardBadge: '+30% nessas lojas',
+    sidebarNudge: 'Essas lojas parecidas com a sua já compraram esses itens — pode ser um bom sinal pra você também',
+  },
+  reposicao: {
+    chip: 'Reposição necessária',
+    bannerIcon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M4 19V10M11 19V5M18 19v-6" />
+      </svg>
+    ),
+    bannerTitle: 'Produtos com reposição necessária',
+    bannerSub: '3 produtos vendendo mais rápido que a reposição atual — quantidade sugerida já calculada por item',
+    heading: '3 produtos precisam de reposição',
+    productIds: ['1901-06', '1901-67', '2304-01'],
+    cardBadge: null,
+    sidebarNudge: 'Adicionar esses itens de reposição resolve o alerta do seu radar de hoje',
+    coverage: { '1901-06': '12 dias', '1901-67': '8 dias', '2304-01': '15 dias' } as Record<string, string>,
+    suggestion: { '1901-06': '32 unidades', '1901-67': '18 unidades', '2304-01': '60 unidades' } as Record<string, string>,
+  },
+} as const
+
+type ContextKey = keyof typeof contextConfig
 
 function applyFilter(list: typeof products, filter: string, query: string) {
   let out = list
@@ -35,6 +71,9 @@ const badgeToneClass: Record<string, string> = {
 export function Catalog() {
   const navigate = useNavigate()
   const { id } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const contextKey = searchParams.get('contexto') as ContextKey | null
+  const context = contextKey && contextConfig[contextKey] ? contextConfig[contextKey] : null
   const [filter, setFilter] = useState(filters[0])
   const [query, setQuery] = useState('')
   const toggleCart = useAppStore((s) => s.toggleCart)
@@ -146,19 +185,44 @@ export function Catalog() {
     )
   }
 
-  const filteredProducts = applyFilter(products, filter, query)
+  const filteredProducts = context
+    ? context.productIds.map((pid) => products.find((p) => p.id === pid)).filter((p): p is (typeof products)[number] => Boolean(p))
+    : applyFilter(products, filter, query)
 
   return (
     <DesktopPage>
       <WebTopNav />
       <Breadcrumb items={[{ label: 'Radar', to: '/radar' }, { label: 'Catálogo Inteligente' }]} />
+
+      {context && (
+        <div className="context-banner">
+          <div className="cb-icon" style={contextKey === 'reposicao' ? { background: 'var(--risk-dim)', color: 'var(--risk)' } : undefined}>
+            {context.bannerIcon}
+          </div>
+          <div>
+            <div className="cb-title">{context.bannerTitle}</div>
+            <div className="cb-sub">{context.bannerSub}</div>
+          </div>
+          <div
+            className="cb-clear"
+            style={{ cursor: 'pointer' }}
+            onClick={() => {
+              searchParams.delete('contexto')
+              setSearchParams(searchParams)
+            }}
+          >
+            Limpar filtro ×
+          </div>
+        </div>
+      )}
+
       <div className="web-app-layout">
         <div className="web-content">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <div>
               <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--text-primary)' }}>Catálogo Inteligente</h1>
               <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
-                {products.length} produtos · ordenado por recomendado pra você
+                {context ? context.heading : `${products.length} produtos · ordenado por recomendado pra você`}
               </div>
             </div>
           </div>
@@ -176,22 +240,39 @@ export function Catalog() {
                 style={{ background: 'transparent', border: 'none', outline: 'none', width: '100%', font: 'inherit', color: 'inherit' }}
               />
             </div>
-            {filters.map((f) => (
-              <div key={f} className={`chip ${filter === f ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setFilter(f)}>
-                {f}
-              </div>
-            ))}
+            {context ? (
+              <div className="chip selected">{context.chip}</div>
+            ) : (
+              filters.map((f) => (
+                <div key={f} className={`chip ${filter === f ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setFilter(f)}>
+                  {f}
+                </div>
+              ))
+            )}
+            {context && <div className="chip">Alto giro</div>}
+            {context && <div className="chip">Boa margem</div>}
           </div>
 
           <div className="catgrid-web">
             {filteredProducts.map((p) => {
               const inCart = isInCart(p.id)
               const margin = Math.round(((p.pricePdv - p.priceFactory) / p.pricePdv) * 100)
-              const contextBadge = p.badges.find((b) => b.tone === 'premium')?.label ?? (p.restockDays <= 32 ? 'Alto giro' : null)
+              const contextBadge =
+                context?.cardBadge ??
+                p.badges.find((b) => b.tone === 'premium')?.label ??
+                (p.restockDays <= 32 ? 'Alto giro' : null)
+              const coverage = contextKey === 'reposicao' ? contextConfig.reposicao.coverage[p.id] : null
+              const suggestion = contextKey === 'reposicao' ? contextConfig.reposicao.suggestion[p.id] : null
               return (
                 <div className="pcard-web" key={p.id}>
                   <div className="pw-thumb" style={{ cursor: 'pointer' }} onClick={() => navigate(`/catalogo/${p.id}`)}>
-                    {contextBadge && <div className="pw-instock">{contextBadge}</div>}
+                    {coverage ? (
+                      <div className="pw-instock" style={{ background: 'var(--risk)' }}>
+                        Cobertura {coverage}
+                      </div>
+                    ) : (
+                      contextBadge && <div className="pw-instock">{contextBadge}</div>
+                    )}
                     <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#B0B3BA" strokeWidth="1.2">
                       <path d="M3 15c0-1 1-1.6 2-2l3-1.4c1-.5 1.6-1.4 2-2.3.4-1 1.2-1.3 2-1 .8.4 1.6 1.6 3 2.3 1.2.6 3 .7 4.4 1 1 .2 1.6.9 1.6 1.9v2.3c0 .7-.5 1.2-1.2 1.2H4.2C3.5 17 3 16.5 3 15.8Z" />
                     </svg>
@@ -210,11 +291,15 @@ export function Catalog() {
                       </div>
                     </div>
                     <div className="pw-badgerow">
-                      {p.badges.slice(0, 2).map((b, i) => (
-                        <span className={`badge ${badgeToneClass[b.tone]}`} key={i}>
-                          {b.label}
-                        </span>
-                      ))}
+                      {suggestion ? (
+                        <span className="badge risk">Sugestão: {suggestion}</span>
+                      ) : (
+                        p.badges.slice(0, 2).map((b, i) => (
+                          <span className={`badge ${badgeToneClass[b.tone]}`} key={i}>
+                            {b.label}
+                          </span>
+                        ))
+                      )}
                     </div>
                     <div
                       className={`pw-addbtn ${inCart ? 'in-cart' : ''}`}
@@ -242,7 +327,7 @@ export function Catalog() {
           )}
         </div>
 
-        <OrderSidebar />
+        <OrderSidebar nudges={context ? [context.sidebarNudge] : undefined} />
       </div>
     </DesktopPage>
   )

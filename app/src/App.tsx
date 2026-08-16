@@ -20,6 +20,9 @@ import { MeusCarrinhos } from './screens/lojista/MeusCarrinhos'
 import { CarrinhoDetail } from './screens/lojista/CarrinhoDetail'
 import { Payment } from './screens/lojista/Payment'
 import { OrderConfirmed } from './screens/lojista/OrderConfirmed'
+import { Tracking } from './screens/lojista/Tracking'
+import { Chat } from './screens/lojista/Chat'
+import { Colecao } from './screens/lojista/Colecao'
 import { Loyalty } from './screens/lojista/Loyalty'
 
 import { RepRadar } from './screens/representante/Radar'
@@ -49,11 +52,14 @@ function App() {
         <Route path="/catalogo/:id" element={<Catalog />} />
         <Route path="/planejamento" element={<Planning />} />
         <Route path="/fidelizacao" element={<Loyalty />} />
+        <Route path="/colecoes/fusion" element={<Colecao />} />
 
         <Route path="/carrinhos" element={<MeusCarrinhos />} />
         <Route path="/carrinhos/:cartId" element={<CarrinhoDetail />} />
         <Route path="/carrinhos/:cartId/:pedidoId/pagamento" element={<Payment />} />
         <Route path="/carrinhos/:cartId/:pedidoId/confirmado" element={<OrderConfirmed />} />
+        <Route path="/carrinhos/:cartId/:pedidoId/acompanhamento" element={<Tracking />} />
+        <Route path="/carrinhos/:cartId/:pedidoId/chat" element={<Chat />} />
 
         <Route path="/rep/radar" element={<RepRadar />} />
         <Route path="/rep/carteira" element={<Wallet />} />

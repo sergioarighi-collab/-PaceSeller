@@ -64,7 +64,11 @@ export function OrderConfirmed() {
             <div className="btn-secondary" style={{ flex: 1, cursor: 'pointer' }} onClick={() => navigate('/radar')}>
               Voltar ao radar
             </div>
-            <div className="btn-primary" style={{ flex: 1, cursor: 'pointer' }} onClick={() => navigate('/radar')}>
+            <div
+              className="btn-primary"
+              style={{ flex: 1, cursor: 'pointer' }}
+              onClick={() => navigate(`/carrinhos/${cart.id}/${pedido.id}/acompanhamento`)}
+            >
               Acompanhar pedido
             </div>
           </div>

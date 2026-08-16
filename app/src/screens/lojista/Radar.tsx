@@ -135,6 +135,8 @@ export function Radar() {
                   style={{ marginTop: card.opportunity ? 12 : 10, fontWeight: card.opportunity ? 700 : 400, cursor: 'pointer' }}
                   onClick={() => {
                     if (card.cta === 'Ver produto' && card.productId) navigate(`/catalogo/${card.productId}`)
+                    else if (card.cta === 'Comparar') navigate('/catalogo?contexto=benchmark')
+                    else if (card.cta === 'Ver coleção') navigate('/colecoes/fusion')
                     else navigate('/catalogo')
                   }}
                 >
@@ -237,7 +239,15 @@ export function Radar() {
           onClose={() => setListModal(null)}
           footer={
             <>
-              <a href="#" onClick={(e) => { e.preventDefault(); setListModal(null); navigate('/catalogo') }}>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  const target = listModal === 'dp-1' ? '/catalogo?contexto=reposicao' : '/catalogo'
+                  setListModal(null)
+                  navigate(target)
+                }}
+              >
                 Ver tudo no catálogo →
               </a>
               {listModalContent[listModal].batchLabel && (
