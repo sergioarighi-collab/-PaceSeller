@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { DesktopPage } from './DesktopPage'
+import heroImg from '../../assets/images/hero-login-aerial.jpg'
 
 export function LoginSplitShell({
   heroTitle,
@@ -16,10 +17,9 @@ export function LoginSplitShell({
     <DesktopPage>
       <div className="loginsplit">
         <div
-          className="heroside"
+          className="heroside heroside-photo"
           style={{
-            backgroundImage:
-              'radial-gradient(circle at 15% 15%, rgba(255,255,255,0.08), transparent 45%), radial-gradient(circle at 85% 85%, rgba(255,255,255,0.06), transparent 50%)',
+            backgroundImage: `linear-gradient(rgba(22,22,24,0.55), rgba(22,22,24,0.75)), linear-gradient(rgba(197,153,32,0.13), rgba(197,153,32,0.13)), url(${heroImg})`,
           }}
         >
           <div>

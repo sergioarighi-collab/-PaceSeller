@@ -7,6 +7,7 @@ import { Toast } from '../../components/desktop/Toast'
 import { useAppStore } from '../../lib/store'
 import { lojistaRadarInsights, dailyPanel, goals } from '../../lib/data'
 import type { Severity } from '../../lib/types'
+import bannerImg from '../../assets/images/banner-destaque-semana.jpg'
 
 const severityColor: Record<Severity, string> = {
   positive: 'var(--positive)',
@@ -175,7 +176,9 @@ export function Radar() {
             overflow: 'hidden',
             padding: '44px 36px',
             minHeight: 280,
-            background: 'linear-gradient(135deg, #1c1c1e, #2c2c2e)',
+            backgroundImage: `linear-gradient(90deg, rgba(22,22,24,0.85), rgba(22,22,24,0.35)), url(${bannerImg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
           }}
         >
           <div style={{ maxWidth: 460, color: '#fff', position: 'relative', zIndex: 1 }}>
