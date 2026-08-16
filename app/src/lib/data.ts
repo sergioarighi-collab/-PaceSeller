@@ -243,7 +243,10 @@ export const products: Product[] = raw.map((r) => {
     badges.push({ label: `${r.growthPct}% no período`, tone: 'risk' })
   }
   if (r.premium) badges.push({ label: 'Lançamento', tone: 'premium' })
-  badges.push({ label: `Margem ${r.marginPct}%`, tone: 'neutral' })
+  // "Margem estimada" = rentabilidade esperada da loja com este produto (varia por SKU, alimenta o
+  // filtro "Boa margem" do catálogo) — diferente do badge "+X% sobre a fábrica" no preço, que é o
+  // cálculo real fábrica→PDV sugerido (quase constante, é regra de precificação, não estimativa).
+  badges.push({ label: `Margem estimada ${r.marginPct}%`, tone: 'neutral' })
 
   const why = [
     r.growthPct >= 0

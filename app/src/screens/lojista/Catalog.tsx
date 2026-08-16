@@ -149,7 +149,7 @@ export function Catalog() {
                       borderRadius: 4,
                     }}
                   >
-                    +{margin}% de margem
+                    +{margin}% sobre a fábrica
                   </span>
                 </div>
               </div>
@@ -316,7 +316,7 @@ export function Catalog() {
                       </div>
                       <div className="pw-pdvrow">
                         <span className="pw-pdvlabel">PDV sugerido {formatBRL(p.pricePdv)}</span>
-                        <span className="pw-margintag">+{margin}% de margem</span>
+                        <span className="pw-margintag">+{margin}% sobre a fábrica</span>
                       </div>
                     </div>
                     <div className="pw-badgerow">
