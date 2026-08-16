@@ -20,11 +20,13 @@ export interface Product {
   reference: string
   collection: string
   name: string
+  colorway: string
   category: string
   line: string
   image: string
   priceFactory: number
   pricePdv: number
+  growthPct: number
   badges: { label: string; tone: Severity }[]
   why: string[]
   restockDays: number

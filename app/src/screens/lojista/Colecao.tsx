@@ -1,20 +1,15 @@
-import { useNavigate } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { OrderSidebar } from '../../components/desktop/OrderSidebar'
-import { ProductThumb } from '../../components/desktop/ProductThumb'
-import { useAppStore } from '../../lib/store'
+import { ProductLineCard } from '../../components/desktop/ProductLineCard'
 import { products } from '../../lib/data'
-import { formatBRL } from '../../lib/format'
 
 const fusionProductIds = ['2601-02', '2601-03', '2601-04']
 
 export function Colecao() {
-  const navigate = useNavigate()
-  const toggleCart = useAppStore((s) => s.toggleCart)
-  const isInCart = useAppStore((s) => s.isInCart)
   const fusionProducts = fusionProductIds.map((id) => products.find((p) => p.id === id)).filter((p): p is (typeof products)[number] => Boolean(p))
+  const bestSellerId = fusionProducts.reduce((a, b) => (b.growthPct > a.growthPct ? b : a)).id
 
   return (
     <DesktopPage>
@@ -48,53 +43,8 @@ export function Colecao() {
           </div>
 
           <div className="web-section-title">Produtos da linha</div>
-          <div className="catgrid-web">
-            {fusionProducts.map((p) => {
-              const inCart = isInCart(p.id)
-              const margin = Math.round(((p.pricePdv - p.priceFactory) / p.pricePdv) * 100)
-              return (
-                <div className="pcard-web" key={p.id}>
-                  <div className="pw-thumb" style={{ cursor: 'pointer' }} onClick={() => navigate(`/catalogo/${p.id}`)}>
-                    <div className="pw-instock">Lançamento</div>
-                    <ProductThumb src={p.image} alt={p.name} />
-                  </div>
-                  <div className="pw-body">
-                    <div className="pw-name" style={{ cursor: 'pointer' }} onClick={() => navigate(`/catalogo/${p.id}`)}>
-                      {p.name}
-                    </div>
-                    <div className="pw-priceblock">
-                      <div className="pw-pricemain">
-                        {formatBRL(p.priceFactory)}
-                        <span className="pw-tax-tag">fábrica</span>
-                      </div>
-                      <div className="pw-pdvrow">
-                        <span className="pw-pdvlabel">PDV sugerido {formatBRL(p.pricePdv)}</span>
-                        <span className="pw-margintag">+{margin}% sobre a fábrica</span>
-                      </div>
-                    </div>
-                    <div className="pw-badgerow">
-                      <span className="badge info">Novo</span>
-                    </div>
-                    <div
-                      className={`pw-addbtn ${inCart ? 'in-cart' : ''}`}
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => toggleCart(p.id)}
-                    >
-                      {inCart ? (
-                        <>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-                            <path d="M5 13l4 4L19 7" />
-                          </svg>
-                          No carrinho
-                        </>
-                      ) : (
-                        'Adicionar ao carrinho'
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+          <div style={{ background: 'var(--surface-2)', padding: 20, borderRadius: 8, maxWidth: 340 }}>
+            <ProductLineCard colors={fusionProducts} bestSellerId={bestSellerId} />
           </div>
         </div>
 

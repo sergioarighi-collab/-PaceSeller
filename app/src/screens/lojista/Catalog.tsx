@@ -5,6 +5,7 @@ import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { OrderSidebar } from '../../components/desktop/OrderSidebar'
 import { ProductThumb } from '../../components/desktop/ProductThumb'
+import { ProductLineCard } from '../../components/desktop/ProductLineCard'
 import { useAppStore } from '../../lib/store'
 import { products } from '../../lib/data'
 import { formatBRL } from '../../lib/format'
@@ -59,6 +60,36 @@ function applyFilter(list: typeof products, filter: string, query: string) {
     out = out.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q))
   }
   return out
+}
+
+// Agrupa as cores de uma mesma linha (ex: as 10 cores de Coil) num único card com seletor de
+// cor, marcando a de melhor performance — em vez de um card por cor no grid.
+function buildProductLines(list: typeof products) {
+  const order: string[] = []
+  const byCollection = new Map<string, typeof products>()
+  for (const p of list) {
+    if (!byCollection.has(p.collection)) {
+      byCollection.set(p.collection, [])
+      order.push(p.collection)
+    }
+    byCollection.get(p.collection)!.push(p)
+  }
+  return order.map((collection) => {
+    const colors = byCollection.get(collection)!
+    const bestSellerId = colors.reduce((a, b) => (b.growthPct > a.growthPct ? b : a)).id
+    return { collection, colors, bestSellerId }
+  })
+}
+
+function applyLineFilter(lines: ReturnType<typeof buildProductLines>, filter: string, query: string) {
+  return lines
+    .map((line) => {
+      const matching = applyFilter(line.colors, filter, query)
+      if (matching.length === 0) return null
+      const defaultId = matching.some((c) => c.id === line.bestSellerId) ? line.bestSellerId : matching[0].id
+      return { ...line, defaultId }
+    })
+    .filter((l): l is NonNullable<typeof l> => l !== null)
 }
 
 const badgeToneClass: Record<string, string> = {
@@ -217,7 +248,8 @@ export function Catalog() {
 
   const filteredProducts = context
     ? context.productIds.map((pid) => products.find((p) => p.id === pid)).filter((p): p is (typeof products)[number] => Boolean(p))
-    : applyFilter(products, filter, query)
+    : []
+  const productLines = context ? [] : applyLineFilter(buildProductLines(products), filter, query)
 
   return (
     <DesktopPage>
@@ -252,7 +284,7 @@ export function Catalog() {
             <div>
               <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--text-primary)' }}>Catálogo Inteligente</h1>
               <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
-                {context ? context.heading : `${products.length} produtos · ordenado por recomendado pra você`}
+                {context ? context.heading : `${productLines.length} linhas de produto · ordenado por recomendado pra você`}
               </div>
             </div>
           </div>
@@ -284,74 +316,78 @@ export function Catalog() {
           </div>
 
           <div className="catgrid-web">
-            {filteredProducts.map((p) => {
-              const inCart = isInCart(p.id)
-              const margin = Math.round(((p.pricePdv - p.priceFactory) / p.pricePdv) * 100)
-              const contextBadge =
-                context?.cardBadge ??
-                p.badges.find((b) => b.tone === 'premium')?.label ??
-                (p.restockDays <= 32 ? 'Alto giro' : null)
-              const coverage = contextKey === 'reposicao' ? contextConfig.reposicao.coverage[p.id] : null
-              const suggestion = contextKey === 'reposicao' ? contextConfig.reposicao.suggestion[p.id] : null
-              return (
-                <div className="pcard-web" key={p.id}>
-                  <div className="pw-thumb" style={{ cursor: 'pointer' }} onClick={() => navigate(`/catalogo/${p.id}`)}>
-                    {coverage ? (
-                      <div className="pw-instock" style={{ background: 'var(--risk)' }}>
-                        Cobertura {coverage}
+            {context
+              ? filteredProducts.map((p) => {
+                  const inCart = isInCart(p.id)
+                  const margin = Math.round(((p.pricePdv - p.priceFactory) / p.pricePdv) * 100)
+                  const contextBadge =
+                    context?.cardBadge ??
+                    p.badges.find((b) => b.tone === 'premium')?.label ??
+                    (p.restockDays <= 32 ? 'Alto giro' : null)
+                  const coverage = contextKey === 'reposicao' ? contextConfig.reposicao.coverage[p.id] : null
+                  const suggestion = contextKey === 'reposicao' ? contextConfig.reposicao.suggestion[p.id] : null
+                  return (
+                    <div className="pcard-web" key={p.id}>
+                      <div className="pw-thumb" style={{ cursor: 'pointer' }} onClick={() => navigate(`/catalogo/${p.id}`)}>
+                        {coverage ? (
+                          <div className="pw-instock" style={{ background: 'var(--risk)' }}>
+                            Cobertura {coverage}
+                          </div>
+                        ) : (
+                          contextBadge && <div className="pw-instock">{contextBadge}</div>
+                        )}
+                        <ProductThumb src={p.image} alt={p.name} />
                       </div>
-                    ) : (
-                      contextBadge && <div className="pw-instock">{contextBadge}</div>
-                    )}
-                    <ProductThumb src={p.image} alt={p.name} />
-                  </div>
-                  <div className="pw-body">
-                    <div className="pw-name" style={{ cursor: 'pointer' }} onClick={() => navigate(`/catalogo/${p.id}`)}>
-                      {p.name}
-                    </div>
-                    <div className="pw-priceblock">
-                      <div className="pw-pricemain">
-                        {formatBRL(p.priceFactory)}
-                        <span className="pw-tax-tag">fábrica</span>
+                      <div className="pw-body">
+                        <div className="pw-name" style={{ cursor: 'pointer' }} onClick={() => navigate(`/catalogo/${p.id}`)}>
+                          {p.name}
+                        </div>
+                        <div className="pw-priceblock">
+                          <div className="pw-pricemain">
+                            {formatBRL(p.priceFactory)}
+                            <span className="pw-tax-tag">fábrica</span>
+                          </div>
+                          <div className="pw-pdvrow">
+                            <span className="pw-pdvlabel">PDV sugerido {formatBRL(p.pricePdv)}</span>
+                            <span className="pw-margintag">+{margin}% sobre a fábrica</span>
+                          </div>
+                        </div>
+                        <div className="pw-badgerow">
+                          {suggestion ? (
+                            <span className="badge risk">Sugestão: {suggestion}</span>
+                          ) : (
+                            p.badges.slice(0, 2).map((b, i) => (
+                              <span className={`badge ${badgeToneClass[b.tone]}`} key={i}>
+                                {b.label}
+                              </span>
+                            ))
+                          )}
+                        </div>
+                        <div
+                          className={`pw-addbtn ${inCart ? 'in-cart' : ''}`}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => toggleCart(p.id)}
+                        >
+                          {inCart ? (
+                            <>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                                <path d="M5 13l4 4L19 7" />
+                              </svg>
+                              No carrinho
+                            </>
+                          ) : (
+                            'Adicionar ao carrinho'
+                          )}
+                        </div>
                       </div>
-                      <div className="pw-pdvrow">
-                        <span className="pw-pdvlabel">PDV sugerido {formatBRL(p.pricePdv)}</span>
-                        <span className="pw-margintag">+{margin}% sobre a fábrica</span>
-                      </div>
                     </div>
-                    <div className="pw-badgerow">
-                      {suggestion ? (
-                        <span className="badge risk">Sugestão: {suggestion}</span>
-                      ) : (
-                        p.badges.slice(0, 2).map((b, i) => (
-                          <span className={`badge ${badgeToneClass[b.tone]}`} key={i}>
-                            {b.label}
-                          </span>
-                        ))
-                      )}
-                    </div>
-                    <div
-                      className={`pw-addbtn ${inCart ? 'in-cart' : ''}`}
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => toggleCart(p.id)}
-                    >
-                      {inCart ? (
-                        <>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-                            <path d="M5 13l4 4L19 7" />
-                          </svg>
-                          No carrinho
-                        </>
-                      ) : (
-                        'Adicionar ao carrinho'
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+                  )
+                })
+              : productLines.map((line) => (
+                  <ProductLineCard key={line.collection} colors={line.colors} bestSellerId={line.bestSellerId} defaultId={line.defaultId} />
+                ))}
           </div>
-          {filteredProducts.length === 0 && (
+          {(context ? filteredProducts.length === 0 : productLines.length === 0) && (
             <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-secondary)', padding: '64px 0' }}>Nenhum produto encontrado</div>
           )}
         </div>
