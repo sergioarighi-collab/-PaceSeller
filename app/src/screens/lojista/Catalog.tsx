@@ -97,16 +97,30 @@ export function Catalog() {
               <div
                 style={{
                   height: 420,
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 6,
+                  background: 'var(--surface-2)',
+                  padding: 16,
+                  boxSizing: 'border-box',
+                  borderRadius: 8,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   position: 'relative',
                 }}
               >
-                <ProductThumb src={p.image} alt={p.name} iconSize={140} />
+                <div
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    background: 'var(--surface)',
+                    borderRadius: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                  }}
+                >
+                  <ProductThumb src={p.image} alt={p.name} iconSize={140} />
+                </div>
               </div>
             </div>
 
