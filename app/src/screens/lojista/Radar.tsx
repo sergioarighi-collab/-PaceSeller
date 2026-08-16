@@ -61,6 +61,8 @@ export function Radar() {
   const addToCart = useAppStore((s) => s.addToCart)
   const goalId = useAppStore((s) => s.goalId)
   const setGoal = useAppStore((s) => s.setGoal)
+  const onboardingSkipped = useAppStore((s) => s.onboardingSkipped)
+  const dismissOnboardingNotice = useAppStore((s) => s.dismissOnboardingNotice)
 
   const [focusOpen, setFocusOpen] = useState(false)
   const [listModal, setListModal] = useState<string | null>(null)
@@ -75,6 +77,30 @@ export function Radar() {
   return (
     <DesktopPage>
       <WebTopNav />
+
+      {onboardingSkipped && (
+        <div className="context-banner">
+          <div className="cb-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 8v5M12 16h.01" />
+            </svg>
+          </div>
+          <div>
+            <div className="cb-title">Complete seu perfil pra sugestões mais precisas</div>
+            <div className="cb-sub">Você pulou o cadastro inicial — algumas recomendações do radar ainda são genéricas.</div>
+          </div>
+          <div className="cb-clear" style={{ cursor: 'pointer' }} onClick={() => navigate('/onboarding/loja')}>
+            Completar perfil →
+          </div>
+          <div
+            style={{ cursor: 'pointer', color: 'var(--text-tertiary)', marginLeft: 14, flexShrink: 0 }}
+            onClick={() => dismissOnboardingNotice()}
+          >
+            ✕
+          </div>
+        </div>
+      )}
 
       <div className="web-hero-band">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>

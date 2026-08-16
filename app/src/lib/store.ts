@@ -12,6 +12,11 @@ interface AppState {
   goalId: string
   setGoal: (id: string) => void
 
+  /** true quando o lojista pulou o onboarding (perfil incompleto). */
+  onboardingSkipped: boolean
+  skipOnboarding: () => void
+  dismissOnboardingNotice: () => void
+
   focusOpen: boolean
   openFocus: () => void
   closeFocus: () => void
@@ -36,6 +41,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   goalId: 'g1',
   setGoal: (id) => set({ goalId: id }),
+
+  onboardingSkipped: false,
+  skipOnboarding: () => set({ onboardingSkipped: true }),
+  dismissOnboardingNotice: () => set({ onboardingSkipped: false }),
 
   focusOpen: false,
   openFocus: () => set({ focusOpen: true }),

@@ -38,6 +38,7 @@ export function GoalSelect() {
   const navigate = useNavigate()
   const goalId = useAppStore((s) => s.goalId)
   const setGoal = useAppStore((s) => s.setGoal)
+  const dismissOnboardingNotice = useAppStore((s) => s.dismissOnboardingNotice)
 
   return (
     <OnboardShell step={3}>
@@ -67,7 +68,14 @@ export function GoalSelect() {
           })}
         </div>
         <div style={{ marginTop: 36 }}>
-          <div className="btn-primary" style={{ width: 220, cursor: 'pointer' }} onClick={() => navigate('/radar')}>
+          <div
+            className="btn-primary"
+            style={{ width: 220, cursor: 'pointer' }}
+            onClick={() => {
+              dismissOnboardingNotice()
+              navigate('/radar')
+            }}
+          >
             Ir para o meu radar
           </div>
         </div>

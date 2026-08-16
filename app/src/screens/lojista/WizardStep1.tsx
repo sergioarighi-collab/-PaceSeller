@@ -85,9 +85,6 @@ export function WizardStep1() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 36 }}>
-          <div className="btn-secondary" style={{ width: 180, cursor: 'pointer' }} onClick={() => navigate('/onboarding/vendas')}>
-            Pular por agora
-          </div>
           <div className="btn-primary" style={{ width: 180, cursor: 'pointer' }} onClick={() => navigate('/onboarding/vendas')}>
             Continuar
           </div>
