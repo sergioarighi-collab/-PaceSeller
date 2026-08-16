@@ -67,8 +67,9 @@ export function Colecao() {
                         {formatBRL(p.priceFactory)}
                         <span className="pw-tax-tag">fábrica</span>
                       </div>
-                      <div className="pw-pricesub">
-                        PDV sugerido: {formatBRL(p.pricePdv)} (+{formatBRL(p.pricePdv - p.priceFactory)} · {margin}%)
+                      <div className="pw-pdvrow">
+                        <span className="pw-pdvlabel">PDV sugerido {formatBRL(p.pricePdv)}</span>
+                        <span className="pw-margintag">+{margin}% de margem</span>
                       </div>
                     </div>
                     <div className="pw-badgerow">

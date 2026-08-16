@@ -429,7 +429,9 @@
   .pw-priceblock{margin-top:6px;}
   .pw-priceblock .pw-pricemain{font-family:var(--mono);font-size:13px;color:var(--text-primary);font-weight:500;}
   .pw-priceblock .pw-pricemain .pw-tax-tag{font-family:var(--body);font-size:10px;color:var(--text-tertiary);font-weight:400;margin-left:4px;}
-  .pw-priceblock .pw-pricesub{font-family:var(--mono);font-size:11px;color:var(--positive);margin-top:2px;font-weight:500;}
+  .pw-priceblock .pw-pdvrow{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:4px;}
+  .pw-priceblock .pw-pdvlabel{font-family:var(--mono);font-size:11px;color:var(--text-secondary);}
+  .pw-priceblock .pw-margintag{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--positive);background:var(--positive-dim);padding:2px 7px;border-radius:4px;white-space:nowrap;}
   .pcard-web .pw-badgerow{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;}
   .pw-addbtn{margin-top:14px;width:100%;text-align:center;padding:9px;border-radius:4px;font-size:12.5px;font-weight:600;background:var(--surface);border:1px solid var(--border-strong);color:var(--text-primary);}
   .pw-addbtn.in-cart{background:var(--positive-dim);border-color:var(--positive);color:var(--positive);display:flex;align-items:center;justify-content:center;gap:6px;}

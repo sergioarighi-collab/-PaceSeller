@@ -134,8 +134,23 @@ export function Catalog() {
                   {formatBRL(p.priceFactory)}{' '}
                   <span style={{ fontFamily: 'var(--body)', fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 400 }}>fábrica</span>
                 </div>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--positive)', fontWeight: 500, marginTop: 2 }}>
-                  PDV sugerido: {formatBRL(p.pricePdv)} (+{formatBRL(p.pricePdv - p.priceFactory)} · {margin}%)
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--text-secondary)' }}>
+                    PDV sugerido {formatBRL(p.pricePdv)}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--mono)',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: 'var(--positive)',
+                      background: 'var(--positive-dim)',
+                      padding: '3px 9px',
+                      borderRadius: 4,
+                    }}
+                  >
+                    +{margin}% de margem
+                  </span>
                 </div>
               </div>
 
@@ -299,8 +314,9 @@ export function Catalog() {
                         {formatBRL(p.priceFactory)}
                         <span className="pw-tax-tag">fábrica</span>
                       </div>
-                      <div className="pw-pricesub">
-                        PDV sugerido: {formatBRL(p.pricePdv)} (+{formatBRL(p.pricePdv - p.priceFactory)} · {margin}%)
+                      <div className="pw-pdvrow">
+                        <span className="pw-pdvlabel">PDV sugerido {formatBRL(p.pricePdv)}</span>
+                        <span className="pw-margintag">+{margin}% de margem</span>
                       </div>
                     </div>
                     <div className="pw-badgerow">
