@@ -225,9 +225,12 @@ export const products: Product[] = raw.map((r) => {
   const priceFactory = r.priceFactory ?? meta.baseFactory
   const pricePdv = r.pricePdv ?? calcPdv(priceFactory)
 
-  // Referência no formato Linha-Ano-NúmeroLançamentoNoAno-Cor (ex: Fusion-2026-3-01), confirmado com o cliente
-  const seq = (collectionCounters[r.collection] = (collectionCounters[r.collection] ?? 0) + 1)
-  const reference = `${collectionTitle[r.collection].replace(/\s+/g, '')}-2026-${seq}-${String(seq).padStart(2, '0')}`
+  // Referência no formato Linha-Ano-NúmeroDeLançamentoNoAno-Cor (ex: Fusion-2026-3-01), confirmado com o cliente:
+  // lançamento e cor são eixos diferentes (uma linha pode ter dezenas de cores dentro do mesmo lançamento).
+  // Nosso catálogo mock só tem um lançamento por linha em 2026, então o número de lançamento fica fixo em 1
+  // e a cor é o índice sequencial do produto dentro da linha.
+  const corSeq = (collectionCounters[r.collection] = (collectionCounters[r.collection] ?? 0) + 1)
+  const reference = `${collectionTitle[r.collection].replace(/\s+/g, '')}-2026-1-${String(corSeq).padStart(2, '0')}`
 
   const badges: Product['badges'] = []
   if (r.riskCallout) {
@@ -334,7 +337,7 @@ export const carrinhos: Carrinho[] = [
         total: 10800,
         marginPct: 38,
         paymentCondition: '30',
-        deliveryEstimateDays: 7,
+        deliveryEstimateDays: 15,
       },
       {
         id: '4821-2',
@@ -367,7 +370,7 @@ export const carrinhos: Carrinho[] = [
         marginPct: 41,
         paymentCondition: '30',
         paymentMethod: 'boleto',
-        deliveryEstimateDays: 7,
+        deliveryEstimateDays: 2,
       },
     ],
   },
@@ -392,17 +395,18 @@ export const mixPlan = {
   ],
 }
 
+// Prazo real confirmado com o cliente: ~15 dias corridos até a entrega (não 7).
 export const trackingSteps = [
   { id: 't1', status: 'done' as const, title: 'Pedido confirmado', date: '12 jul, 09:40' },
   {
     id: 't2',
     status: 'current' as const,
     title: 'Em produção',
-    date: 'Previsão: 15 jul',
+    date: 'Previsão: 18 jul',
     desc: 'Fábrica está separando e produzindo os itens do pedido',
   },
-  { id: 't3', status: 'pending' as const, title: 'Enviado', date: 'Previsão: 17 jul' },
-  { id: 't4', status: 'pending' as const, title: 'Entregue na loja', date: 'Previsão: 19 jul' },
+  { id: 't3', status: 'pending' as const, title: 'Enviado', date: 'Previsão: 24 jul' },
+  { id: 't4', status: 'pending' as const, title: 'Entregue na loja', date: 'Previsão: 27 jul' },
 ]
 
 export const goals = [

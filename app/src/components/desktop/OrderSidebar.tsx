@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useAppStore, cartSummary } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
+import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { ProductThumb } from './ProductThumb'
 
 export function OrderSidebar({
@@ -15,6 +16,8 @@ export function OrderSidebar({
   const navigate = useNavigate()
   const { lines, totalItems, totalValue } = cartSummary(cartItems)
   const marginPct = 38
+  const gradeOk = totalItems >= GRADE_MINIMA_PARES
+  const gradePct = Math.min(100, Math.round((totalItems / GRADE_MINIMA_PARES) * 100))
 
   const defaultNudges = [
     'Você está a <b>R$ 800</b> de ganhar frete grátis',
@@ -28,6 +31,23 @@ export function OrderSidebar({
       <div className="stotal">{totalItems} itens</div>
       <div className="ssub">
         {formatBRL(totalValue)} · margem {marginPct}%
+      </div>
+
+      <div className="nudge-progress">
+        <div className="np-label">
+          <span>Grade mínima do pedido</span>
+          <span style={{ fontFamily: 'var(--mono)', color: gradeOk ? 'var(--positive)' : 'var(--risk)', fontWeight: 600 }}>
+            {totalItems}/{GRADE_MINIMA_PARES} pares
+          </span>
+        </div>
+        <div className="nudge-bar">
+          <div className="nudge-bar-fill" style={{ width: `${gradePct}%`, background: gradeOk ? 'var(--positive)' : 'var(--risk)' }} />
+        </div>
+        {!gradeOk && (
+          <div style={{ fontSize: 11, color: 'var(--risk)', marginTop: 5 }}>
+            Faltam {GRADE_MINIMA_PARES - totalItems} pares pra fechar o pedido
+          </div>
+        )}
       </div>
 
       <div className="nudge-progress">
