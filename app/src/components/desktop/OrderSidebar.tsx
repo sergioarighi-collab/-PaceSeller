@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useAppStore, cartSummary } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
+import { ProductThumb } from './ProductThumb'
 
 export function OrderSidebar({
   mixPct = 70,
@@ -42,7 +43,9 @@ export function OrderSidebar({
       <div className="sidebar-itemlist">
         {lines.map(({ product, qty, value }) => (
           <div className="sidebar-item" key={product.id}>
-            <div className="si-thumb" />
+            <div className="si-thumb">
+              <ProductThumb src={product.image} alt={product.name} iconSize={18} padding={3} />
+            </div>
             <div className="si-info">
               <div className="si-name">{product.name}</div>
               <div className="si-meta">

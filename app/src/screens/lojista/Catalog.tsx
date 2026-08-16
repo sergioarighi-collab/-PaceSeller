@@ -97,7 +97,8 @@ export function Catalog() {
               <div
                 style={{
                   height: 420,
-                  background: 'linear-gradient(155deg,var(--surface-3),var(--surface-2))',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
                   borderRadius: 6,
                   display: 'flex',
                   alignItems: 'center',
