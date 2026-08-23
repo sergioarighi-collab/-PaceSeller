@@ -141,13 +141,13 @@ export function Radar() {
               )}
               {card.cta === 'Repor agora' ? (
                 repostos.has(card.title) ? (
-                  <div className="cta" style={{ marginTop: 10, color: 'var(--positive)', fontWeight: 700 }}>
+                  <div className="cta" style={{ color: 'var(--positive)', fontWeight: 700 }}>
                     ✓ Reposto
                   </div>
                 ) : (
                   <div
                     className="cta"
-                    style={{ marginTop: 10, cursor: 'pointer' }}
+                    style={{ cursor: 'pointer' }}
                     onClick={() => {
                       addToCart(card.productId ?? card.id, card.suggestedQty)
                       handleRepor(card.title, card.suggestedQty ?? 0)
@@ -159,7 +159,7 @@ export function Radar() {
               ) : (
                 <div
                   className="cta"
-                  style={{ marginTop: card.opportunity ? 12 : 10, fontWeight: card.opportunity ? 700 : 400, cursor: 'pointer' }}
+                  style={{ fontWeight: card.opportunity ? 700 : 400, cursor: 'pointer' }}
                   onClick={() => {
                     if (card.cta === 'Ver produto' && card.productId) navigate(`/catalogo/${card.productId}`)
                     else if (card.cta === 'Comparar') navigate('/catalogo?contexto=benchmark')
