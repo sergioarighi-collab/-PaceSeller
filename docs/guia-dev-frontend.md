@@ -78,9 +78,9 @@ O grid (`.catgrid-web`/`.grid4`) já estica cada card pra altura do maior da fil
 | `DesktopPage` | wrapper de página (fundo, min-height) |
 | `WebTopNav` | navbar superior com menu do avatar |
 | `Breadcrumb` | trilha de navegação abaixo da navbar |
-| `OrderSidebar` | painel lateral "Seu pedido" (Catálogo/Planejamento) — mostra itens do `cartItems` do store, nudge de grade mínima e de mix |
+| `OrderSidebar` | painel lateral "Seu pedido" (Catálogo/Coleção) — mostra itens do `cartItems` do store, nudge de grade mínima e de mix. A tela Planejar **não** usa esse componente — tem seu próprio `.web-sidebar` de resumo do plano, ver seção Planejar abaixo |
 | `ProductThumb` | `<img>` de produto com fallback automático pro ícone placeholder (SVG de tênis) via `onError`, caso o SKU não tenha foto real ainda |
-| `ProductLineCard` | card de produto **agrupado por linha** (ex: as 10 cores de Coil), com seletor de cor (miniaturas clicáveis) e selo "★ Mais vendida" na cor de maior `growthPct`. É o card usado no Catálogo e na página da Linha Fusion — ver seção Catálogo abaixo |
+| `ProductLineCard` | card de produto **agrupado por linha** (ex: as 10 cores de Coil), com seletor de cor (miniaturas clicáveis) e selo "★ Mais vendida" na cor de maior `growthPct`. Usado no Catálogo, na página da Linha Fusion e (com a prop `planning`) na tela Planejar — ver seções abaixo |
 | `WebModal` | modal genérico |
 | `Toast` | toast com auto-dismiss |
 | `LoginSplitShell` | layout de login (hero com foto + form) |
@@ -121,6 +121,21 @@ Filtros (`Alto giro`/`Boa margem`/`Lançamentos`/busca) continuam operando por S
 
 A página da Linha Fusion (`Colecao.tsx`) usa o mesmo `ProductLineCard` (só 1 linha, sem grid).
 
+`buildProductLines` foi extraído pra `lib/productLines.ts` (também exporta `deltaInfo`) porque agora é usado tanto pelo Catálogo quanto pela tela Planejar — ver seção seguinte.
+
+## Planejar — comparação com a coleção anterior (redesign ago/2026)
+
+`Planning.tsx` (rota `/planejamento`, mesmos pontos de entrada de antes: nav "Planejar", `OrderSidebar` → "Planejar compra", Radar → "Adicionar ao planejamento", Ficha de Decisão → "Adicionar ao planejamento") deixou de ser uma tela solta com barra de mix por % — o cliente achou confuso porque a barra não tinha ligação nenhuma com a lista de itens embaixo dela, e o modal "Ajustar mix" mexia num número que não afetava nada.
+
+Agora a tela reusa o mesmo grid/card do Catálogo (`buildProductLines` + `ProductLineCard`), com uma diferença: `ProductLineCard` aceita uma prop opcional `planning={{ prevQty, qty, onChangeQty }}` que troca o botão "Adicionar ao carrinho" por um bloco de comparação — quanto a loja comprou na coleção anterior vs. quanto está planejando agora, com stepper e badge de delta (`.pw-compare`/`.deltabadge` em `mockup.css`). Card idêntico ao do Catálogo em tudo mais (foto, seletor de cor, preço, badges).
+
+- **Dado mock**: `previousCollectionQty` (por `collection`) e `previousCollectionName` em `data.ts` — pares comprados na coleção anterior, por linha. Números ilustrativos: `0` nas linhas que só têm colorways "Lançamento" (Hertz Art) ou que aparecem como oportunidade "ainda não chegou no seu mix" no Radar (Fusion) — coerente com os outros dados mock, não são números reais do cliente.
+- **Quantidade inicial "planejando agora"** = igual à da coleção anterior (o lojista ajusta a partir daí pelos steppers do próprio card) — não existe fórmula de sugestão automática.
+- **Resumo no topo** (`.plan-summarybar`): total de pares e investimento (soma `qty × priceFactory` da cor mais vendida de cada linha), coleção anterior vs. agora, com delta.
+- **Sidebar**: total do plano + um aviso (`.bubble`, reaproveitado) só quando alguma linha cai mais de 15% vs. a coleção anterior — não é um alerta fixo, é calculado a cada mudança nos steppers.
+- **`mixPlan`** (em `data.ts`) continua existindo só porque `screens/representante/SuggestedOrder.tsx` (fluxo mobile do representante, fora do escopo desktop) ainda usa esse formato — não é mais usado pela tela do lojista. Não deletar sem checar esse outro fluxo.
+- **Em aberto** (não implementado, mesma ressalva do esboço original): o que mostrar pra uma loja nova sem nenhuma coleção anterior — hoje toda linha tem algum número de comparação, ainda que `0`. Também não há seletor funcional de "trocar coleção" (o banner no topo é informativo, fixo em uma única coleção anterior).
+
 ## Fotos de produto
 
 Extraídas dos catálogos PDF reais da Tesla Footwear (não são geradas/fake). Cobertura hoje: COIL, HERTZ, HERTZ ART (parcial), FLOW, FLOW XL. **Fusion e TG II não têm foto real** (não aparecem nos PDFs recebidos) — nesses casos `ProductThumb` cai automaticamente no ícone placeholder via `onError`, então nunca vai aparecer imagem quebrada, mas também não adianta tentar "consertar" apontando pra um arquivo que não existe.
@@ -132,7 +147,6 @@ Ver `docs/cruzamento-reuniao-cliente.md` pro racional completo. Resumo do que **
 - **Categoria de cliente 3/6/9** (filtro de catálogo por perfil de lojista) — decisão explícita do cliente de adiar. Não existe em nenhum lugar do código hoje; se aparecer um pedido pra "mostrar só produtos disponíveis pro perfil do lojista", é sobre isso, e está fora de escopo.
 - **Condição de pagamento livre** — hoje `Payment.tsx` mostra 30/60/90 e à vista como se fossem sempre todas disponíveis. Na regra real, a condição é liberada por cliente (histórico de pontualidade). Marcado como correção de comportamento não-urgente, ainda não implementada.
 - **Onde roda a aprovação de crédito** — em aberto pelo próprio cliente (dentro do Pace Seller ou no sistema atual dele). O mockup assume que a aprovação do representante é só um "ok" dentro do `CarrinhoDetail`, sem etapa de crédito separada.
-- **Módulo "Planejar" (`Planning.tsx`)** — sob revisão. A tela atual mistura uma barra de mix por linha (%) que não tem ligação com a lista de itens embaixo dela, mais um modal "Ajustar mix" que não afeta nada — o cliente achou confuso. Direção proposta (ainda não implementada): virar uma funcionalidade dentro do Catálogo, comparando quantidade da coleção anterior com o planejamento atual, linha por linha. Ver esboço interativo publicado como Artifact na sessão — se for retomado, checar com o usuário antes de mexer na tela atual.
 - Combos, controle de revenda em marketplace terceiro, preço diferenciado por perfil, expansão internacional — confirmado fora do MVP.
 
 ## Regras de negócio confirmadas (não são chute)

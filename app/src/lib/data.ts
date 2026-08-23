@@ -208,7 +208,7 @@ function buildSizes(): { size: string; suggested: boolean }[] {
   return sizes.map((size, i) => ({ size, suggested: i > 1 && i < sizes.length - 2 }))
 }
 
-const collectionTitle: Record<RawProduct['collection'], string> = {
+export const collectionTitle: Record<RawProduct['collection'], string> = {
   COIL: 'Coil',
   HERTZ: 'Hertz',
   'HERTZ ART': 'Hertz Art',
@@ -381,6 +381,24 @@ export const carrinhos: Carrinho[] = [
   },
 ]
 
+// Comparação com a coleção anterior fechada por esta loja, usada na tela "Planejar" do lojista
+// desktop (ago/2026, substitui o mix por % antigo — ver docs/guia-dev-frontend.md). Números
+// ilustrativos: 0 pares nas linhas que só têm colorways "Lançamento"/sem giro no radar (Hertz Art,
+// Fusion), coerente com o card de oportunidade "Linha Fusion — ainda não chegou no seu mix" do Radar.
+export const previousCollectionName = 'Inverno 2025'
+export const previousCollectionQty: Record<string, number> = {
+  COIL: 145,
+  HERTZ: 88,
+  'HERTZ ART': 0,
+  FLOW: 52,
+  'FLOW XL': 34,
+  FUSION: 0,
+  'TG II': 20,
+}
+
+// @deprecated (lojista desktop) — mantido só porque o fluxo mobile do representante
+// (screens/representante/SuggestedOrder.tsx) ainda usa esse formato de mix por %.
+// A tela "Planejar" do lojista desktop não usa mais este objeto.
 export const mixPlan = {
   planName: 'Coleção de Inverno',
   investment: 18000,

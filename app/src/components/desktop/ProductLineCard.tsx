@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import type { Product, Severity } from '../../lib/types'
 import { useAppStore } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
+import { deltaInfo } from '../../lib/productLines'
 import { ProductThumb } from './ProductThumb'
 
 const badgeToneClass: Record<Severity, string> = {
@@ -13,7 +14,19 @@ const badgeToneClass: Record<Severity, string> = {
   premium: 'info',
 }
 
-export function ProductLineCard({ colors, bestSellerId, defaultId }: { colors: Product[]; bestSellerId: string; defaultId?: string }) {
+export function ProductLineCard({
+  colors,
+  bestSellerId,
+  defaultId,
+  planning,
+}: {
+  colors: Product[]
+  bestSellerId: string
+  defaultId?: string
+  // Presente só na tela "Planejar" — troca o botão "Adicionar ao carrinho" pela comparação
+  // com a coleção anterior (mesmo card, mesma foto, ver docs/guia-dev-frontend.md).
+  planning?: { prevQty: number; qty: number; onChangeQty: (delta: number) => void }
+}) {
   const navigate = useNavigate()
   const toggleCart = useAppStore((s) => s.toggleCart)
   const isInCart = useAppStore((s) => s.isInCart)
@@ -88,18 +101,42 @@ export function ProductLineCard({ colors, bestSellerId, defaultId }: { colors: P
           </div>
         )}
 
-        <div className={`pw-addbtn ${inCart ? 'in-cart' : ''}`} style={{ cursor: 'pointer' }} onClick={() => toggleCart(p.id)}>
-          {inCart ? (
-            <>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-                <path d="M5 13l4 4L19 7" />
-              </svg>
-              No carrinho
-            </>
-          ) : (
-            'Adicionar ao carrinho'
-          )}
-        </div>
+        {planning ? (
+          <div className="pw-compare">
+            <div className="pw-compare-prev">
+              Coleção anterior: <b>{planning.prevQty > 0 ? `${planning.prevQty} pares` : 'não comprou'}</b>
+            </div>
+            <div className="pw-compare-now">
+              <span className="pw-compare-label">Planejando agora</span>
+              <div className="stepper">
+                <div className="stepbtn" style={{ cursor: 'pointer' }} onClick={() => planning.onChangeQty(-1)}>
+                  −
+                </div>
+                <div className="qty">{planning.qty}</div>
+                <div className="stepbtn" style={{ cursor: 'pointer' }} onClick={() => planning.onChangeQty(1)}>
+                  +
+                </div>
+              </div>
+              {(() => {
+                const d = deltaInfo(planning.prevQty, planning.qty)
+                return <span className={`deltabadge ${d.tone}`}>{d.text}</span>
+              })()}
+            </div>
+          </div>
+        ) : (
+          <div className={`pw-addbtn ${inCart ? 'in-cart' : ''}`} style={{ cursor: 'pointer' }} onClick={() => toggleCart(p.id)}>
+            {inCart ? (
+              <>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                  <path d="M5 13l4 4L19 7" />
+                </svg>
+                No carrinho
+              </>
+            ) : (
+              'Adicionar ao carrinho'
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

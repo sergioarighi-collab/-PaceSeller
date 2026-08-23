@@ -9,6 +9,7 @@ import { ProductLineCard } from '../../components/desktop/ProductLineCard'
 import { useAppStore } from '../../lib/store'
 import { products } from '../../lib/data'
 import { formatBRL } from '../../lib/format'
+import { buildProductLines } from '../../lib/productLines'
 
 const filters = ['Recomendado p/ você', 'Alto giro', 'Boa margem', 'Lançamentos']
 
@@ -64,23 +65,6 @@ function applyFilter(list: typeof products, filter: string, query: string) {
 
 // Agrupa as cores de uma mesma linha (ex: as 10 cores de Coil) num único card com seletor de
 // cor, marcando a de melhor performance — em vez de um card por cor no grid.
-function buildProductLines(list: typeof products) {
-  const order: string[] = []
-  const byCollection = new Map<string, typeof products>()
-  for (const p of list) {
-    if (!byCollection.has(p.collection)) {
-      byCollection.set(p.collection, [])
-      order.push(p.collection)
-    }
-    byCollection.get(p.collection)!.push(p)
-  }
-  return order.map((collection) => {
-    const colors = byCollection.get(collection)!
-    const bestSellerId = colors.reduce((a, b) => (b.growthPct > a.growthPct ? b : a)).id
-    return { collection, colors, bestSellerId }
-  })
-}
-
 function applyLineFilter(lines: ReturnType<typeof buildProductLines>, filter: string, query: string) {
   return lines
     .map((line) => {
