@@ -1,6 +1,6 @@
 # Retail Performance Platform
 
-Protótipo navegável (React + Vite + TypeScript + Tailwind) das interfaces de **lojista** e **representante** da Retail Performance Platform, com dados mock e adaptação responsiva mobile → tablet.
+Protótipo navegável (React + Vite + TypeScript) do fluxo **desktop do lojista** da Tesla Skate, com dados mock. CSS não é Tailwind — é extraído literalmente do mockup HTML de referência (`telas/telas-desktop-lojista.html`) pra fidelidade pixel a pixel.
 
 ## Rodando localmente
 
@@ -11,7 +11,10 @@ npm run dev
 
 ## Estrutura
 
-- `src/lib` — tipos, dados mock e store (zustand) de sessão/persona.
-- `src/components/ui` — design system (botões, chips, cards, timeline etc.), fiel aos tokens de `telas/*.html`.
-- `src/components/layout` — shells de navegação (bottom nav mobile / rail lateral tablet) e de autenticação (tela cheia mobile / cartão centralizado tablet).
-- `src/screens/lojista`, `src/screens/representante`, `src/screens/shared` — telas de cada fluxo; telas de convergência (carrinho, acompanhamento de pedido) ficam em `shared` com lógica condicional por persona.
+- `src/lib` — tipos, dados mock e store (zustand) de sessão/carrinho.
+- `src/components/desktop` — componentes compartilhados do fluxo desktop ativo (topnav, cards, sidebar etc.).
+- `src/screens/lojista` — telas do fluxo desktop ativo (login → radar → catálogo → carrinho → pagamento).
+- `src/styles/mockup.css` — CSS literal do mockup de referência.
+- `src/components/ui`, `src/components/layout`, `src/screens/representante`, `src/screens/shared` — protótipo mobile anterior, não retrabalhado nesta leva.
+
+Guia técnico completo (modelo de dados, convenções, regras de negócio, decisões e gaps conhecidos): [`../docs/guia-dev-frontend.md`](../docs/guia-dev-frontend.md).
