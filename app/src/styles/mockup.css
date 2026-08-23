@@ -395,7 +395,8 @@
   .web-section-title{font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin:36px 0 16px;}
   .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
   .web-icard{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:20px;border-left-width:6px;border-left-style:solid;}
-  .web-icard.opportunity{border-left-color:var(--black);}
+  .web-icard.opportunity{border-left-color:var(--black);background:var(--surface-2);}
+  .cta{color:var(--info);font-weight:600;}
   .focuslink-desktop{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--text-primary);background:transparent;border:1.5px solid var(--border-strong);padding:9px 16px;border-radius:20px;flex-shrink:0;}
   .focuslink-desktop svg{flex-shrink:0;}
 
@@ -425,10 +426,10 @@
   .pcard-web .pw-thumb{height:180px;background:var(--surface);display:flex;align-items:center;justify-content:center;position:relative;}
   .pcard-web .pw-instock{position:absolute;top:12px;left:12px;background:var(--black);color:#fff;font-family:var(--mono);font-size:9.5px;text-transform:uppercase;padding:4px 8px;border-radius:3px;}
   .pcard-web .pw-body{padding:16px;}
-  .pcard-web .pw-name{font-family:var(--display);font-size:14.5px;font-weight:600;color:var(--text-primary);}
-  .pcard-web .pw-colorway{font-size:12px;color:var(--text-tertiary);margin-top:2px;}
-  .pw-priceblock{margin-top:6px;}
-  .pw-priceblock .pw-pricemain{font-family:var(--mono);font-size:13px;color:var(--text-primary);font-weight:500;}
+  .pcard-web .pw-name{font-family:var(--display);font-size:15.5px;font-weight:700;color:var(--text-primary);}
+  .pcard-web .pw-colorway{font-size:11.5px;color:var(--text-tertiary);margin-top:1px;}
+  .pw-priceblock{margin-top:9px;}
+  .pw-priceblock .pw-pricemain{font-family:var(--mono);font-size:13.5px;color:var(--text-primary);font-weight:700;}
   .pw-priceblock .pw-pricemain .pw-tax-tag{font-family:var(--body);font-size:10px;color:var(--text-tertiary);font-weight:400;margin-left:4px;}
   .pw-priceblock .pw-pdvrow{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:4px;}
   .pw-priceblock .pw-pdvlabel{font-family:var(--mono);font-size:11px;color:var(--text-secondary);}

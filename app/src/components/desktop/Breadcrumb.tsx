@@ -7,7 +7,7 @@ export function Breadcrumb({ items }: { items: { label: string; to?: string }[] 
         <span key={i} style={{ display: 'contents' }}>
           {i > 0 && <span className="bc-sep">/</span>}
           {item.to && i < items.length - 1 ? (
-            <Link to={item.to} style={{ color: 'inherit' }}>
+            <Link to={item.to} style={{ color: 'var(--info)', fontWeight: 500 }}>
               {item.label}
             </Link>
           ) : (

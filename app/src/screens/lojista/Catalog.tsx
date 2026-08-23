@@ -188,8 +188,8 @@ export function Catalog() {
               <div className="whybox" style={{ margin: '24px 0 0', maxWidth: 520 }}>
                 <div className="title">Por que comprar este produto</div>
                 {p.why.slice(0, 4).map((w, i) => (
-                  <div className="checkline" key={i}>
-                    <span className="ck">✓</span>
+                  <div className="checkline" key={i} style={i === 0 ? { fontWeight: 600 } : undefined}>
+                    <span className="ck" style={i === 0 ? { background: 'var(--positive)' } : undefined}>✓</span>
                     {w}
                   </div>
                 ))}
