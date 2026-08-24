@@ -6,12 +6,13 @@ const navItems = [
   { to: '/radar', label: 'Radar' },
   { to: '/catalogo', label: 'Catálogo' },
   { to: '/planejamento', label: 'Planejar' },
-  { to: '/carrinhos', label: 'Pedidos' },
+  { to: '/carrinhos', label: 'Meus carrinhos' },
 ]
 
 export function WebTopNav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const activeUser = useAppStore((s) => s.activeUser)
+  const toggleOrderDrawer = useAppStore((s) => s.toggleOrderDrawer)
   const navigate = useNavigate()
   const initials = activeUser?.initials ?? 'CA'
 
@@ -41,6 +42,13 @@ export function WebTopNav() {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+          </svg>
+        </div>
+        <div className="navicon" style={{ cursor: 'pointer' }} onClick={toggleOrderDrawer} title="Seu pedido">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M6 6h15l-1.5 9h-12L6 6Zm0 0-1-3H2" />
+            <circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none" />
+            <circle cx="17" cy="20" r="1.4" fill="currentColor" stroke="none" />
           </svg>
         </div>
         <div className="avatar-wrap">

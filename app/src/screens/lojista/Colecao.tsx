@@ -1,7 +1,6 @@
 import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
-import { OrderSidebar } from '../../components/desktop/OrderSidebar'
 import { ProductLineCard } from '../../components/desktop/ProductLineCard'
 import { products } from '../../lib/data'
 
@@ -47,8 +46,6 @@ export function Colecao() {
             <ProductLineCard colors={fusionProducts} bestSellerId={bestSellerId} />
           </div>
         </div>
-
-        <OrderSidebar nudges={['Nenhum item dessa coleção está no seu pedido ainda']} />
       </div>
     </DesktopPage>
   )

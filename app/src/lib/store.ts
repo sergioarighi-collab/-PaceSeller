@@ -41,6 +41,12 @@ interface AppState {
   importPreviousCollection: () => void
   skipPreviousCollection: () => void
   resetPreviousCollection: () => void
+
+  /** Drawer "Seu pedido" (carrinho em construção) — trigger no header, disponível em qualquer tela do lojista. */
+  orderDrawerOpen: boolean
+  openOrderDrawer: () => void
+  closeOrderDrawer: () => void
+  toggleOrderDrawer: () => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -87,6 +93,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   importPreviousCollection: () => set({ previousCollectionStatus: 'imported' }),
   skipPreviousCollection: () => set({ previousCollectionStatus: 'scratch' }),
   resetPreviousCollection: () => set({ previousCollectionStatus: 'pending' }),
+
+  orderDrawerOpen: false,
+  openOrderDrawer: () => set({ orderDrawerOpen: true }),
+  closeOrderDrawer: () => set({ orderDrawerOpen: false }),
+  toggleOrderDrawer: () => set((s) => ({ orderDrawerOpen: !s.orderDrawerOpen })),
 }))
 
 export function cartSummary(cartItems: Record<string, number>) {

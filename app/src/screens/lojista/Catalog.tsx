@@ -3,7 +3,6 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
-import { OrderSidebar } from '../../components/desktop/OrderSidebar'
 import { ProductThumb } from '../../components/desktop/ProductThumb'
 import { ProductLineCard } from '../../components/desktop/ProductLineCard'
 import { useAppStore } from '../../lib/store'
@@ -223,8 +222,6 @@ export function Catalog() {
               </div>
             </div>
           </div>
-
-          <OrderSidebar nudges={[`Esse produto já tem <b>alta recompra</b> na sua loja — bom pra fechar o mix`]} />
         </div>
       </DesktopPage>
     )
@@ -375,8 +372,6 @@ export function Catalog() {
             <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-secondary)', padding: '64px 0' }}>Nenhum produto encontrado</div>
           )}
         </div>
-
-        <OrderSidebar nudges={context ? [context.sidebarNudge] : undefined} />
       </div>
     </DesktopPage>
   )

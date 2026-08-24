@@ -85,10 +85,10 @@ O usuário achou os 4 cards de "Oportunidades de hoje" (`.grid4`/`.web-icard` em
 
 | Componente | Uso |
 |---|---|
-| `DesktopPage` | wrapper de página (fundo, min-height) |
-| `WebTopNav` | navbar superior com menu do avatar |
+| `DesktopPage` | wrapper de página (fundo, min-height) — também monta o `OrderDrawer` globalmente, ver seção própria abaixo |
+| `WebTopNav` | navbar superior com menu do avatar e o ícone de sacola que abre o `OrderDrawer` |
 | `Breadcrumb` | trilha de navegação abaixo da navbar |
-| `OrderSidebar` | painel lateral "Seu pedido" (Catálogo/Coleção) — mostra itens do `cartItems` do store, nudge de grade mínima e de mix. A tela Planejar **não** usa esse componente — tem seu próprio `.web-sidebar` de resumo do plano, ver seção Planejar abaixo |
+| `OrderDrawer` | painel "Seu pedido" que desliza por cima da página (ver seção própria abaixo) — mostra itens do `cartItems` do store, nudge de grade mínima e de mix, sugestões de produto. A tela Planejar **não** usa esse componente — tem seu próprio `.web-sidebar` de resumo do plano, ver seção Planejar abaixo |
 | `ProductThumb` | `<img>` de produto com fallback automático pro ícone placeholder (SVG de tênis) via `onError`, caso o SKU não tenha foto real ainda |
 | `ProductLineCard` | card de produto **agrupado por linha** (ex: as 10 cores de Coil), com seletor de cor (miniaturas clicáveis) e selo "★ Mais vendida" na cor de maior `growthPct`. Usado no Catálogo, na página da Linha Fusion e (com a prop `planning`) na tela Planejar — ver seções abaixo |
 | `WebModal` | modal genérico |
@@ -113,9 +113,9 @@ Cada cor de cada linha é um `Product` (SKU) próprio — ex: `Coil Black Reflec
 
 ### Carrinho → Pedido
 
-Um `Carrinho` é compartilhado com o representante fixo da loja e pode ter **1+ `Pedido`s**, cada um com condição de pagamento, forma de pagamento e prazo de entrega próprios (confirmado em reunião real — não é 1 carrinho = 1 pedido). `GRADE_MINIMA_PARES = 36`: soma de `qty` de todos os itens de **um `Pedido`** (não do carrinho todo) precisa bater 36 pares, livremente distribuídos entre produtos/tamanhos — ver o aviso em `CarrinhoDetail.tsx` (bloqueia "Ir para pagamento" abaixo do mínimo) e em `OrderSidebar.tsx` (mesmo aviso, em tempo real, enquanto ainda está no Catálogo/Planejamento).
+Um `Carrinho` é compartilhado com o representante fixo da loja e pode ter **1+ `Pedido`s**, cada um com condição de pagamento, forma de pagamento e prazo de entrega próprios (confirmado em reunião real — não é 1 carrinho = 1 pedido). `GRADE_MINIMA_PARES = 36`: soma de `qty` de todos os itens de **um `Pedido`** (não do carrinho todo) precisa bater 36 pares, livremente distribuídos entre produtos/tamanhos — ver o aviso em `CarrinhoDetail.tsx` (bloqueia "Ir para pagamento" abaixo do mínimo) e em `OrderDrawer.tsx` (mesmo aviso, em tempo real, enquanto o lojista navega pelo Catálogo).
 
-**Gap conhecido:** `OrderSidebar` (estado `cartItems` do zustand, usado durante a navegação pelo Catálogo) e `carrinhos` (dado mock usado em Meus Carrinhos/Carrinho/Pagamento) **não são a mesma fonte de dados** — são dois modelos paralelos que ainda não foram unificados. "Ir para o carrinho" na sidebar não gera de fato um novo `Pedido` a partir do `cartItems`.
+**Gap conhecido:** `OrderDrawer` (estado `cartItems` do zustand, o pedido em construção) e `carrinhos` (dado mock usado em Meus Carrinhos/Carrinho/Pagamento) **não são a mesma fonte de dados** — são dois modelos paralelos que ainda não foram unificados. "Ir para o carrinho" no drawer não gera de fato um novo `Pedido` a partir do `cartItems`.
 
 ### Prazo de entrega
 
@@ -135,7 +135,7 @@ A página da Linha Fusion (`Colecao.tsx`) usa o mesmo `ProductLineCard` (só 1 l
 
 ## Planejar — comparação com a coleção anterior (redesign ago/2026)
 
-`Planning.tsx` (rota `/planejamento`, mesmos pontos de entrada de antes: nav "Planejar", `OrderSidebar` → "Planejar compra", Radar → "Adicionar ao planejamento", Ficha de Decisão → "Adicionar ao planejamento") deixou de ser uma tela solta com barra de mix por % — o cliente achou confuso porque a barra não tinha ligação nenhuma com a lista de itens embaixo dela, e o modal "Ajustar mix" mexia num número que não afetava nada.
+`Planning.tsx` (rota `/planejamento`, pontos de entrada: nav "Planejar", Radar → "Adicionar ao planejamento", Ficha de Decisão → "Adicionar ao planejamento") deixou de ser uma tela solta com barra de mix por % — o cliente achou confuso porque a barra não tinha ligação nenhuma com a lista de itens embaixo dela, e o modal "Ajustar mix" mexia num número que não afetava nada.
 
 Agora a tela reusa o mesmo grid/card do Catálogo (`buildProductLines` + `ProductLineCard`), com uma diferença: `ProductLineCard` aceita uma prop opcional `planning={{ prevQty, qty, onChangeQty }}` que troca o botão "Adicionar ao carrinho" por um bloco de comparação — quanto a loja comprou na coleção anterior vs. quanto está planejando agora, com stepper e badge de delta (`.pw-compare`/`.deltabadge` em `mockup.css`). Card idêntico ao do Catálogo em tudo mais (foto, seletor de cor, preço, badges).
 
@@ -161,6 +161,19 @@ Agora a tela reusa o mesmo grid/card do Catálogo (`buildProductLines` + `Produc
 O botão "Baixar modelo em branco" **não é mock** — gera e baixa um CSV real (`downloadTemplateCsv()`, `Blob` + `URL.createObjectURL`) com uma linha por coleção do catálogo real. Se algum dia a leitura do arquivo for implementada de verdade, meta ideal é o parser aceitar exatamente esse formato de volta.
 
 **Se for implementar a leitura real do arquivo depois**: trocar o miolo do passo 1 (hoje só seta um nome fixo) por um parser de CSV/XLSX de verdade rodando no navegador (sem precisar de backend — é só leitura de arquivo local), casando o nome de cada linha da planilha com `collectionTitle`/`buildProductLines(products)` por aproximação de texto, e populando a tabela do passo 2 dinamicamente em vez dos 7 valores fixos.
+
+## OrderDrawer — "Seu pedido" virou um drawer global (ago/2026)
+
+Antes, "Seu pedido" era o componente `OrderSidebar`, uma coluna fixa de 320px sempre visível ao lado do conteúdo — só existia dentro do Catálogo e da página da Linha Fusion (`Colecao.tsx`), cada um passando seus próprios `nudges` customizados via prop. O usuário achou que merecia mais destaque justo por ser sempre a mesma faixa estreita ocupando espaço, e pediu pra virar algo que abre/fecha, como um menu — esboçado como Artifact antes de mexer no código real.
+
+- **`OrderDrawer.tsx`** (`components/desktop/`) substituiu `OrderSidebar.tsx`. Não recebe mais props (`nudges`/`mixPct` foram removidas) — lê tudo direto do zustand (`cartItems`, `orderDrawerOpen`) e do catálogo (`products`), porque agora é **montado uma única vez, globalmente**, em `DesktopPage.tsx` (o wrapper usado por toda tela do lojista desktop) em vez de ser inserido manualmente em cada tela.
+- **Trigger**: ícone de sacola em `WebTopNav.tsx` (`.navicon`, ao lado da busca e do sino), com `onClick={toggleOrderDrawer}`. **De propósito não mostra contagem nem valor** — o usuário pediu pra tirar isso porque o módulo de carrinho vai ter múltiplos carrinhos, e um número solto no ícone ia parecer "o total" quando na real seria só o rascunho atual. Os números completos (itens, valor, margem) só aparecem dentro do drawer já aberto.
+- **Mecânica**: `orderDrawerOpen` no store controla duas classes CSS (`.order-drawer.open` desliza o painel da direita via `transform`, `.order-drawer-scrim.open` escurece o fundo) — mesmo padrão visual do `WebModal`, mas com slide em vez de fade+scale, e não reaproveita `.web-sidebar` (que continua existindo só pro resumo do plano da tela Planejar — são propositalmente CSS separados, ver `.order-drawer` vs `.web-sidebar` em `mockup.css`).
+- **Como abrir/fechar pontos de entrada antigos**: Catálogo/Ficha de Decisão/Coleção Fusion não montam mais `OrderSidebar` nenhum — o layout de 2 colunas virou 1 coluna full-width nessas telas (a `.web-sidebar` sumiu do `.web-app-layout`, `.web-content{flex:1}` ocupa o espaço todo automaticamente).
+- **Botão "Planejar compra" foi removido do drawer** (pedido explícito) — só sobrou "Ir para o carrinho". Quem quiser ir pro Planejar usa a nav ou os pontos de entrada que já existiam fora do drawer (Radar, Ficha de Decisão).
+- **Sugestões pra completar o mix**: nova seção dentro do drawer, lista produtos com badge "Oportunidade perdida" (loja ainda não vende) que ainda não estão no `cartItems`, com botão "+" que chama `addToCart(id, 12)` direto — soma real ao pedido em construção, atualiza a lista (o item sai das sugestões assim que entra no carrinho) e o total no topo do drawer, tudo em tempo real.
+  - **Bug corrigido nessa mudança**: o badge "Oportunidade perdida" (`data.ts`) era aplicado pra **qualquer** `riskCallout`, mas o texto do dado mock tinha dois sentidos diferentes — "loja ainda não vende este modelo" (oportunidade de entrada) vs. "sem giro nos últimos 30 dias" (item parado que já está no mix). Antes disso não importava muito (o badge só aparecia no card), mas como a lista de sugestões passou a **filtrar por esse badge**, o texto errado faria um item parado (Flow XL Black) aparecer como "sua loja ainda não vende" — agora o label vira "Estoque parado" nesse caso.
+- **`WebTopNav`**: o item de menu "Pedidos" (que levava pra `/carrinhos`) virou **"Meus carrinhos"** — é como a própria tela já se chamava (título e breadcrumb já usavam esse nome; só o link do menu estava desalinhado). Decisão de manter texto em vez de um segundo ícone de carrinho: já que o ícone de sacola do drawer ocupa esse papel visual no header, um ícone de carrinho ali pros pedidos **já enviados** ia confundir rascunho-em-construção com histórico de compras fechadas.
 
 ## Fotos de produto
 

@@ -238,7 +238,10 @@ export const products: Product[] = raw.map((r) => {
 
   const badges: Product['badges'] = []
   if (r.riskCallout) {
-    badges.push({ label: 'Oportunidade perdida', tone: 'risk' })
+    // O texto do riskCallout tem dois sentidos diferentes — "loja ainda não vende" (oportunidade
+    // de entrada) vs. "sem giro" (item parado que já está no mix) — o badge precisa refletir qual é.
+    const label = r.riskCallout.startsWith('Oportunidade perdida') ? 'Oportunidade perdida' : 'Estoque parado'
+    badges.push({ label, tone: 'risk' })
   } else if (r.growthPct >= 20) {
     badges.push({ label: `+${r.growthPct}% crescimento`, tone: 'positive' })
   } else if (r.growthPct >= 0) {
