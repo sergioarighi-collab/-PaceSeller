@@ -12,6 +12,9 @@ export interface InsightCardData {
   cta: string
   productId?: string
   suggestedQty?: number
+  // Número/métrica central do card (ex: "+34%", "32 un.") — puxado em destaque tipográfico
+  // grande no card do Radar desktop. Opcional porque nem todo insight tem uma métrica única e limpa.
+  stat?: string
 }
 
 export interface Product {

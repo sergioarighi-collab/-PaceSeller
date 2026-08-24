@@ -6,15 +6,57 @@ import { WebModal } from '../../components/desktop/WebModal'
 import { Toast } from '../../components/desktop/Toast'
 import { useAppStore } from '../../lib/store'
 import { lojistaRadarInsights, dailyPanel, goals } from '../../lib/data'
-import type { Severity } from '../../lib/types'
+import type { InsightCardData } from '../../lib/types'
 import bannerImg from '../../assets/images/banner-destaque-semana.jpg'
 
-const severityColor: Record<Severity, string> = {
-  positive: 'var(--positive)',
-  risk: 'var(--risk)',
-  info: 'var(--info)',
-  neutral: 'var(--border-strong)',
-  premium: 'var(--gold, var(--positive))',
+type CardTone = 'black' | 'risk' | 'info' | 'positive'
+type CardIcon = 'star' | 'warning' | 'compare' | 'plus' | 'check'
+
+// Cor de severidade preenche o card inteiro (não só a barra lateral de antes) — ver .web-icard em
+// mockup.css. "Resolvido" (ex: reposição já feita) sempre vira tone positive, independente da
+// severidade original do card, pra confirmar visualmente que a ação foi concluída.
+function cardVisual(card: InsightCardData, resolved: boolean): { tone: CardTone; icon: CardIcon } {
+  if (resolved) return { tone: 'positive', icon: 'check' }
+  if (card.opportunity) return { tone: 'black', icon: 'star' }
+  if (card.severity === 'risk') return { tone: 'risk', icon: 'warning' }
+  if (card.severity === 'info') return { tone: 'info', icon: 'compare' }
+  return { tone: 'positive', icon: 'plus' }
+}
+
+function ToneIcon({ icon }: { icon: CardIcon }) {
+  switch (icon) {
+    case 'star':
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l2.9 6.9 7.4.6-5.6 4.9 1.7 7.3L12 17.9 5.6 21.7l1.7-7.3-5.6-4.9 7.4-.6L12 2z" />
+        </svg>
+      )
+    case 'warning':
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+        </svg>
+      )
+    case 'compare':
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <path d="M3 3v18h18" />
+          <path d="m7 14 4-4 4 4 5-6" />
+        </svg>
+      )
+    case 'check':
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+          <path d="M5 13l4 4L19 7" />
+        </svg>
+      )
+    default:
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+          <path d="M12 2v20M2 12h20" />
+        </svg>
+      )
+  }
 }
 
 const listModalContent: Record<string, { title: string; sub: string; batchLabel?: string; rows: { name: string; meta: string; qty?: string; done?: boolean }[] }> = {
@@ -122,56 +164,55 @@ export function Radar() {
       <div className="web-main">
         <div className="web-section-title">Oportunidades de hoje</div>
         <div className="grid4">
-          {lojistaRadarInsights.map((card) => (
-            <div
-              className={`web-icard ${card.opportunity ? 'opportunity' : ''}`}
-              key={card.id}
-              style={!card.opportunity ? { borderLeftColor: severityColor[card.severity] } : undefined}
-            >
-              {card.opportunity && <div className="tag-black">Oportunidade</div>}
-              <div className="eyebrow" style={!card.opportunity ? { color: severityColor[card.severity] } : undefined}>
-                {card.eyebrow}
-              </div>
-              <h3 style={{ fontFamily: 'var(--display)', fontSize: 16, fontWeight: 600, marginTop: 6 }}>{card.title}</h3>
-              <p style={{ fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 6 }}>{card.text}</p>
-              {card.suggestedQty && !repostos.has(card.title) && (
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--text-primary)', fontWeight: 600, marginTop: 8 }}>
-                  Sugestão: repor {card.suggestedQty} unidades
+          {lojistaRadarInsights.map((card) => {
+            const resolved = card.cta === 'Repor agora' && repostos.has(card.title)
+            const { tone, icon } = cardVisual(card, resolved)
+            return (
+              <div className={`web-icard tone-${tone}`} key={card.id}>
+                <div className="kicon">
+                  <ToneIcon icon={icon} />
                 </div>
-              )}
-              {card.cta === 'Repor agora' ? (
-                repostos.has(card.title) ? (
-                  <div className="cta" style={{ color: 'var(--positive)', fontWeight: 700 }}>
-                    ✓ Reposto
+                <div className="eyebrow">{card.opportunity ? `Oportunidade · ${card.eyebrow}` : card.eyebrow}</div>
+                {card.stat && <div className="stat">{card.stat}</div>}
+                <h3>{card.title}</h3>
+                <p>{card.text}</p>
+                {card.suggestedQty && !resolved && (
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 600, marginTop: 8 }}>
+                    Sugestão: repor {card.suggestedQty} unidades
                   </div>
+                )}
+                {card.cta === 'Repor agora' ? (
+                  resolved ? (
+                    <div className="cta">✓ Reposto</div>
+                  ) : (
+                    <div
+                      className="cta"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        addToCart(card.productId ?? card.id, card.suggestedQty)
+                        handleRepor(card.title, card.suggestedQty ?? 0)
+                      }}
+                    >
+                      Repor agora →
+                    </div>
+                  )
                 ) : (
                   <div
                     className="cta"
                     style={{ cursor: 'pointer' }}
                     onClick={() => {
-                      addToCart(card.productId ?? card.id, card.suggestedQty)
-                      handleRepor(card.title, card.suggestedQty ?? 0)
+                      if (card.cta === 'Ver produto' && card.productId) navigate(`/catalogo/${card.productId}`)
+                      else if (card.cta === 'Comparar') navigate('/catalogo?contexto=benchmark')
+                      else if (card.cta === 'Ver coleção') navigate('/colecoes/fusion')
+                      else navigate('/catalogo')
                     }}
                   >
-                    Repor agora →
+                    {card.cta} →
                   </div>
-                )
-              ) : (
-                <div
-                  className="cta"
-                  style={{ fontWeight: card.opportunity ? 700 : 400, cursor: 'pointer' }}
-                  onClick={() => {
-                    if (card.cta === 'Ver produto' && card.productId) navigate(`/catalogo/${card.productId}`)
-                    else if (card.cta === 'Comparar') navigate('/catalogo?contexto=benchmark')
-                    else if (card.cta === 'Ver coleção') navigate('/colecoes/fusion')
-                    else navigate('/catalogo')
-                  }}
-                >
-                  {card.cta} →
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            )
+          })}
         </div>
 
         <div className="web-section-title">Todas as pendências — por categoria</div>

@@ -67,9 +67,19 @@ O grid (`.catgrid-web`/`.grid4`) já estica cada card pra altura do maior da fil
 - A área de thumb/imagem leva `flex-shrink:0` pra não ser espremida.
 - A área de corpo (`.pw-body`) também vira flex column com `flex:1`.
 - O botão/CTA leva `margin-top:auto` — empurra pro fim do espaço disponível, ficando sempre na base do card, alinhado com os outros da fileira.
-- No `.cta` do Radar, como cada instância também definia `marginTop: 10` inline via `style` (React), isso tinha prioridade sobre a classe CSS — foi removido do inline e adicionado um `padding-top:10px` fixo na classe `.cta` (junto do `margin-top:auto`), garantindo espaçamento mínimo mesmo quando o card é o mais alto da fileira e a margem automática vira 0.
+- No `.cta` do Radar, como cada instância também definia `marginTop` inline via `style` (React), isso tinha prioridade sobre a classe CSS — foi removido do inline; a classe `.cta` tem `padding-top` fixo (junto do `margin-top:auto`), garantindo espaçamento mínimo mesmo quando o card é o mais alto da fileira e a margem automática vira 0.
 
 **Padrão a seguir em novos grids de card**: se o card tem um botão/link de ação no fim e o conteúdo acima varia de tamanho, usar essa combinação (flex column no container + `flex:1` no corpo + `margin-top:auto` no elemento de ação), em vez de `margin-top` fixo em px.
+
+### Cards do Radar — cor de severidade cheia + ícone + número em destaque (ago/2026)
+
+O usuário achou os 4 cards de "Oportunidades de hoje" (`.grid4`/`.web-icard` em `Radar.tsx`) visualmente fracos pra serem a primeira coisa que a loja vê ao logar — antes eram fundo branco/cinza com só uma barrinha de 6px na cor de severidade. Esboço comparado com o usuário (2 variantes, Artifact) e escolhida a de mais peso: a cor de severidade agora preenche o card inteiro, não só a borda.
+
+- **Tom por card** (`cardVisual()` em `Radar.tsx`): `card.opportunity` → `tone-black` (fundo preto sólido, igual ao banner "Destaque da semana" — é o card mais importante do grupo); senão por `severity` → `tone-risk`/`tone-info`/`tone-positive` (fundo `--risk-dim`/`--info-dim`/`--positive-dim`). Uma ação "resolvida" (ex: `repostos.has(...)` depois de clicar "Repor agora") força `tone-positive` + ícone de check, independente da severidade original — confirma visualmente que a ação foi concluída (mesmo padrão do "No carrinho" do `ProductLineCard`).
+- **Ícone de categoria** (`ToneIcon` em `Radar.tsx`): badge circular colorido por tom, com um SVG por tipo de insight (estrela pra oportunidade, alerta pra estoque baixo, comparação pra benchmark, "+" pra lançamento, check pra ação resolvida).
+- **Número em destaque** (`.web-icard .stat`, campo opcional `stat` em `InsightCardData`/`lojistaRadarInsights`): a métrica central do card (ex: "+34%", "32 un.") puxada pro topo em tipografia grande (`--display`, 30px) em vez de ficar só embutida no meio da frase do `text`. Campo opcional porque nem todo insight tem uma métrica única e limpa pra puxar.
+- No card `tone-black`, o selo "Oportunidade" (que antes era um `.tag-black` separado) foi incorporado no próprio eyebrow (`Oportunidade · {card.eyebrow}`) — um badge preto sobre fundo preto não teria contraste nenhum.
+- CTA continua no mesmo padrão de alinhamento da seção anterior (`margin-top:auto`), com a cor herdada do tom do card em vez de sempre `--info`.
 
 ## Componentes compartilhados (`components/desktop/`)
 
