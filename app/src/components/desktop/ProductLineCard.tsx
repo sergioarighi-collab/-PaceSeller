@@ -101,6 +101,10 @@ export function ProductLineCard({
           </div>
         )}
 
+        {/* flex-basis garante um respiro mínimo acima do botão/comparação mesmo quando este é o
+            card mais alto da fileira (onde margin-top:auto sozinho colapsaria pra 0) */}
+        <div style={{ flex: '1 0 14px' }} />
+
         {planning ? (
           <div className="pw-compare">
             <div className="pw-compare-prev">
