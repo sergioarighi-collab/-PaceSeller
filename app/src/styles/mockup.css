@@ -498,6 +498,40 @@
   .plan-summarybar .sdelta.down{color:var(--risk);}
   .plan-summarybar .sdelta.flat{color:var(--text-tertiary);}
 
+  /* Estado vazio do Planejar (loja sem coleção anterior registrada) */
+  .plan-empty{max-width:480px;margin:70px auto 0;text-align:center;}
+  .plan-empty .pe-icon{width:60px;height:60px;border-radius:14px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;margin:0 auto;color:var(--text-tertiary);}
+  .plan-empty h1{font-family:var(--display);font-size:21px;font-weight:700;margin-top:20px;letter-spacing:-.01em;}
+  .plan-empty p{font-size:13px;color:var(--text-secondary);margin-top:10px;line-height:1.6;}
+  .plan-empty .pe-actions{display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:24px;}
+  .btn-text{background:none;border:none;font-size:12.5px;color:var(--text-secondary);font-weight:500;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:var(--body);}
+
+  /* Modal de importar coleção anterior — passo 1 (arquivo) e passo 2 (conferir dados) */
+  .dropzone{border:1.5px dashed var(--border-strong);border-radius:8px;padding:36px 20px;text-align:center;background:var(--surface-2);cursor:pointer;transition:border-color .15s ease;}
+  .dropzone:hover{border-color:var(--text-tertiary);}
+  .dropzone .dz-icon{width:36px;height:36px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto;color:var(--text-secondary);}
+  .dropzone .dz-title{font-size:13px;font-weight:600;margin-top:12px;}
+  .dropzone .dz-sub{font-size:11.5px;color:var(--text-tertiary);margin-top:4px;}
+  .filerow{margin-top:14px;display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:12.5px;}
+  .filerow .fname{font-weight:600;flex:1;}
+  .filerow .fsize{color:var(--text-tertiary);font-family:var(--mono);font-size:11px;}
+  .modelrow{margin-top:12px;font-size:12px;color:var(--text-secondary);}
+  .modelrow button{background:none;border:none;padding:0;color:var(--info);font-weight:600;font-size:12px;font-family:var(--body);cursor:pointer;}
+
+  .prev-summary{display:flex;gap:8px;margin-bottom:2px;}
+  .chip{font-family:var(--mono);font-size:11px;font-weight:600;padding:5px 10px;border-radius:20px;}
+  .chip.ok{background:var(--positive-dim);color:var(--positive);}
+  .chip.warn{background:var(--risk-dim);color:var(--risk);}
+  .plan-table{width:100%;border-collapse:collapse;margin-top:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .plan-table th{text-align:left;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-tertiary);background:var(--surface-2);padding:9px 12px;border-bottom:1px solid var(--border);}
+  .plan-table td{padding:9px 12px;font-size:12.5px;border-bottom:1px solid var(--border);}
+  .plan-table tr:last-child td{border-bottom:none;}
+  .plan-table tr.row-warn td{background:var(--risk-dim);}
+  .plan-table select{font-family:var(--body);font-size:12px;padding:5px 7px;border-radius:4px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text-primary);}
+  .plan-table .qty-cell{font-family:var(--mono);}
+  .plan-table .status-ok{color:var(--positive);font-weight:600;font-size:11.5px;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+  .plan-table .status-warn{color:var(--risk);font-weight:600;font-size:11.5px;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+
   .sidebar-itemlist{margin-top:16px;display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;}
   .sidebar-item{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:8px 10px;}
   .sidebar-item .si-thumb{width:34px;height:34px;border-radius:3px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}

@@ -30,6 +30,17 @@ interface AppState {
   removeFromCart: (productId: string) => void
   toggleCart: (productId: string) => void
   isInCart: (productId: string) => boolean
+
+  /**
+   * Situação da comparação com a coleção anterior, na tela Planejar.
+   * 'imported' = já tem os dados (padrão — a loja "Carlos" do protótipo já tem histórico de vendas).
+   * 'pending' = ainda não importou nada — mostra o estado vazio (loja nova, ou reimportação via "trocar coleção").
+   * 'scratch' = decidiu planejar sem comparação — trata toda linha como se prevQty fosse 0.
+   */
+  previousCollectionStatus: 'pending' | 'imported' | 'scratch'
+  importPreviousCollection: () => void
+  skipPreviousCollection: () => void
+  resetPreviousCollection: () => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -71,6 +82,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     else s.addToCart(productId, 12)
   },
   isInCart: (productId) => Boolean(get().cartItems[productId]),
+
+  previousCollectionStatus: 'imported',
+  importPreviousCollection: () => set({ previousCollectionStatus: 'imported' }),
+  skipPreviousCollection: () => set({ previousCollectionStatus: 'scratch' }),
+  resetPreviousCollection: () => set({ previousCollectionStatus: 'pending' }),
 }))
 
 export function cartSummary(cartItems: Record<string, number>) {

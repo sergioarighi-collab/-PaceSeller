@@ -144,7 +144,23 @@ Agora a tela reusa o mesmo grid/card do Catálogo (`buildProductLines` + `Produc
 - **Resumo no topo** (`.plan-summarybar`): total de pares e investimento (soma `qty × priceFactory` da cor mais vendida de cada linha), coleção anterior vs. agora, com delta.
 - **Sidebar**: total do plano + um aviso (`.bubble`, reaproveitado) só quando alguma linha cai mais de 15% vs. a coleção anterior — não é um alerta fixo, é calculado a cada mudança nos steppers.
 - **`mixPlan`** (em `data.ts`) continua existindo só porque `screens/representante/SuggestedOrder.tsx` (fluxo mobile do representante, fora do escopo desktop) ainda usa esse formato — não é mais usado pela tela do lojista. Não deletar sem checar esse outro fluxo.
-- **Em aberto** (não implementado, mesma ressalva do esboço original): o que mostrar pra uma loja nova sem nenhuma coleção anterior — hoje toda linha tem algum número de comparação, ainda que `0`. Também não há seletor funcional de "trocar coleção" (o banner no topo é informativo, fixo em uma única coleção anterior).
+
+### Estado vazio + importar coleção anterior (ago/2026)
+
+`useAppStore.previousCollectionStatus` (`'pending' | 'imported' | 'scratch'`) controla o que a tela mostra — não é mais garantido que toda linha tenha um número de comparação:
+
+- **`'imported'`** (padrão) — usa `previousCollectionQty` real de `data.ts`, é o comportamento descrito acima. Faz sentido como padrão porque a loja "Carlos" do protótipo já é uma loja estabelecida (Radar mostra histórico, produtos com giro, etc.) — uma loja nova de verdade entraria em `'pending'`, mas o protótipo só tem essa persona.
+- **`'pending'`** — `Planning.tsx` retorna cedo e renderiza só o estado vazio (`.plan-empty`): explica que sem histórico ainda dá pra planejar, só não tem com o que comparar, com duas saídas — "Importar vendas da coleção anterior" (abre o modal de upload) ou "Começar do zero, sem comparação" (`skipPreviousCollection()`, pula direto pro `'scratch'`).
+- **`'scratch'`** — mesma tela normal do Planejar, mas toda linha trata `prevQty` como `0` (`prevQtyOf()` em vez de ler `previousCollectionQty` direto). O banner de topo muda pra "Planejando sem comparação" em vez do "Comparando com Coleção X".
+- **Reentrada**: o banner de "Comparando com Coleção X" agora tem um "Trocar coleção" clicável (`resetPreviousCollection()`) que volta pro estado `'pending'` — é o mesmo botão que resolve o gap que a versão anterior deste doc citava ("não há seletor funcional de trocar coleção"). O banner do modo `'scratch'` tem o equivalente ("Importar dados de vendas").
+
+**Upload é simulado** (a pedido do usuário) — `UploadModal` em `Planning.tsx` é um fluxo de 2 passos dentro de `WebModal`:
+1. **Dropzone** — clicar na área (ou, no app real, soltar um arquivo) só seta um nome de arquivo mock (`colecao-inverno-2025.csv`) no estado local, não lê o arquivo de verdade. "Continuar" fica desabilitado até ter um "arquivo selecionado".
+2. **Conferir dados** — tabela estática com 7 linhas mock, sempre a mesma independente do arquivo "importado" — uma delas (`Flow-XL`) simula um nome que não bateu automaticamente, com um `<select>` pra reatribuir manualmente à linha certa do catálogo (não muda dado nenhum de verdade, é só a demonstração do fluxo). "Confirmar" chama `importPreviousCollection()` e fecha o modal.
+
+O botão "Baixar modelo em branco" **não é mock** — gera e baixa um CSV real (`downloadTemplateCsv()`, `Blob` + `URL.createObjectURL`) com uma linha por coleção do catálogo real. Se algum dia a leitura do arquivo for implementada de verdade, meta ideal é o parser aceitar exatamente esse formato de volta.
+
+**Se for implementar a leitura real do arquivo depois**: trocar o miolo do passo 1 (hoje só seta um nome fixo) por um parser de CSV/XLSX de verdade rodando no navegador (sem precisar de backend — é só leitura de arquivo local), casando o nome de cada linha da planilha com `collectionTitle`/`buildProductLines(products)` por aproximação de texto, e populando a tabela do passo 2 dinamicamente em vez dos 7 valores fixos.
 
 ## Fotos de produto
 
