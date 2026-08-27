@@ -5,7 +5,7 @@ import { useAppStore } from '../../lib/store'
 const navItems = [
   { to: '/radar', label: 'Radar' },
   { to: '/catalogo', label: 'Catálogo' },
-  { to: '/planejamento', label: 'Planejar' },
+  { to: '/planejamento', label: 'Planejar o pedido' },
   { to: '/carrinhos', label: 'Meus carrinhos' },
 ]
 

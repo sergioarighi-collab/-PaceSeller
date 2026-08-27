@@ -8,10 +8,9 @@ import { ProductLineCard } from '../../components/desktop/ProductLineCard'
 import { products, previousCollectionName, previousCollectionQty, collectionTitle } from '../../lib/data'
 import { buildProductLines, deltaInfo } from '../../lib/productLines'
 import { formatBRL } from '../../lib/format'
-import { useAppStore } from '../../lib/store'
+import { useAppStore, cartSummary } from '../../lib/store'
 
 const lines = buildProductLines(products)
-const zeroQtyByCollection = Object.fromEntries(lines.map((l) => [l.collection, 0]))
 
 // Modelo real de planilha pra download — só o "ler o arquivo importado de volta" é simulado, isso aqui não é.
 function downloadTemplateCsv() {
@@ -35,19 +34,19 @@ export function Planning() {
   const skipPreviousCollection = useAppStore((s) => s.skipPreviousCollection)
   const resetPreviousCollection = useAppStore((s) => s.resetPreviousCollection)
 
+  const cartItems = useAppStore((s) => s.cartItems)
+
   const [uploadStep, setUploadStep] = useState<UploadStep>('closed')
   const [fileName, setFileName] = useState<string | null>(null)
 
-  const [qtyByCollection, setQtyByCollection] = useState<Record<string, number>>(
-    status === 'imported' ? { ...previousCollectionQty } : zeroQtyByCollection,
-  )
-
-  function changeQty(collection: string, delta: number) {
-    setQtyByCollection((s) => ({ ...s, [collection]: Math.max(0, (s[collection] ?? 0) + delta) }))
-  }
-
   function prevQtyOf(collection: string) {
     return status === 'imported' ? (previousCollectionQty[collection] ?? 0) : 0
+  }
+
+  // "Planejando agora" de uma linha = soma do cartItems (o pedido de verdade) entre as cores dela —
+  // não é um estado à parte do Planejar, é o mesmo pedido que o Catálogo/drawer "Seu pedido" editam.
+  function lineCartQty(line: (typeof lines)[number]) {
+    return line.colors.reduce((sum, c) => sum + (cartItems[c.id] ?? 0), 0)
   }
 
   function closeUploadModal() {
@@ -57,12 +56,10 @@ export function Planning() {
 
   function handleSkip() {
     skipPreviousCollection()
-    setQtyByCollection(zeroQtyByCollection)
   }
 
   function handleImportConfirmed() {
     importPreviousCollection()
-    setQtyByCollection({ ...previousCollectionQty })
     closeUploadModal()
   }
 
@@ -70,7 +67,7 @@ export function Planning() {
     return (
       <DesktopPage>
         <WebTopNav />
-        <Breadcrumb items={[{ label: 'Radar', to: '/radar' }, { label: 'Catálogo', to: '/catalogo' }, { label: 'Planejar coleção' }]} />
+        <Breadcrumb items={[{ label: 'Radar', to: '/radar' }, { label: 'Catálogo', to: '/catalogo' }, { label: 'Planejar o pedido' }]} />
         <div className="plan-empty">
           <div className="pe-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -113,9 +110,9 @@ export function Planning() {
   }
 
   const prevTotalQty = lines.reduce((sum, l) => sum + prevQtyOf(l.collection), 0)
-  const nowTotalQty = lines.reduce((sum, l) => sum + (qtyByCollection[l.collection] ?? 0), 0)
   const prevTotalVal = lines.reduce((sum, l) => sum + prevQtyOf(l.collection) * factoryPriceOf(l), 0)
-  const nowTotalVal = lines.reduce((sum, l) => sum + (qtyByCollection[l.collection] ?? 0) * factoryPriceOf(l), 0)
+  const { totalItems: nowTotalQty, totalValue: nowTotalVal } = cartSummary(cartItems)
+  const linesWithItem = lines.filter((l) => lineCartQty(l) > 0).length
 
   const qtyDelta = deltaInfo(prevTotalQty, nowTotalQty)
   const valDelta = deltaInfo(prevTotalVal, nowTotalVal)
@@ -124,7 +121,7 @@ export function Planning() {
   const biggestDrop = lines
     .map((l) => {
       const prev = prevQtyOf(l.collection)
-      const now = qtyByCollection[l.collection] ?? 0
+      const now = lineCartQty(l)
       if (prev === 0) return null
       const pct = Math.round(((now - prev) / prev) * 100)
       return { collection: l.collection, pct }
@@ -135,7 +132,7 @@ export function Planning() {
   return (
     <DesktopPage>
       <WebTopNav />
-      <Breadcrumb items={[{ label: 'Radar', to: '/radar' }, { label: 'Catálogo', to: '/catalogo' }, { label: 'Planejar coleção' }]} />
+      <Breadcrumb items={[{ label: 'Radar', to: '/radar' }, { label: 'Catálogo', to: '/catalogo' }, { label: 'Planejar o pedido' }]} />
 
       {status === 'imported' ? (
         <div className="context-banner">
@@ -173,10 +170,10 @@ export function Planning() {
       <div className="web-app-layout">
         <div className="web-content">
           <div style={{ marginTop: 16 }}>
-            <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--text-primary)' }}>Planejar coleção</h1>
+            <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--text-primary)' }}>Planejar o pedido</h1>
             <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6, maxWidth: 580 }}>
-              Cada linha mostra quanto você comprou na coleção anterior — ajuste a quantidade desta a partir daí, direto no card do
-              catálogo.
+              Ajuste seu pedido linha por linha, comparando com o que você comprou na coleção anterior — as mudanças aqui já são o
+              mesmo pedido que você monta no Catálogo.
             </div>
           </div>
 
@@ -214,8 +211,7 @@ export function Planning() {
                 bestSellerId={line.bestSellerId}
                 planning={{
                   prevQty: prevQtyOf(line.collection),
-                  qty: qtyByCollection[line.collection] ?? 0,
-                  onChangeQty: (delta) => changeQty(line.collection, delta),
+                  isGap: lineCartQty(line) === 0,
                 }}
               />
             ))}
@@ -223,10 +219,10 @@ export function Planning() {
         </div>
 
         <div className="web-sidebar">
-          <div className="stitle">Resumo do plano</div>
+          <div className="stitle">Resumo do pedido</div>
           <div className="stotal">{formatBRL(nowTotalVal)}</div>
           <div className="ssub">
-            {nowTotalQty} pares · {lines.length} linhas
+            {nowTotalQty} pares · {linesWithItem} de {lines.length} linhas com item
           </div>
           {biggestDrop && (
             <div className="bubble">
@@ -236,7 +232,7 @@ export function Planning() {
           )}
           <div className="sbtns">
             <div className="btn-primary" style={{ cursor: 'pointer' }} onClick={() => navigate('/carrinhos')}>
-              Enviar plano ao carrinho
+              Ir para o carrinho
             </div>
           </div>
         </div>

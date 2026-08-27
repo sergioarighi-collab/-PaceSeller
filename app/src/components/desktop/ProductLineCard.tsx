@@ -23,13 +23,18 @@ export function ProductLineCard({
   colors: Product[]
   bestSellerId: string
   defaultId?: string
-  // Presente só na tela "Planejar" — troca o botão "Adicionar ao carrinho" pela comparação
-  // com a coleção anterior (mesmo card, mesma foto, ver docs/guia-dev-frontend.md).
-  planning?: { prevQty: number; qty: number; onChangeQty: (delta: number) => void }
+  // Presente só na tela "Planejar o pedido" — troca o botão "Adicionar ao carrinho" pela
+  // comparação com a coleção anterior (mesmo card, mesma foto, ver docs/guia-dev-frontend.md).
+  // "Planejando agora" edita o cartItems de verdade (mesmo pedido do Catálogo/drawer) — não é
+  // um estado à parte, por isso só recebe prevQty/isGap, não qty/onChangeQty.
+  planning?: { prevQty: number; isGap: boolean }
 }) {
   const navigate = useNavigate()
   const toggleCart = useAppStore((s) => s.toggleCart)
   const isInCart = useAppStore((s) => s.isInCart)
+  const cartItems = useAppStore((s) => s.cartItems)
+  const addToCart = useAppStore((s) => s.addToCart)
+  const removeFromCart = useAppStore((s) => s.removeFromCart)
   const initialIdx = Math.max(
     0,
     colors.findIndex((c) => c.id === (defaultId ?? bestSellerId)),
@@ -37,8 +42,17 @@ export function ProductLineCard({
   const [selectedIdx, setSelectedIdx] = useState(initialIdx)
   const p = colors[selectedIdx]
   const inCart = isInCart(p.id)
+  const qty = cartItems[p.id] ?? 0
   const margin = Math.round(((p.pricePdv - p.priceFactory) / p.pricePdv) * 100)
   const lineName = p.name.replace(` ${p.colorway}`, '')
+
+  function incQty() {
+    addToCart(p.id, qty + 1)
+  }
+  function decQty() {
+    if (qty <= 1) removeFromCart(p.id)
+    else addToCart(p.id, qty - 1)
+  }
 
   return (
     <div className="pcard-web">
@@ -107,22 +121,23 @@ export function ProductLineCard({
 
         {planning ? (
           <div className="pw-compare">
+            {planning.isGap && <span className="pw-gaptag">Lacuna no seu pedido</span>}
             <div className="pw-compare-prev">
               Coleção anterior: <b>{planning.prevQty > 0 ? `${planning.prevQty} pares` : 'não comprou'}</b>
             </div>
             <div className="pw-compare-now">
               <span className="pw-compare-label">Planejando agora</span>
               <div className="stepper">
-                <div className="stepbtn" style={{ cursor: 'pointer' }} onClick={() => planning.onChangeQty(-1)}>
+                <div className="stepbtn" style={{ cursor: 'pointer' }} onClick={decQty}>
                   −
                 </div>
-                <div className="qty">{planning.qty}</div>
-                <div className="stepbtn" style={{ cursor: 'pointer' }} onClick={() => planning.onChangeQty(1)}>
+                <div className="qty">{qty}</div>
+                <div className="stepbtn" style={{ cursor: 'pointer' }} onClick={incQty}>
                   +
                 </div>
               </div>
               {(() => {
-                const d = deltaInfo(planning.prevQty, planning.qty)
+                const d = deltaInfo(planning.prevQty, qty)
                 return <span className={`deltabadge ${d.tone}`}>{d.text}</span>
               })()}
             </div>

@@ -121,9 +121,9 @@ export const lojistaRadarInsights: InsightCardData[] = [
     timeframe: '30dias',
     severity: 'info',
     eyebrow: 'Planejamento',
-    title: 'Planejar a próxima coleção',
-    text: 'Comparar com o que vendeu na coleção anterior',
-    cta: 'Ir pro Planejar',
+    title: 'Feche seu pedido com o histórico em mãos',
+    text: 'Compare com o que vendeu na coleção anterior antes de decidir a quantidade',
+    cta: 'Planejar pedido',
     stat: '7 linhas',
   },
 ]
