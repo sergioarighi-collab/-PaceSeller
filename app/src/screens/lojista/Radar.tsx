@@ -183,8 +183,7 @@ export function Radar() {
           return (
             <div className="tl-group" key={tf}>
               <div
-                className="tl-group-head"
-                style={collapsible ? { cursor: 'pointer' } : undefined}
+                className={`tl-group-head ${collapsible ? 'collapsible' : ''}`}
                 onClick={collapsible ? () => setExpanded((s) => ({ ...s, [tf]: !s[tf] })) : undefined}
               >
                 <span className="tl-label">{timeframeLabel[tf]}</span>
@@ -192,9 +191,14 @@ export function Radar() {
                   {items.length} {items.length === 1 ? 'item' : 'itens'}
                 </span>
                 {collapsible && (
-                  <svg className={`tl-chevron ${isOpen ? 'open' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
+                  <span className="tl-toggle">
+                    {isOpen ? 'Ocultar' : 'Mostrar'}
+                    <span className="tl-chevron-btn">
+                      <svg className={isOpen ? 'open' : ''} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </span>
+                  </span>
                 )}
               </div>
               {isOpen && <div className="grid4">{items.map(renderInsightCard)}</div>}
