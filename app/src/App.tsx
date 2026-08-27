@@ -12,7 +12,6 @@ import { ConfirmPin } from './screens/shared/ConfirmPin'
 
 import { WizardStep1 } from './screens/lojista/WizardStep1'
 import { WizardStep2 } from './screens/lojista/WizardStep2'
-import { GoalSelect } from './screens/lojista/GoalSelect'
 import { Radar } from './screens/lojista/Radar'
 import { Catalog } from './screens/lojista/Catalog'
 import { Planning } from './screens/lojista/Planning'
@@ -45,7 +44,6 @@ function App() {
 
         <Route path="/onboarding/loja" element={<WizardStep1 />} />
         <Route path="/onboarding/vendas" element={<WizardStep2 />} />
-        <Route path="/onboarding/objetivo" element={<GoalSelect />} />
 
         <Route path="/radar" element={<Radar />} />
         <Route path="/catalogo" element={<Catalog />} />

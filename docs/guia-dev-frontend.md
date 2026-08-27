@@ -83,6 +83,22 @@ O usuário achou os 4 cards de "Oportunidades de hoje" (`.grid4`/`.web-icard` em
 - No card `tone-black`, o selo "Oportunidade" (que antes era um `.tag-black` separado) foi incorporado no próprio eyebrow (`Oportunidade · {card.eyebrow}`) — um badge preto sobre fundo preto não teria contraste nenhum.
 - CTA continua no mesmo padrão de alinhamento da seção anterior (`margin-top:auto`), com a cor herdada do tom do card em vez de sempre `--info`.
 
+### Radar agrupado por prazo + fim da pergunta de objetivo no onboarding (ago/2026)
+
+Antes: onboarding tinha 3 etapas, a 3ª perguntava "o que você quer fazer agora?" (`goalId`) e o Radar tinha um botão "Ajustar foco" que dizia "isso reordena o que aparece primeiro no seu radar hoje" — **mas não reordenava nada de verdade** (`goalId` só marcava qual card ficava selecionado dentro do próprio modal). O usuário notou que isso não tinha efeito real e pediu pra tirar a etapa, trazendo em vez disso todas as pendências organizadas por prazo direto no Radar.
+
+- **Onboarding agora tem 2 etapas** (`OnboardShell.tsx`, `steps` array). `WizardStep2.tsx` (antiga etapa 2) é quem agora finaliza o fluxo — o botão vira "Ir para o meu radar", chama `dismissOnboardingNotice()` e navega pra `/radar` direto (mesma ação que a extinta `GoalSelect.tsx` fazia). Rota `/onboarding/objetivo` e o arquivo `GoalSelect.tsx` foram removidos.
+- **`goalId`/`setGoal`/`goals`/`openFocus`/`closeFocus`/`focusOpen` continuam existindo no store e em `data.ts`** — **não foram removidos** porque o fluxo mobile do representante (`screens/representante/Radar.tsx` + `components/ui/FocusSheet.tsx`) ainda usa esse mesmo mecanismo de "Ajustar foco". Só o uso no Radar **desktop do lojista** foi removido (o botão "Ajustar foco" e o modal correspondente saíram de `Radar.tsx`).
+- **`lojistaRadarInsights` (`data.ts`) agora tem um campo `timeframe: 'hoje' | '15dias' | '30dias'`** em cada item, e passou de 4 para 11 itens — incorporou tudo que antes só existia escondido atrás do modal de categoria (`listModalContent`, removido) + um item novo (`ins-11`, "baixo giro/impulsionar com campanha", usando o produto que já tinha `riskCallout: 'Estoque parado'`). Nada foi inventado além desse último — os outros 10 já existiam em algum lugar da tela antiga.
+- **Layout do Radar** (`Radar.tsx`): os cards continuam sendo exatamente o mesmo `.web-icard`/`cardVisual()`/`ToneIcon` de antes (nenhuma linguagem visual nova) — só que agora agrupados em 3 seções (`timeframeOrder`). "Hoje" fica sempre aberta; "Em 15 dias" e "Nos próximos 30 dias" são acordeão, fechadas por padrão (`expanded` state local), abrindo ao clicar no header (`.tl-group-head`) — esse foi o meio-termo escolhido depois de comparar 3 esboços (grid único, cards menores com tudo visível, filtro por chip) com o usuário.
+- **Removido de vez** (dado morto depois dessa mudança, sem uso em nenhum outro lugar): `dailyPanel` (`data.ts`), a seção "Todas as pendências — por categoria" e seu modal, e as classes CSS `.listgroup`/`.listrow`/`.goalcard`/`.gicon`/`.gtitle`/`.gsub`/`.gcheck`/`.focuslink-desktop`/`.wm-list`/`.wm-row` (e afins) em `mockup.css`.
+- **Novos CTAs precisaram de destino real** — decisões tomadas caso a caso, sem inventar telas que não existem:
+  - "Ver pedido" (alerta de atraso) → `/carrinhos/reposicao-rapida/4790-1/acompanhamento` (o pedido mock #4790-1 já existe em `data.ts`, é real).
+  - "Ver clientes" (recuperar clientes) → `/fidelizacao`. **Gap conhecido**: essa é a tela `Loyalty.tsx`, que é do fluxo mobile/Tailwind (fora do desktop) — não existe hoje uma tela "Clientes" no desktop do lojista (o item de nav "Clientes" no `WebTopNav` é só texto cinza, sem rota). Revisitar se/quando um módulo de Clientes desktop for construído.
+  - "Ver todos" (produtos em alta) → `/catalogo` (sem filtro específico — não existe um filtro "produtos em alta" implementado no Catálogo hoje).
+  - "Ir pro Planejar" → `/planejamento` (já existia).
+- **Régua de prazo é ilustrativa** — os critérios usados pra classificar cada item em hoje/15/30 dias (cobertura de estoque, dias desde o lançamento, etc.) foram uma proposta feita durante o esboço, não vieram de reunião com o cliente. Se o critério real de "urgência" for diferente, só precisa remapear o campo `timeframe` de cada item em `data.ts` — a estrutura de UI não muda.
+
 ## Componentes compartilhados (`components/desktop/`)
 
 | Componente | Uso |

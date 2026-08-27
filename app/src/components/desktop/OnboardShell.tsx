@@ -6,10 +6,9 @@ import { useAppStore } from '../../lib/store'
 const steps = [
   { n: 1, title: 'Dados básicos', sub: 'Nome, segmento e região' },
   { n: 2, title: 'Dados de vendas', sub: 'Ticket médio e categorias' },
-  { n: 3, title: 'Objetivo do momento', sub: 'O que você quer agora' },
 ]
 
-export function OnboardShell({ step, children }: { step: 1 | 2 | 3; children: ReactNode }) {
+export function OnboardShell({ step, children }: { step: 1 | 2; children: ReactNode }) {
   const navigate = useNavigate()
   const skipOnboarding = useAppStore((s) => s.skipOnboarding)
 

@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { OnboardShell } from '../../components/desktop/OnboardShell'
+import { useAppStore } from '../../lib/store'
 
 const categorias = ['Coil', 'Hertz', 'Flow', 'Fusion']
 const sazonalidades = ['Inverno', 'Verão', 'Volta às aulas', 'Black Friday']
 
 export function WizardStep2() {
   const navigate = useNavigate()
+  const dismissOnboardingNotice = useAppStore((s) => s.dismissOnboardingNotice)
   const [ticket, setTicket] = useState('R$ 180,00')
   const [cats, setCats] = useState<string[]>(['Coil', 'Hertz'])
   const [saz, setSaz] = useState<string[]>(['Inverno'])
@@ -83,8 +85,15 @@ export function WizardStep2() {
           <div className="btn-secondary" style={{ width: 130, cursor: 'pointer' }} onClick={() => navigate('/onboarding/loja')}>
             Voltar
           </div>
-          <div className="btn-primary" style={{ width: 180, cursor: 'pointer' }} onClick={() => navigate('/onboarding/objetivo')}>
-            Continuar
+          <div
+            className="btn-primary"
+            style={{ width: 180, cursor: 'pointer' }}
+            onClick={() => {
+              dismissOnboardingNotice()
+              navigate('/radar')
+            }}
+          >
+            Ir para o meu radar
           </div>
         </div>
       </div>

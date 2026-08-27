@@ -15,6 +15,9 @@ export interface InsightCardData {
   // Número/métrica central do card (ex: "+34%", "32 un.") — puxado em destaque tipográfico
   // grande no card do Radar desktop. Opcional porque nem todo insight tem uma métrica única e limpa.
   stat?: string
+  // Prazo pra agir (Radar desktop, ago/2026) — agrupa os cards em 3 seções em vez de um grid só.
+  // Opcional porque só o Radar do lojista desktop usa isso hoje (loyaltyInsights não precisa).
+  timeframe?: 'hoje' | '15dias' | '30dias'
 }
 
 export interface Product {

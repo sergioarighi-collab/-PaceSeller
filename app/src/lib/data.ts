@@ -1,8 +1,14 @@
 import type { Client, InsightCardData, Product, User, Carrinho } from './types'
 
+// Todas as pendências do lojista, agrupadas por prazo pra agir (ago/2026, substitui os 4 cards
+// soltos + a lista "por categoria" escondida atrás de um clique — ver docs/guia-dev-frontend.md).
+// Nenhum dado novo foi inventado: são os mesmos itens que já existiam espalhados entre os cards
+// de oportunidade antigos e o listModalContent que ficava atrás do modal de cada categoria.
 export const lojistaRadarInsights: InsightCardData[] = [
+  // Hoje
   {
     id: 'ins-1',
+    timeframe: 'hoje',
     severity: 'positive',
     opportunity: true,
     eyebrow: 'Alta demanda',
@@ -14,16 +20,63 @@ export const lojistaRadarInsights: InsightCardData[] = [
   },
   {
     id: 'ins-2',
+    timeframe: 'hoje',
     severity: 'risk',
-    eyebrow: 'Estoque baixo',
+    eyebrow: 'Estoque baixo · 12 dias',
     title: 'Linha Coil',
     text: 'Vendendo mais rápido que a reposição atual',
     cta: 'Repor agora',
+    productId: '1901-67',
     suggestedQty: 32,
     stat: '32 un.',
   },
   {
     id: 'ins-3',
+    timeframe: 'hoje',
+    severity: 'risk',
+    eyebrow: 'Alerta',
+    title: 'Pedido #4790-1 atrasou',
+    text: 'Previsão de entrega vencida',
+    cta: 'Ver pedido',
+    stat: '2 dias',
+  },
+  // Em 15 dias
+  {
+    id: 'ins-4',
+    timeframe: '15dias',
+    severity: 'risk',
+    eyebrow: 'Estoque baixo · 15 dias',
+    title: 'Tênis Tesla TG II Black Reflect',
+    text: 'Sugestão de reposição antes de faltar',
+    cta: 'Repor agora',
+    productId: '2304-01',
+    suggestedQty: 60,
+    stat: '60 un.',
+  },
+  {
+    id: 'ins-5',
+    timeframe: '15dias',
+    severity: 'positive',
+    eyebrow: 'Lançamento · 12 dias',
+    title: 'Linha Fusion',
+    text: 'Ainda não chegou no seu mix — lojas parecidas já compram',
+    cta: 'Ver coleção',
+    stat: '6 lojas',
+  },
+  {
+    id: 'ins-6',
+    timeframe: '15dias',
+    severity: 'positive',
+    eyebrow: 'Lançamento · 28 dias',
+    title: 'Tênis Tesla TG II Black Reflect',
+    text: 'Ainda com giro abaixo do esperado desde o lançamento',
+    cta: 'Ver produto',
+    productId: '2304-01',
+    stat: 'Giro baixo',
+  },
+  {
+    id: 'ins-7',
+    timeframe: '15dias',
     severity: 'info',
     eyebrow: 'Benchmark',
     title: 'Lojas parecidas venderam mais',
@@ -31,14 +84,47 @@ export const lojistaRadarInsights: InsightCardData[] = [
     cta: 'Comparar',
     stat: '+30%',
   },
+  // Nos próximos 30 dias
   {
-    id: 'ins-4',
+    id: 'ins-8',
+    timeframe: '30dias',
+    severity: 'risk',
+    eyebrow: 'Recuperar clientes',
+    title: 'Sem contato há 90+ dias',
+    text: 'Bom momento pra reativar antes que esfrie de vez',
+    cta: 'Ver clientes',
+    stat: '8 clientes',
+  },
+  {
+    id: 'ins-11',
+    timeframe: '30dias',
+    severity: 'risk',
+    eyebrow: 'Baixo giro',
+    title: 'Tênis Tesla Flow XL Black',
+    text: 'Sem giro nos últimos 30 dias — bom candidato pra impulsionar com campanha',
+    cta: 'Ver produto',
+    productId: '2502-17',
+    stat: 'Sem giro',
+  },
+  {
+    id: 'ins-9',
+    timeframe: '30dias',
     severity: 'positive',
-    eyebrow: 'Lançamento',
-    title: 'Linha Fusion',
-    text: 'Ainda não chegou no seu mix — lojas parecidas já compram',
-    cta: 'Ver coleção',
-    stat: '6 lojas',
+    eyebrow: 'Produtos em alta',
+    title: 'Vendendo acima da média',
+    text: 'Coil Black White, Denim, Hertz All Black Furta Cor e mais 3',
+    cta: 'Ver todos',
+    stat: '6 SKUs',
+  },
+  {
+    id: 'ins-10',
+    timeframe: '30dias',
+    severity: 'info',
+    eyebrow: 'Planejamento',
+    title: 'Planejar a próxima coleção',
+    text: 'Comparar com o que vendeu na coleção anterior',
+    cta: 'Ir pro Planejar',
+    stat: '7 linhas',
   },
 ]
 
@@ -68,13 +154,6 @@ export const loyaltyInsights: InsightCardData[] = [
     text: '72% dos clientes recompram em 60 dias',
     cta: 'Ver detalhes',
   },
-]
-
-export const dailyPanel = [
-  { id: 'dp-1', tone: 'risk' as const, label: 'Reposição necessária', count: 3 },
-  { id: 'dp-2', tone: 'info' as const, label: 'Lançamentos', count: 2 },
-  { id: 'dp-3', tone: 'positive' as const, label: 'Produtos em alta', count: 6 },
-  { id: 'dp-4', tone: 'risk' as const, label: 'Alertas', count: 1 },
 ]
 
 export const loyaltyPanel = [
