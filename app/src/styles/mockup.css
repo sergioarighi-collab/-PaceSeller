@@ -548,9 +548,9 @@
   .modelrow button{background:none;border:none;padding:0;color:var(--info);font-weight:600;font-size:12px;font-family:var(--body);cursor:pointer;}
 
   .prev-summary{display:flex;gap:8px;margin-bottom:2px;}
-  .chip{font-family:var(--mono);font-size:11px;font-weight:600;padding:5px 10px;border-radius:20px;}
-  .chip.ok{background:var(--positive-dim);color:var(--positive);}
-  .chip.warn{background:var(--risk-dim);color:var(--risk);}
+  .import-chip{font-family:var(--mono);font-size:11px;font-weight:600;padding:5px 10px;border-radius:20px;}
+  .import-chip.ok{background:var(--positive-dim);color:var(--positive);}
+  .import-chip.warn{background:var(--risk-dim);color:var(--risk);}
   .plan-table{width:100%;border-collapse:collapse;margin-top:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
   .plan-table th{text-align:left;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-tertiary);background:var(--surface-2);padding:9px 12px;border-bottom:1px solid var(--border);}
   .plan-table td{padding:9px 12px;font-size:12.5px;border-bottom:1px solid var(--border);}

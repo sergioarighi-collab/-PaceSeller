@@ -345,8 +345,8 @@ function UploadModal({
     >
       <div style={{ padding: '8px 20px 20px' }}>
         <div className="prev-summary">
-          <span className="chip ok">6 linhas reconhecidas</span>
-          <span className="chip warn">1 precisa de atenção</span>
+          <span className="import-chip ok">6 linhas reconhecidas</span>
+          <span className="import-chip warn">1 precisa de atenção</span>
         </div>
         <table className="plan-table">
           <thead>
