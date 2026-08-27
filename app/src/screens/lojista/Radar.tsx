@@ -72,7 +72,7 @@ export function Radar() {
   const onboardingSkipped = useAppStore((s) => s.onboardingSkipped)
   const dismissOnboardingNotice = useAppStore((s) => s.dismissOnboardingNotice)
 
-  const [expanded, setExpanded] = useState<Partial<Record<Timeframe, boolean>>>({})
+  const [activeTimeframe, setActiveTimeframe] = useState<Timeframe>('hoje')
   const [toast, setToast] = useState<{ title: string; sub: string } | null>(null)
   const [repostos, setRepostos] = useState<Set<string>>(new Set())
 
@@ -168,43 +168,25 @@ export function Radar() {
       <div className="web-hero-band">
         <div className="whgreet">Bom dia, Carlos</div>
         <h1>Sua loja está saudável</h1>
-        <div className="whsub">
-          {lojistaRadarInsights.length} pendências no total — {groups.hoje.length} pra hoje, {groups['15dias'].length} em até 15 dias,{' '}
-          {groups['30dias'].length} nos próximos 30 dias
-        </div>
+        <div className="whsub">{lojistaRadarInsights.length} pendências no total — filtre por prazo pra ver cada uma</div>
       </div>
 
       <div className="web-main">
-        {timeframeOrder.map((tf) => {
-          const items = groups[tf]
-          if (items.length === 0) return null
-          const collapsible = tf !== 'hoje'
-          const isOpen = !collapsible || Boolean(expanded[tf])
-          return (
-            <div className="tl-group" key={tf}>
-              <div
-                className={`tl-group-head ${collapsible ? 'collapsible' : ''}`}
-                onClick={collapsible ? () => setExpanded((s) => ({ ...s, [tf]: !s[tf] })) : undefined}
-              >
-                <span className="tl-label">{timeframeLabel[tf]}</span>
-                <span className="tl-count">
-                  {items.length} {items.length === 1 ? 'item' : 'itens'}
-                </span>
-                {collapsible && (
-                  <span className="tl-toggle">
-                    {isOpen ? 'Ocultar' : 'Mostrar'}
-                    <span className="tl-chevron-btn">
-                      <svg className={isOpen ? 'open' : ''} width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                        <path d="m6 9 6 6 6-6" />
-                      </svg>
-                    </span>
-                  </span>
-                )}
-              </div>
-              {isOpen && <div className="grid4">{items.map(renderInsightCard)}</div>}
+        <div className="tl-filters">
+          {timeframeOrder.map((tf) => (
+            <div
+              key={tf}
+              className={`chip ${activeTimeframe === tf ? 'selected' : ''}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setActiveTimeframe(tf)}
+            >
+              {timeframeLabel[tf]} <span className="n">{groups[tf].length}</span>
             </div>
-          )
-        })}
+          ))}
+        </div>
+        <div className="grid4" style={{ marginTop: 20 }}>
+          {groups[activeTimeframe].map(renderInsightCard)}
+        </div>
 
         <div className="web-section-title">Destaque da semana</div>
         <div
