@@ -27,7 +27,7 @@ export function buildProductLines(list: Product[]): ProductLine[] {
 
 export type DeltaTone = 'up' | 'down' | 'flat' | 'new'
 
-// Compara uma quantidade "agora" com uma quantidade "antes" (coleção anterior) — usado no Planejar.
+// Compara uma quantidade "agora" com uma quantidade "antes" (ex: mesmo período do ano passado).
 export function deltaInfo(prev: number, now: number): { tone: DeltaTone; text: string } {
   if (prev === 0) return { tone: 'new', text: 'Novo' }
   const pct = Math.round(((now - prev) / prev) * 100)

@@ -120,11 +120,11 @@ export const lojistaRadarInsights: InsightCardData[] = [
     id: 'ins-10',
     timeframe: '30dias',
     severity: 'info',
-    eyebrow: 'Planejamento',
+    eyebrow: 'Fechamento',
     title: 'Feche seu pedido com o histórico em mãos',
-    text: 'Compare com o que vendeu na coleção anterior antes de decidir a quantidade',
-    cta: 'Planejar pedido',
-    stat: '7 linhas',
+    text: 'Compare com o que sua loja comprou no mesmo período do ano passado antes de fechar',
+    cta: 'Ver carrinhos',
+    stat: '2 carrinhos',
   },
 ]
 
@@ -467,19 +467,15 @@ export const carrinhos: Carrinho[] = [
   },
 ]
 
-// Comparação com a coleção anterior fechada por esta loja, usada na tela "Planejar" do lojista
-// desktop (ago/2026, substitui o mix por % antigo — ver docs/guia-dev-frontend.md). Números
-// ilustrativos: 0 pares nas linhas que só têm colorways "Lançamento"/sem giro no radar (Hertz Art,
-// Fusion), coerente com o card de oportunidade "Linha Fusion — ainda não chegou no seu mix" do Radar.
-export const previousCollectionName = 'Inverno 2025'
-export const previousCollectionQty: Record<string, number> = {
-  COIL: 145,
-  HERTZ: 88,
-  'HERTZ ART': 0,
-  FLOW: 52,
-  'FLOW XL': 34,
-  FUSION: 0,
-  'TG II': 20,
+// Quanto a loja comprou de cada SKU no mesmo período do ano passado — usado no checklist
+// "Antes de fechar" do carrinho (ago/2026) pra comparar o pedido de agora com o histórico da
+// própria loja, em vez de depender de import manual de planilha (ver docs/guia-dev-frontend.md).
+// Cobre só os SKUs que aparecem nos carrinhos mock hoje; SKU sem entrada aqui = sem dado
+// histórico suficiente, e o item correspondente simplesmente não entra na comparação.
+export const samePeriodLastYearQty: Record<string, number> = {
+  '2101-30': 34, // Tênis Tesla Hertz Black
+  '1901-67': 12, // Tênis Tesla Coil Black White
+  '2101-31': 14, // Tênis Tesla Hertz Rose
 }
 
 // @deprecated (lojista desktop) — mantido só porque o fluxo mobile do representante

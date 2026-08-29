@@ -157,9 +157,6 @@
   .tile .tval{font-family:var(--mono);font-size:16px;font-weight:500;color:var(--text-primary);margin-top:5px;}
   .mixitem{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:11px 13px;margin-top:8px;}
   .mixitem .mname{font-size:13px;color:var(--text-primary);font-weight:500;}
-  .stepper{display:flex;align-items:center;gap:10px;}
-  .stepbtn{width:24px;height:24px;border-radius:4px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;font-size:13px;}
-  .stepper .qty{font-family:var(--mono);font-size:13px;color:var(--text-primary);min-width:18px;text-align:center;}
 
   /* DESKTOP FRAME */
   .desktop{width:1040px;background:var(--bg-app);border-radius:8px;overflow:hidden;box-shadow:0 24px 50px rgba(20,20,22,0.12);border:1px solid var(--border);}
@@ -493,61 +490,17 @@
   .pw-addbtn{width:100%;text-align:center;padding:9px;border-radius:4px;font-size:12.5px;font-weight:600;background:var(--surface);border:1px solid var(--border-strong);color:var(--text-primary);}
   .pw-addbtn.in-cart{background:var(--positive-dim);border-color:var(--positive);color:var(--positive);display:flex;align-items:center;justify-content:center;gap:6px;}
 
-  /* Comparação com coleção anterior (tela Planejar) — substitui o pw-addbtn nesse contexto */
-  .pw-compare{padding-top:11px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;}
-  .pw-gaptag{align-self:flex-start;font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--info);background:var(--info-dim);padding:3px 7px;border-radius:3px;}
-  .pw-compare-prev{font-size:12px;color:var(--text-secondary);}
-  .pw-compare-prev b{color:var(--text-primary);font-weight:600;}
-  .pw-compare-now{display:flex;align-items:center;gap:8px;}
-  .pw-compare-label{font-size:11.5px;color:var(--text-tertiary);flex:1;}
+  /* Badge de variação (ex: comparação com mesmo período do ano passado, no "Antes de fechar") */
   .deltabadge{font-family:var(--mono);font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:4px;flex-shrink:0;}
   .deltabadge.up{color:var(--positive);background:var(--positive-dim);}
   .deltabadge.down{color:var(--risk);background:var(--risk-dim);}
   .deltabadge.flat{color:var(--text-tertiary);background:var(--surface-2);border:1px solid var(--border);}
   .deltabadge.new{color:var(--info);background:var(--info-dim);}
 
-  .plan-summarybar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:640px;}
-  .plan-summarybar .cell{background:var(--surface);padding:14px 16px;}
-  .plan-summarybar .slabel{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-tertiary);}
-  .plan-summarybar .sval{font-family:var(--display);font-size:19px;font-weight:700;margin-top:6px;color:var(--text-primary);}
-  .plan-summarybar .sdelta{font-family:var(--mono);font-size:11px;margin-top:4px;font-weight:600;}
-  .plan-summarybar .sdelta.up{color:var(--positive);}
-  .plan-summarybar .sdelta.down{color:var(--risk);}
-  .plan-summarybar .sdelta.flat{color:var(--text-tertiary);}
-
-  /* Estado vazio do Planejar (loja sem coleção anterior registrada) */
-  .plan-empty{max-width:480px;margin:70px auto 0;text-align:center;}
-  .plan-empty .pe-icon{width:60px;height:60px;border-radius:14px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;margin:0 auto;color:var(--text-tertiary);}
-  .plan-empty h1{font-family:var(--display);font-size:21px;font-weight:700;margin-top:20px;letter-spacing:-.01em;}
-  .plan-empty p{font-size:13px;color:var(--text-secondary);margin-top:10px;line-height:1.6;}
-  .plan-empty .pe-actions{display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:24px;}
-  .btn-text{background:none;border:none;font-size:12.5px;color:var(--text-secondary);font-weight:500;cursor:pointer;text-decoration:underline;text-underline-offset:3px;font-family:var(--body);}
-
-  /* Modal de importar coleção anterior — passo 1 (arquivo) e passo 2 (conferir dados) */
-  .dropzone{border:1.5px dashed var(--border-strong);border-radius:8px;padding:36px 20px;text-align:center;background:var(--surface-2);cursor:pointer;transition:border-color .15s ease;}
-  .dropzone:hover{border-color:var(--text-tertiary);}
-  .dropzone .dz-icon{width:36px;height:36px;border-radius:50%;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto;color:var(--text-secondary);}
-  .dropzone .dz-title{font-size:13px;font-weight:600;margin-top:12px;}
-  .dropzone .dz-sub{font-size:11.5px;color:var(--text-tertiary);margin-top:4px;}
-  .filerow{margin-top:14px;display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;font-size:12.5px;}
-  .filerow .fname{font-weight:600;flex:1;}
-  .filerow .fsize{color:var(--text-tertiary);font-family:var(--mono);font-size:11px;}
-  .modelrow{margin-top:12px;font-size:12px;color:var(--text-secondary);}
-  .modelrow button{background:none;border:none;padding:0;color:var(--info);font-weight:600;font-size:12px;font-family:var(--body);cursor:pointer;}
-
-  .prev-summary{display:flex;gap:8px;margin-bottom:2px;}
-  .import-chip{font-family:var(--mono);font-size:11px;font-weight:600;padding:5px 10px;border-radius:20px;}
-  .import-chip.ok{background:var(--positive-dim);color:var(--positive);}
-  .import-chip.warn{background:var(--risk-dim);color:var(--risk);}
-  .plan-table{width:100%;border-collapse:collapse;margin-top:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-  .plan-table th{text-align:left;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-tertiary);background:var(--surface-2);padding:9px 12px;border-bottom:1px solid var(--border);}
-  .plan-table td{padding:9px 12px;font-size:12.5px;border-bottom:1px solid var(--border);}
-  .plan-table tr:last-child td{border-bottom:none;}
-  .plan-table tr.row-warn td{background:var(--risk-dim);}
-  .plan-table select{font-family:var(--body);font-size:12px;padding:5px 7px;border-radius:4px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text-primary);}
-  .plan-table .qty-cell{font-family:var(--mono);}
-  .plan-table .status-ok{color:var(--positive);font-weight:600;font-size:11.5px;display:flex;align-items:center;gap:5px;white-space:nowrap;}
-  .plan-table .status-warn{color:var(--risk);font-weight:600;font-size:11.5px;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+  /* Linhas de comparação "mesmo período do ano passado" dentro do qualitybox (CarrinhoDetail) */
+  .yoylist{display:flex;flex-direction:column;gap:7px;margin-top:2px;padding-left:23px;}
+  .yoyrow{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--text-secondary);}
+  .yoyrow b{color:var(--text-primary);font-weight:600;}
 
   .sidebar-itemlist{margin-top:16px;display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;}
   .sidebar-item{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:8px 10px;}

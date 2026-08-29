@@ -126,7 +126,7 @@ export function Radar() {
               else if (card.cta === 'Ver coleção') navigate('/colecoes/fusion')
               else if (card.cta === 'Ver pedido') navigate('/carrinhos/reposicao-rapida/4790-1/acompanhamento')
               else if (card.cta === 'Ver clientes') navigate('/fidelizacao')
-              else if (card.cta === 'Planejar pedido') navigate('/planejamento')
+              else if (card.cta === 'Ver carrinhos') navigate('/carrinhos')
               else navigate('/catalogo')
             }}
           >
@@ -214,9 +214,9 @@ export function Radar() {
             <div
               className="btn-primary"
               style={{ width: 220, marginTop: 20, background: '#fff', color: 'var(--text-primary)', cursor: 'pointer' }}
-              onClick={() => navigate('/planejamento')}
+              onClick={() => navigate('/catalogo')}
             >
-              Planejar pedido
+              Ver no catálogo
             </div>
           </div>
         </div>

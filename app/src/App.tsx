@@ -14,7 +14,6 @@ import { WizardStep1 } from './screens/lojista/WizardStep1'
 import { WizardStep2 } from './screens/lojista/WizardStep2'
 import { Radar } from './screens/lojista/Radar'
 import { Catalog } from './screens/lojista/Catalog'
-import { Planning } from './screens/lojista/Planning'
 import { MeusCarrinhos } from './screens/lojista/MeusCarrinhos'
 import { CarrinhoDetail } from './screens/lojista/CarrinhoDetail'
 import { Payment } from './screens/lojista/Payment'
@@ -48,7 +47,6 @@ function App() {
         <Route path="/radar" element={<Radar />} />
         <Route path="/catalogo" element={<Catalog />} />
         <Route path="/catalogo/:id" element={<Catalog />} />
-        <Route path="/planejamento" element={<Planning />} />
         <Route path="/fidelizacao" element={<Loyalty />} />
         <Route path="/colecoes/fusion" element={<Colecao />} />
 

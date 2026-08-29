@@ -212,13 +212,9 @@ export function Catalog() {
                   >
                     {inCart ? 'No carrinho ✓ — ver carrinho' : 'Adicionar ao carrinho'}
                   </div>
-                  <div className="btn-secondary" style={{ flex: 1, cursor: 'pointer' }} onClick={() => navigate('/planejamento')}>
-                    Planejar pedido
-                  </div>
                 </div>
                 <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 10 }}>
-                  Carrinho: adiciona este item agora · Planejar pedido: mesmo pedido, mas comparando cada linha com a coleção anterior
-                  antes de decidir a quantidade
+                  Antes de fechar o carrinho, você vê como esse pedido se compara ao mesmo período do ano passado
                 </div>
               </div>
             </div>

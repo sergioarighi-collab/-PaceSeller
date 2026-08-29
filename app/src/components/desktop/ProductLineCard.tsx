@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import type { Product, Severity } from '../../lib/types'
 import { useAppStore } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
-import { deltaInfo } from '../../lib/productLines'
 import { ProductThumb } from './ProductThumb'
 
 const badgeToneClass: Record<Severity, string> = {
@@ -18,23 +17,14 @@ export function ProductLineCard({
   colors,
   bestSellerId,
   defaultId,
-  planning,
 }: {
   colors: Product[]
   bestSellerId: string
   defaultId?: string
-  // Presente só na tela "Planejar o pedido" — troca o botão "Adicionar ao carrinho" pela
-  // comparação com a coleção anterior (mesmo card, mesma foto, ver docs/guia-dev-frontend.md).
-  // "Planejando agora" edita o cartItems de verdade (mesmo pedido do Catálogo/drawer) — não é
-  // um estado à parte, por isso só recebe prevQty/isGap, não qty/onChangeQty.
-  planning?: { prevQty: number; isGap: boolean }
 }) {
   const navigate = useNavigate()
   const toggleCart = useAppStore((s) => s.toggleCart)
   const isInCart = useAppStore((s) => s.isInCart)
-  const cartItems = useAppStore((s) => s.cartItems)
-  const addToCart = useAppStore((s) => s.addToCart)
-  const removeFromCart = useAppStore((s) => s.removeFromCart)
   const initialIdx = Math.max(
     0,
     colors.findIndex((c) => c.id === (defaultId ?? bestSellerId)),
@@ -42,17 +32,8 @@ export function ProductLineCard({
   const [selectedIdx, setSelectedIdx] = useState(initialIdx)
   const p = colors[selectedIdx]
   const inCart = isInCart(p.id)
-  const qty = cartItems[p.id] ?? 0
   const margin = Math.round(((p.pricePdv - p.priceFactory) / p.pricePdv) * 100)
   const lineName = p.name.replace(` ${p.colorway}`, '')
-
-  function incQty() {
-    addToCart(p.id, qty + 1)
-  }
-  function decQty() {
-    if (qty <= 1) removeFromCart(p.id)
-    else addToCart(p.id, qty - 1)
-  }
 
   return (
     <div className="pcard-web">
@@ -115,47 +96,22 @@ export function ProductLineCard({
           </div>
         )}
 
-        {/* flex-basis garante um respiro mínimo acima do botão/comparação mesmo quando este é o
+        {/* flex-basis garante um respiro mínimo acima do botão mesmo quando este é o
             card mais alto da fileira (onde margin-top:auto sozinho colapsaria pra 0) */}
         <div style={{ flex: '1 0 14px' }} />
 
-        {planning ? (
-          <div className="pw-compare">
-            {planning.isGap && <span className="pw-gaptag">Lacuna no seu pedido</span>}
-            <div className="pw-compare-prev">
-              Coleção anterior: <b>{planning.prevQty > 0 ? `${planning.prevQty} pares` : 'não comprou'}</b>
-            </div>
-            <div className="pw-compare-now">
-              <span className="pw-compare-label">Planejando agora</span>
-              <div className="stepper">
-                <div className="stepbtn" style={{ cursor: 'pointer' }} onClick={decQty}>
-                  −
-                </div>
-                <div className="qty">{qty}</div>
-                <div className="stepbtn" style={{ cursor: 'pointer' }} onClick={incQty}>
-                  +
-                </div>
-              </div>
-              {(() => {
-                const d = deltaInfo(planning.prevQty, qty)
-                return <span className={`deltabadge ${d.tone}`}>{d.text}</span>
-              })()}
-            </div>
-          </div>
-        ) : (
-          <div className={`pw-addbtn ${inCart ? 'in-cart' : ''}`} style={{ cursor: 'pointer' }} onClick={() => toggleCart(p.id)}>
-            {inCart ? (
-              <>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-                  <path d="M5 13l4 4L19 7" />
-                </svg>
-                No carrinho
-              </>
-            ) : (
-              'Adicionar ao carrinho'
-            )}
-          </div>
-        )}
+        <div className={`pw-addbtn ${inCart ? 'in-cart' : ''}`} style={{ cursor: 'pointer' }} onClick={() => toggleCart(p.id)}>
+          {inCart ? (
+            <>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+              No carrinho
+            </>
+          ) : (
+            'Adicionar ao carrinho'
+          )}
+        </div>
       </div>
     </div>
   )

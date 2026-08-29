@@ -2,8 +2,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
-import { carrinhos } from '../../lib/data'
+import { carrinhos, samePeriodLastYearQty } from '../../lib/data'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
+import { deltaInfo } from '../../lib/productLines'
 import { formatBRL } from '../../lib/format'
 
 const conditionLabel: Record<string, string> = {
@@ -20,6 +21,28 @@ export function CarrinhoDetail() {
 
   const totalItems = cart.pedidos.reduce((sum, p) => sum + p.items.reduce((s, i) => s + i.qty, 0), 0)
   const totalValue = cart.pedidos.reduce((sum, p) => sum + p.total, 0)
+
+  // Compara os itens deste carrinho com o que a loja comprou no mesmo período do ano passado —
+  // só entram os SKUs com dado histórico (ver samePeriodLastYearQty em lib/data.ts) de pedidos
+  // ainda não fechados (pago já foi decidido, não faz sentido re-questionar "antes de fechar").
+  const itemsByProduct = new Map<string, { name: string; qty: number }>()
+  for (const pedido of cart.pedidos) {
+    if (pedido.status === 'pago') continue
+    for (const item of pedido.items) {
+      const existing = itemsByProduct.get(item.productId)
+      if (existing) existing.qty += item.qty
+      else itemsByProduct.set(item.productId, { name: item.name, qty: item.qty })
+    }
+  }
+  const yoyRows = Array.from(itemsByProduct.entries())
+    .filter(([productId]) => samePeriodLastYearQty[productId] !== undefined)
+    .map(([productId, { name, qty }]) => ({
+      productId,
+      name: name.replace('Tênis Tesla ', ''),
+      prevQty: samePeriodLastYearQty[productId],
+      nowQty: qty,
+      delta: deltaInfo(samePeriodLastYearQty[productId], qty),
+    }))
 
   return (
     <DesktopPage>
@@ -152,6 +175,28 @@ export function CarrinhoDetail() {
                 + Adicionar 4 itens
               </div>
             </div>
+            {yoyRows.length > 0 && (
+              <div className="qline" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
+                <div className="qleft">
+                  <span className="ck" style={{ background: 'var(--info-dim)', color: 'var(--info)' }}>
+                    ↕
+                  </span>
+                  Comparado ao mesmo período do ano passado
+                </div>
+                <div className="yoylist">
+                  {yoyRows.map((r) => (
+                    <div className="yoyrow" key={r.productId}>
+                      <span>
+                        <b>{r.name}</b> · ano passado {r.prevQty} pares
+                      </span>
+                      <span className={`deltabadge ${r.delta.tone}`}>
+                        {r.nowQty} pares · {r.delta.text}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
