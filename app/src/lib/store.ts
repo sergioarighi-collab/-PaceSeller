@@ -41,19 +41,21 @@ interface AppState {
    * lojista fecha o pedido em montagem no drawer (ver commitCartToCarrinho). */
   carrinhos: Carrinho[]
   /**
-   * Em qual carrinho o próximo "Ir para o carrinho" do drawer deve entrar como pedido novo.
-   * `null` = cria um carrinho novo no próximo commit. Setado por "Criar novo pedido neste
-   * carrinho" (aponta pro carrinho atual) e limpo por "+ Novo carrinho" (força criar um novo).
+   * Último carrinho que o lojista mexeu — usado só como sugestão pré-selecionada no seletor de
+   * carrinho do drawer (ou pra pular o seletor quando há só 1 carrinho). Setado por "Criar novo
+   * pedido neste carrinho" (aponta pro carrinho atual) e limpo por "+ Novo carrinho" (sugere
+   * "Novo carrinho" da próxima vez). Nunca decide o destino sozinho — quem decide é sempre o
+   * `carrinhoId` passado pra `commitCartToCarrinho`.
    */
   activeCarrinhoId: string | null
   setActiveCarrinho: (id: string | null) => void
   /**
-   * Converte o `cartItems` atual (o pedido que o lojista está montando) num `Pedido` de
-   * verdade dentro do carrinho ativo — cria um carrinho novo se não houver um ativo — e limpa
-   * o `cartItems` pra começar o próximo pedido do zero. Retorna o id do carrinho de destino, ou
-   * `null` se não havia nenhum item pra enviar (não faz sentido commitar um pedido vazio).
+   * Converte o `cartItems` atual (o pedido que o lojista está montando) num `Pedido` de verdade
+   * dentro do carrinho escolhido, e limpa o `cartItems` pra começar o próximo pedido do zero.
+   * `carrinhoId: null` cria um carrinho novo. Retorna o id do carrinho de destino, ou `null` se
+   * não havia nenhum item pra enviar (não faz sentido commitar um pedido vazio).
    */
-  commitCartToCarrinho: () => string | null
+  commitCartToCarrinho: (targetCarrinhoId: string | null) => string | null
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -104,7 +106,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   carrinhos: initialCarrinhos,
   activeCarrinhoId: null,
   setActiveCarrinho: (id) => set({ activeCarrinhoId: id }),
-  commitCartToCarrinho: () => {
+  commitCartToCarrinho: (targetCarrinhoId) => {
     const s = get()
     const { lines, totalItems, totalValue } = cartSummary(s.cartItems)
     if (totalItems === 0) return null
@@ -120,7 +122,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const marginPct = pdvTotal > 0 ? Math.round(((pdvTotal - totalValue) / pdvTotal) * 100) : 0
 
     let carrinhos = s.carrinhos
-    let carrinho = carrinhos.find((c) => c.id === s.activeCarrinhoId)
+    let carrinho = targetCarrinhoId ? carrinhos.find((c) => c.id === targetCarrinhoId) : undefined
     if (!carrinho) {
       carrinho = { id: `carrinho-${Date.now()}`, name: `Carrinho ${carrinhos.length + 1}`, representative: 'Ana', updatedAt: 'agora', pedidos: [] }
       carrinhos = [...carrinhos, carrinho]
