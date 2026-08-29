@@ -202,6 +202,13 @@ Antes, "Seu pedido" era o componente `OrderSidebar`, uma coluna fixa de 320px se
 
 Extraídas dos catálogos PDF reais da Tesla Footwear (não são geradas/fake). Cobertura hoje: COIL, HERTZ, HERTZ ART (parcial), FLOW, FLOW XL. **Fusion e TG II não têm foto real** (não aparecem nos PDFs recebidos) — nesses casos `ProductThumb` cai automaticamente no ícone placeholder via `onError`, então nunca vai aparecer imagem quebrada, mas também não adianta tentar "consertar" apontando pra um arquivo que não existe.
 
+**Padronizadas pra um mesmo tamanho (ago/2026):** os 33 arquivos em `app/public/products/` vinham direto do recorte de cada PDF, com enquadramentos bem diferentes entre si — de 448×249 a 900×900px, algumas já cortadas rente ao tênis, outras com bastante margem sobrando. Mesmo o `ProductThumb` usando `object-fit:contain` (que evita distorcer qualquer imagem), o **tênis em si** aparecia em escalas bem diferentes de um card pro outro, porque o "zoom" já vinha embutido no arquivo. Corrigido reprocessando os 33 arquivos (script Python ad-hoc, não faz parte do build — não precisa rodar de novo a menos que cheguem fotos novas):
+
+1. Detecta a bounding box do conteúdo real (tênis) em cada imagem — qualquer pixel com `min(R,G,B) < 228` conta como conteúdo, o resto é fundo (todas as fotos são still de estúdio em fundo branco/quase-branco, algumas com um vinheta bem sutil nos cantos — o threshold absoluto de branco lida bem com isso; a primeira tentativa, comparar cada pixel com uma amostra dos 4 cantos, se enganava nessas fotos com vinheta e "achava" conteúdo na imagem inteira).
+2. Recorta pra essa bounding box, redimensiona preservando a proporção pra ocupar **82% da largura** de uma tela final fixa de **900×520px**, e centraliza em fundo branco.
+
+Resultado: todo arquivo em `products/` tem exatamente 900×520px hoje, e o tênis ocupa uma fração visualmente parecida do quadro em qualquer card (Catálogo, Ficha de Decisão, drawer, etc.) — sem precisar mexer no `ProductThumb` ou em nenhum CSS, o ganho é só no arquivo de origem. Se uma foto nova for adicionada depois, vale rodar o mesmo tratamento nela antes de soltar no diretório (senão ela vai destoar de novo).
+
 ## Fora de escopo — propositalmente não implementado
 
 Ver `docs/cruzamento-reuniao-cliente.md` pro racional completo. Resumo do que **não** deve ser desenhado/implementado sem retomar a decisão com o cliente:
