@@ -24,12 +24,17 @@ interface AppState {
   activeOrderId: string
   setActiveOrderId: (id: string) => void
 
-  /** Itens do pedido em montagem (Catálogo / Ficha de Decisão / Planejamento). */
+  /**
+   * Itens do pedido em montagem (Catálogo / Ficha de Decisão / Planejamento). Pra saber se um
+   * produto está no carrinho, leia `cartItems[productId]` direto onde for renderizar — não
+   * exponha um helper tipo `isInCart(id)` selecionado via `useAppStore((s) => s.isInCart)`: a
+   * referência da função nunca muda entre renders, então o componente nunca re-renderiza quando
+   * o carrinho muda (bug real que já aconteceu aqui — ver `ProductLineCard.tsx`/`Catalog.tsx`).
+   */
   cartItems: Record<string, number>
   addToCart: (productId: string, qty?: number) => void
   removeFromCart: (productId: string) => void
   toggleCart: (productId: string) => void
-  isInCart: (productId: string) => boolean
 
   /** Drawer "Seu pedido" (carrinho em construção) — trigger no header, disponível em qualquer tela do lojista. */
   orderDrawerOpen: boolean
@@ -103,7 +108,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (s.cartItems[productId]) s.removeFromCart(productId)
     else s.addToCart(productId, 12)
   },
-  isInCart: (productId) => Boolean(get().cartItems[productId]),
 
   orderDrawerOpen: false,
   openOrderDrawer: () => set({ orderDrawerOpen: true }),

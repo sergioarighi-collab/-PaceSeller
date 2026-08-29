@@ -148,6 +148,14 @@ Um `Carrinho` é compartilhado com o representante fixo da loja e pode ter **1+ 
 
 `deliveryEstimateDays` — prazo real confirmado com o cliente é **~15 dias corridos** (não 7, que era um chute anterior baseado em suposição errada). Casos pontuais de reposição rápida podem ser ~2 dias (ver o pedido de exemplo em `carrinhos.reposicao-rapida`). `0` é usado como valor-sentinela pra "entrega imediata" (à vista) — tratamento separado, não confundir com o caso de 2 dias.
 
+### Bug corrigido: "Adicionar ao carrinho" clicava mas não mudava de estado (ago/2026)
+
+O clique funcionava de verdade (o item ia pro `cartItems`, o drawer refletia certinho), mas o botão do próprio card continuava mostrando "Adicionar ao carrinho" em vez de virar "No carrinho" — em `ProductLineCard.tsx` e nas duas ocorrências em `Catalog.tsx` (Ficha de Decisão e o grid `?contexto=`). Causa: os três liam `const isInCart = useAppStore((s) => s.isInCart)` e depois chamavam `isInCart(p.id)` — mas `isInCart` é uma **função do store**, e a referência dessa função nunca muda entre atualizações do zustand. O seletor `(s) => s.isInCart` sempre retorna o mesmo valor, então o componente nunca era notificado quando `cartItems` mudava (mesmo o item tendo sido adicionado de verdade) — só re-renderizava por outro motivo (ex: trocar de cor no seletor de swatch).
+
+Fix: os três agora selecionam `cartItems` direto (`const cartItems = useAppStore((s) => s.cartItems)`) e leem `Boolean(cartItems[p.id])` — esse sim é um valor que muda de referência a cada `set`, então o componente re-renderiza quando deveria. `isInCart` foi removido do store (ficava sem uso depois do fix, e é exatamente o padrão que causa esse bug — não recriar).
+
+**Regra geral pra esse store**: nunca selecione uma *função* do zustand esperando reatividade (`useAppStore((s) => s.algumHelper)` + chamar o helper dentro do componente) — funções de store são estáveis por referência. Pra renderizar algo que depende de um pedaço do estado, selecione o próprio dado (`useAppStore((s) => s.cartItems)`, `useAppStore((s) => s.carrinhos)` etc.) e derive o valor no corpo do componente.
+
 ## Catálogo — cards agrupados por linha (mudança recente)
 
 O grid do Catálogo (`Catalog.tsx`, view sem `?contexto=`) **não mostra mais um card por SKU** — agrupa por `collection` (`buildProductLines`) e renderiza um `ProductLineCard` por linha, com seletor de cor. A cor com maior `growthPct` da linha é a "mais vendida" (selo + estrela na miniatura), e é a selecionada por padrão ao abrir a página (ou a primeira cor que bate o filtro ativo, se a mais vendida não bater).

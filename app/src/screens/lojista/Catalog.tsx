@@ -92,14 +92,14 @@ export function Catalog() {
   const [filter, setFilter] = useState(filters[0])
   const [query, setQuery] = useState('')
   const toggleCart = useAppStore((s) => s.toggleCart)
-  const isInCart = useAppStore((s) => s.isInCart)
+  const cartItems = useAppStore((s) => s.cartItems)
   const addToCart = useAppStore((s) => s.addToCart)
 
   const selectedProduct = products.find((p) => p.id === id)
 
   if (selectedProduct) {
     const p = selectedProduct
-    const inCart = isInCart(p.id)
+    const inCart = Boolean(cartItems[p.id])
     const margin = Math.round(((p.pricePdv - p.priceFactory) / p.pricePdv) * 100)
     return (
       <DesktopPage>
@@ -296,7 +296,7 @@ export function Catalog() {
           <div className="catgrid-web">
             {context
               ? filteredProducts.map((p) => {
-                  const inCart = isInCart(p.id)
+                  const inCart = Boolean(cartItems[p.id])
                   const margin = Math.round(((p.pricePdv - p.priceFactory) / p.pricePdv) * 100)
                   const contextBadge =
                     context?.cardBadge ??

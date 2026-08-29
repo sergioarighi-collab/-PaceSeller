@@ -24,14 +24,14 @@ export function ProductLineCard({
 }) {
   const navigate = useNavigate()
   const toggleCart = useAppStore((s) => s.toggleCart)
-  const isInCart = useAppStore((s) => s.isInCart)
+  const cartItems = useAppStore((s) => s.cartItems)
   const initialIdx = Math.max(
     0,
     colors.findIndex((c) => c.id === (defaultId ?? bestSellerId)),
   )
   const [selectedIdx, setSelectedIdx] = useState(initialIdx)
   const p = colors[selectedIdx]
-  const inCart = isInCart(p.id)
+  const inCart = Boolean(cartItems[p.id])
   const margin = Math.round(((p.pricePdv - p.priceFactory) / p.pricePdv) * 100)
   const lineName = p.name.replace(` ${p.colorway}`, '')
 
