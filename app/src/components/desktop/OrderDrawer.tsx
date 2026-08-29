@@ -1,14 +1,11 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore, cartSummary } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { products } from '../../lib/data'
 import { ProductThumb } from './ProductThumb'
-import { WebModal } from './WebModal'
 
 const MIX_IDEAL_PCT = 70
-const NEW_CARRINHO = 'novo' as const
 
 export function OrderDrawer() {
   const open = useAppStore((s) => s.orderDrawerOpen)
@@ -26,29 +23,17 @@ export function OrderDrawer() {
   const gradeOk = totalItems >= GRADE_MINIMA_PARES
   const gradePct = Math.min(100, Math.round((totalItems / GRADE_MINIMA_PARES) * 100))
 
-  const [pickerOpen, setPickerOpen] = useState(false)
-  const [picked, setPicked] = useState<string>(NEW_CARRINHO)
-
-  // Fecha o pedido em montagem: vira um Pedido de verdade dentro do carrinho escolhido (ou um
-  // carrinho novo) e limpa o cartItems pro próximo pedido.
-  function commitAndGo(target: string) {
-    const carrinhoId = commitCartToCarrinho(target === NEW_CARRINHO ? null : target)
-    setActiveCarrinho(carrinhoId)
-    setPickerOpen(false)
-    closeOrderDrawer()
-    navigate(carrinhoId ? `/carrinhos/${carrinhoId}` : '/carrinhos')
-  }
-
+  // Fecha o pedido em montagem: vira um Pedido de verdade dentro do carrinho ativo (o carrinho
+  // único, se só há um; ou um carrinho novo) e limpa o cartItems pro próximo pedido. Não
+  // interrompe pra perguntar em qual carrinho entra — o drawer é sobre comprar, não sobre
+  // organizar carrinhos; se o padrão errar, dá pra mover o pedido depois em Meus Carrinhos.
   function handleAddToCart() {
     if (totalItems === 0) return
-    // Só pergunta em qual carrinho entra quando há mais de um pra escolher — com 0 ou 1
-    // carrinho existente não tem o que decidir, comita direto.
-    if (carrinhos.length > 1) {
-      setPicked(activeCarrinhoId && carrinhos.some((c) => c.id === activeCarrinhoId) ? activeCarrinhoId : NEW_CARRINHO)
-      setPickerOpen(true)
-      return
-    }
-    commitAndGo(carrinhos.length === 1 ? carrinhos[0].id : NEW_CARRINHO)
+    const target = activeCarrinhoId && carrinhos.some((c) => c.id === activeCarrinhoId) ? activeCarrinhoId : carrinhos.length === 1 ? carrinhos[0].id : null
+    const carrinhoId = commitCartToCarrinho(target)
+    setActiveCarrinho(carrinhoId)
+    closeOrderDrawer()
+    navigate(carrinhoId ? `/carrinhos/${carrinhoId}` : '/carrinhos')
   }
 
   // Sugestões pra completar o mix: produtos que a loja ainda não vende (badge "Oportunidade perdida"),
@@ -163,58 +148,6 @@ export function OrderDrawer() {
           </div>
         </div>
       </div>
-
-      {pickerOpen && (
-        <WebModal
-          title="Em qual carrinho?"
-          subtitle="Você tem mais de um carrinho aberto — escolha onde esse pedido entra"
-          onClose={() => setPickerOpen(false)}
-          width={420}
-          footer={
-            <>
-              <div className="btn-secondary" style={{ cursor: 'pointer' }} onClick={() => setPickerOpen(false)}>
-                Cancelar
-              </div>
-              <div className="btn-primary" style={{ cursor: 'pointer' }} onClick={() => commitAndGo(picked)}>
-                Adicionar
-              </div>
-            </>
-          }
-        >
-          <div style={{ padding: '8px 20px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {carrinhos.map((c) => (
-              <div
-                key={c.id}
-                className={`optioncard ${picked === c.id ? 'selected' : ''}`}
-                style={{ cursor: 'pointer' }}
-                onClick={() => setPicked(c.id)}
-              >
-                <div>
-                  <div className="otitle">{c.name}</div>
-                  <div className="osub">
-                    {c.pedidos.length} pedido{c.pedidos.length > 1 ? 's' : ''} · Representante: {c.representative}
-                  </div>
-                </div>
-              </div>
-            ))}
-            <div
-              className={`optioncard ${picked === NEW_CARRINHO ? 'selected' : ''}`}
-              style={{ cursor: 'pointer' }}
-              onClick={() => setPicked(NEW_CARRINHO)}
-            >
-              <div className="oicon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-              </div>
-              <div>
-                <div className="otitle">Novo carrinho</div>
-                <div className="osub">Cria um carrinho separado só pra esse pedido</div>
-              </div>
-            </div>
-          </div>
-        </WebModal>
-      )}
     </>
   )
 }

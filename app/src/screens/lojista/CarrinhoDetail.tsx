@@ -1,12 +1,16 @@
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
+import { WebModal } from '../../components/desktop/WebModal'
 import { samePeriodLastYearQty } from '../../lib/data'
 import { useAppStore } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { deltaInfo } from '../../lib/productLines'
 import { formatBRL } from '../../lib/format'
+
+const NEW_CARRINHO = 'novo' as const
 
 const conditionLabel: Record<string, string> = {
   '30': '30/60/90 dias',
@@ -20,11 +24,30 @@ export function CarrinhoDetail() {
   const { cartId } = useParams()
   const carrinhos = useAppStore((s) => s.carrinhos)
   const setActiveCarrinho = useAppStore((s) => s.setActiveCarrinho)
+  const movePedidoToCarrinho = useAppStore((s) => s.movePedidoToCarrinho)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
 
   function shopMoreForThisCarrinho() {
     setActiveCarrinho(cart.id)
     navigate('/catalogo')
+  }
+
+  // Correção pontual pro caso do pedido ter caído no carrinho errado (o drawer decide sozinho,
+  // sem perguntar — ver OrderDrawer.tsx) — só existe destino pra mover se houver outro carrinho.
+  const otherCarrinhos = carrinhos.filter((c) => c.id !== cart.id)
+  const [movingPedidoId, setMovingPedidoId] = useState<string | null>(null)
+  const [movePicked, setMovePicked] = useState<string>(NEW_CARRINHO)
+
+  function openMovePicker(pedidoId: string) {
+    setMovingPedidoId(pedidoId)
+    setMovePicked(otherCarrinhos[0]?.id ?? NEW_CARRINHO)
+  }
+
+  function confirmMove() {
+    if (!movingPedidoId) return
+    const targetId = movePedidoToCarrinho(cart.id, movingPedidoId, movePicked === NEW_CARRINHO ? null : movePicked)
+    setMovingPedidoId(null)
+    if (targetId) navigate(`/carrinhos/${targetId}`)
   }
 
   const totalItems = cart.pedidos.reduce((sum, p) => sum + p.items.reduce((s, i) => s + i.qty, 0), 0)
@@ -101,9 +124,19 @@ export function CarrinhoDetail() {
                       {conditionLabel[pedido.paymentCondition ?? '30']} · {pedido.deliveryEstimateDays > 0 ? `Entrega em ${pedido.deliveryEstimateDays} dias úteis` : 'Entrega imediata'}
                     </div>
                   </div>
-                  <span className={`badge ${pedido.status === 'pago' ? 'pos' : 'neutral'}`}>
-                    {pedido.status === 'pago' ? 'Confirmado' : pedido.status === 'aguardando' ? 'Aguardando aprovação' : 'Rascunho'}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    {otherCarrinhos.length > 0 && pedido.status !== 'pago' && (
+                      <span
+                        style={{ fontSize: 11.5, color: 'var(--text-secondary)', fontWeight: 500, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}
+                        onClick={() => openMovePicker(pedido.id)}
+                      >
+                        Mover pedido
+                      </span>
+                    )}
+                    <span className={`badge ${pedido.status === 'pago' ? 'pos' : 'neutral'}`}>
+                      {pedido.status === 'pago' ? 'Confirmado' : pedido.status === 'aguardando' ? 'Aguardando aprovação' : 'Rascunho'}
+                    </span>
+                  </div>
                 </div>
                 <div className="og-body">
                   {pedido.items.map((item, i) => (
@@ -239,6 +272,57 @@ export function CarrinhoDetail() {
           </div>
         </div>
       </div>
+
+      {movingPedidoId && (
+        <WebModal
+          title="Mover pedido pra qual carrinho?"
+          onClose={() => setMovingPedidoId(null)}
+          width={420}
+          footer={
+            <>
+              <div className="btn-secondary" style={{ cursor: 'pointer' }} onClick={() => setMovingPedidoId(null)}>
+                Cancelar
+              </div>
+              <div className="btn-primary" style={{ cursor: 'pointer' }} onClick={confirmMove}>
+                Mover
+              </div>
+            </>
+          }
+        >
+          <div style={{ padding: '8px 20px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {otherCarrinhos.map((c) => (
+              <div
+                key={c.id}
+                className={`optioncard ${movePicked === c.id ? 'selected' : ''}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setMovePicked(c.id)}
+              >
+                <div>
+                  <div className="otitle">{c.name}</div>
+                  <div className="osub">
+                    {c.pedidos.length} pedido{c.pedidos.length > 1 ? 's' : ''} · Representante: {c.representative}
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div
+              className={`optioncard ${movePicked === NEW_CARRINHO ? 'selected' : ''}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setMovePicked(NEW_CARRINHO)}
+            >
+              <div className="oicon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </div>
+              <div>
+                <div className="otitle">Novo carrinho</div>
+                <div className="osub">Tira o pedido daqui e cria um carrinho separado só pra ele</div>
+              </div>
+            </div>
+          </div>
+        </WebModal>
+      )}
     </DesktopPage>
   )
 }

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Persona, User, Carrinho, PedidoItem } from './types'
+import type { Persona, User, Carrinho, Pedido, PedidoItem } from './types'
 import { users, products, initialCarrinhos } from './data'
 
 interface AppState {
@@ -41,11 +41,11 @@ interface AppState {
    * lojista fecha o pedido em montagem no drawer (ver commitCartToCarrinho). */
   carrinhos: Carrinho[]
   /**
-   * Último carrinho que o lojista mexeu — usado só como sugestão pré-selecionada no seletor de
-   * carrinho do drawer (ou pra pular o seletor quando há só 1 carrinho). Setado por "Criar novo
-   * pedido neste carrinho" (aponta pro carrinho atual) e limpo por "+ Novo carrinho" (sugere
-   * "Novo carrinho" da próxima vez). Nunca decide o destino sozinho — quem decide é sempre o
-   * `carrinhoId` passado pra `commitCartToCarrinho`.
+   * Em qual carrinho o próximo "Adicionar ao carrinho" do drawer entra, sem perguntar — `null`
+   * cria um carrinho novo. Setado por "Criar novo pedido neste carrinho"/"+ Adicionar itens"/
+   * "Continuar comprando" dentro de um carrinho específico (aponta pra ele) e limpo por
+   * "+ Novo carrinho" (força criar um novo). O drawer não interrompe o lojista pra perguntar
+   * isso — se o padrão errar, dá pra mover o pedido depois (`movePedidoToCarrinho`).
    */
   activeCarrinhoId: string | null
   setActiveCarrinho: (id: string | null) => void
@@ -56,6 +56,13 @@ interface AppState {
    * não havia nenhum item pra enviar (não faz sentido commitar um pedido vazio).
    */
   commitCartToCarrinho: (targetCarrinhoId: string | null) => string | null
+  /**
+   * Move um `Pedido` já existente de um carrinho pra outro (ou pra um carrinho novo, se
+   * `targetCarrinhoId` for `null`) — a correção pontual pro caso do pedido ter caído no
+   * carrinho errado. Retorna o id do carrinho de destino, ou `null` se o pedido não existe ou
+   * o destino já é o próprio carrinho de origem (nada a mover).
+   */
+  movePedidoToCarrinho: (fromCarrinhoId: string, pedidoId: string, targetCarrinhoId: string | null) => string | null
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -121,31 +128,60 @@ export const useAppStore = create<AppState>((set, get) => ({
     const pdvTotal = lines.reduce((sum, l) => sum + l.product.pricePdv * l.qty, 0)
     const marginPct = pdvTotal > 0 ? Math.round(((pdvTotal - totalValue) / pdvTotal) * 100) : 0
 
-    let carrinhos = s.carrinhos
-    let carrinho = targetCarrinhoId ? carrinhos.find((c) => c.id === targetCarrinhoId) : undefined
-    if (!carrinho) {
-      carrinho = { id: `carrinho-${Date.now()}`, name: `Carrinho ${carrinhos.length + 1}`, representative: 'Ana', updatedAt: 'agora', pedidos: [] }
-      carrinhos = [...carrinhos, carrinho]
-    }
-    const pedido = {
+    const { carrinhos: base, carrinho } = getOrCreateCarrinho(s.carrinhos, targetCarrinhoId)
+    const pedido: Pedido = {
       id: `${carrinho.id}-p${carrinho.pedidos.length + 1}`,
       label: `Pedido ${carrinho.pedidos.length + 1}`,
-      status: 'rascunho' as const,
+      status: 'rascunho',
       items,
       subtotal: totalValue,
       discount: 0,
       total: totalValue,
       marginPct,
-      paymentCondition: '30' as const,
+      paymentCondition: '30',
       deliveryEstimateDays: 15,
     }
     const carrinhoId = carrinho.id
-    carrinhos = carrinhos.map((c) => (c.id === carrinhoId ? { ...c, updatedAt: 'agora', pedidos: [...c.pedidos, pedido] } : c))
+    const carrinhos = base.map((c) => (c.id === carrinhoId ? { ...c, updatedAt: 'agora', pedidos: [...c.pedidos, pedido] } : c))
 
     set({ carrinhos, cartItems: {}, activeCarrinhoId: carrinhoId })
     return carrinhoId
   },
+
+  movePedidoToCarrinho: (fromCarrinhoId, pedidoId, targetCarrinhoId) => {
+    const s = get()
+    const fromCarrinho = s.carrinhos.find((c) => c.id === fromCarrinhoId)
+    const pedido = fromCarrinho?.pedidos.find((p) => p.id === pedidoId)
+    if (!fromCarrinho || !pedido || targetCarrinhoId === fromCarrinhoId) return null
+
+    const withoutPedido = s.carrinhos.map((c) =>
+      c.id === fromCarrinhoId ? { ...c, updatedAt: 'agora', pedidos: c.pedidos.filter((p) => p.id !== pedidoId) } : c,
+    )
+    const { carrinhos: base, carrinho: targetCarrinho } = getOrCreateCarrinho(withoutPedido, targetCarrinhoId)
+    // Renomeia id/label pro padrão do carrinho de destino — evita colidir com um pedido que já
+    // exista lá com o mesmo id, e mantém "Pedido 1, 2, 3..." em ordem dentro de cada carrinho.
+    const movedPedido: Pedido = {
+      ...pedido,
+      id: `${targetCarrinho.id}-p${targetCarrinho.pedidos.length + 1}`,
+      label: `Pedido ${targetCarrinho.pedidos.length + 1}`,
+    }
+    const targetId = targetCarrinho.id
+    const carrinhos = base.map((c) => (c.id === targetId ? { ...c, updatedAt: 'agora', pedidos: [...c.pedidos, movedPedido] } : c))
+
+    set({ carrinhos, activeCarrinhoId: targetId })
+    return targetId
+  },
 }))
+
+// Acha o carrinho pelo id, ou cria um novo (nome sequencial "Carrinho N") se `targetId` for
+// `null` ou não bater com nenhum carrinho existente — compartilhado por commitCartToCarrinho e
+// movePedidoToCarrinho, os dois pontos que decidem "em qual carrinho isso entra".
+function getOrCreateCarrinho(carrinhos: Carrinho[], targetId: string | null) {
+  const existing = targetId ? carrinhos.find((c) => c.id === targetId) : undefined
+  if (existing) return { carrinhos, carrinho: existing }
+  const novo: Carrinho = { id: `carrinho-${Date.now()}`, name: `Carrinho ${carrinhos.length + 1}`, representative: 'Ana', updatedAt: 'agora', pedidos: [] }
+  return { carrinhos: [...carrinhos, novo], carrinho: novo }
+}
 
 // Faixa de grade sugerida pro pedido gerado a partir do cartItems — deriva do miolo de
 // `suggestedSizes` (as numerações centrais marcadas como sugeridas), mesma lógica visual do
