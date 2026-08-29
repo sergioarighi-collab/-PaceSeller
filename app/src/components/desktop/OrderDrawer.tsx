@@ -13,11 +13,20 @@ export function OrderDrawer() {
   const cartItems = useAppStore((s) => s.cartItems)
   const addToCart = useAppStore((s) => s.addToCart)
   const removeFromCart = useAppStore((s) => s.removeFromCart)
+  const commitCartToCarrinho = useAppStore((s) => s.commitCartToCarrinho)
   const navigate = useNavigate()
   const { lines, totalItems, totalValue } = cartSummary(cartItems)
   const marginPct = 38
   const gradeOk = totalItems >= GRADE_MINIMA_PARES
   const gradePct = Math.min(100, Math.round((totalItems / GRADE_MINIMA_PARES) * 100))
+
+  // Fecha o pedido em montagem: vira um Pedido de verdade dentro do carrinho ativo (ou um
+  // carrinho novo, se nenhum estiver marcado como ativo) e limpa o cartItems pro próximo pedido.
+  function handleGoToCart() {
+    const carrinhoId = commitCartToCarrinho()
+    closeOrderDrawer()
+    navigate(carrinhoId ? `/carrinhos/${carrinhoId}` : '/carrinhos')
+  }
 
   // Sugestões pra completar o mix: produtos que a loja ainda não vende (badge "Oportunidade perdida"),
   // ainda não adicionados ao pedido em construção.
@@ -122,7 +131,11 @@ export function OrderDrawer() {
         </div>
 
         <div className="od-foot">
-          <div className="btn-primary" style={{ cursor: 'pointer' }} onClick={() => navigate('/carrinhos')}>
+          <div
+            className="btn-primary"
+            style={totalItems > 0 ? { cursor: 'pointer' } : { cursor: 'not-allowed', opacity: 0.5 }}
+            onClick={totalItems > 0 ? handleGoToCart : undefined}
+          >
             Ir para o carrinho
           </div>
         </div>

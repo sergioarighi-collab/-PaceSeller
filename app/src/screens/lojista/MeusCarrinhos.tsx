@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
-import { carrinhos } from '../../lib/data'
+import { useAppStore } from '../../lib/store'
+import type { Carrinho } from '../../lib/types'
 import { formatBRL } from '../../lib/format'
 
 const filters = ['Todos', 'Rascunho', 'Aguardando pagamento', 'Confirmados']
 
-function aggregateStatus(pedidos: (typeof carrinhos)[number]['pedidos']) {
+function aggregateStatus(pedidos: Carrinho['pedidos']) {
   if (pedidos.every((p) => p.status === 'pago')) return 'confirmado'
   if (pedidos.some((p) => p.status === 'aguardando')) return 'aguardando'
   return 'rascunho'
@@ -16,6 +17,8 @@ function aggregateStatus(pedidos: (typeof carrinhos)[number]['pedidos']) {
 
 export function MeusCarrinhos() {
   const navigate = useNavigate()
+  const carrinhos = useAppStore((s) => s.carrinhos)
+  const setActiveCarrinho = useAppStore((s) => s.setActiveCarrinho)
   const [filter, setFilter] = useState(filters[0])
 
   const rows = carrinhos
@@ -44,7 +47,14 @@ export function MeusCarrinhos() {
               {carrinhos.length} carrinhos abertos · com Ana, sua representante
             </div>
           </div>
-          <div className="btn-primary" style={{ width: 180, cursor: 'pointer' }} onClick={() => navigate('/catalogo')}>
+          <div
+            className="btn-primary"
+            style={{ width: 180, cursor: 'pointer' }}
+            onClick={() => {
+              setActiveCarrinho(null)
+              navigate('/catalogo')
+            }}
+          >
             Criar novo carrinho
           </div>
         </div>

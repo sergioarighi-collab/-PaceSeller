@@ -2,12 +2,13 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
-import { carrinhos } from '../../lib/data'
+import { useAppStore } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
 
 export function Chat() {
   const navigate = useNavigate()
   const { cartId, pedidoId } = useParams()
+  const carrinhos = useAppStore((s) => s.carrinhos)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
   const pedido = cart.pedidos.find((p) => p.id === pedidoId) ?? cart.pedidos[0]
   const outroPedido = cart.pedidos.find((p) => p.id !== pedido.id)

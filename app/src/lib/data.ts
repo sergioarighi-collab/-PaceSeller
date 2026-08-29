@@ -408,7 +408,10 @@ export const users: User[] = [
 
 // Carrinho → Pedido: um carrinho é compartilhado com o representante fixo da loja (Ana)
 // e pode ter 1+ pedidos, cada um com prazo/condição de pagamento próprios (confirmado em reunião real).
-export const carrinhos: Carrinho[] = [
+// Seed inicial do store (useAppStore.carrinhos) — a partir daqui a lista é mutável (novos pedidos
+// entram quando o lojista fecha "Seu pedido" no drawer, ver commitCartToCarrinho em lib/store.ts).
+// Não importar direto de telas — usar sempre useAppStore((s) => s.carrinhos).
+export const initialCarrinhos: Carrinho[] = [
   {
     id: 'colecao-inverno',
     name: 'Coleção Inverno',

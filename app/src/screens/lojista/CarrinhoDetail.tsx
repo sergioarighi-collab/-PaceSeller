@@ -2,7 +2,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
-import { carrinhos, samePeriodLastYearQty } from '../../lib/data'
+import { samePeriodLastYearQty } from '../../lib/data'
+import { useAppStore } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { deltaInfo } from '../../lib/productLines'
 import { formatBRL } from '../../lib/format'
@@ -17,7 +18,14 @@ const conditionLabel: Record<string, string> = {
 export function CarrinhoDetail() {
   const navigate = useNavigate()
   const { cartId } = useParams()
+  const carrinhos = useAppStore((s) => s.carrinhos)
+  const setActiveCarrinho = useAppStore((s) => s.setActiveCarrinho)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
+
+  function shopMoreForThisCarrinho() {
+    setActiveCarrinho(cart.id)
+    navigate('/catalogo')
+  }
 
   const totalItems = cart.pedidos.reduce((sum, p) => sum + p.items.reduce((s, i) => s + i.qty, 0), 0)
   const totalValue = cart.pedidos.reduce((sum, p) => sum + p.total, 0)
@@ -56,7 +64,14 @@ export function CarrinhoDetail() {
                 {c.name}
               </div>
             ))}
-            <div className="tab new" style={{ cursor: 'pointer' }} onClick={() => navigate('/catalogo')}>
+            <div
+              className="tab new"
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                setActiveCarrinho(null)
+                navigate('/catalogo')
+              }}
+            >
               + Novo carrinho
             </div>
           </div>
@@ -138,7 +153,7 @@ export function CarrinhoDetail() {
             )
           })}
 
-          <div className="newordergroup" style={{ cursor: 'pointer' }} onClick={() => navigate('/catalogo')}>
+          <div className="newordergroup" style={{ cursor: 'pointer' }} onClick={shopMoreForThisCarrinho}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 5v14M5 12h14" />
             </svg>
@@ -171,7 +186,7 @@ export function CarrinhoDetail() {
                 </span>
                 Categoria feminina sub-representada
               </div>
-              <div className="miniaction" style={{ cursor: 'pointer' }} onClick={() => navigate('/catalogo')}>
+              <div className="miniaction" style={{ cursor: 'pointer' }} onClick={shopMoreForThisCarrinho}>
                 + Adicionar 4 itens
               </div>
             </div>
@@ -216,7 +231,7 @@ export function CarrinhoDetail() {
               style={{ display: 'block', textAlign: 'center', fontSize: 12.5, color: 'var(--text-secondary)', fontWeight: 500, marginTop: 4 }}
               onClick={(e) => {
                 e.preventDefault()
-                navigate('/catalogo')
+                shopMoreForThisCarrinho()
               }}
             >
               ← Continuar comprando
