@@ -12,6 +12,7 @@ import { buildProductLines } from '../../lib/productLines'
 
 const categoryFilters = ['Alto giro', 'Boa margem', 'Lançamentos']
 const priceFilters = ['Até R$250', 'R$250 – R$320', 'Acima de R$320']
+const sizeFilters = ['34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44']
 
 const contextConfig = {
   benchmark: {
@@ -59,7 +60,18 @@ function matchesPriceFilter(p: (typeof products)[number], priceFilter: string | 
   return true
 }
 
-function applyFilter(list: typeof products, filter: string | null, priceFilter: string | null, query: string) {
+function matchesSizeFilter(p: (typeof products)[number], sizeFilter: string | null) {
+  if (!sizeFilter) return true
+  return p.suggestedSizes.some((s) => s.size === sizeFilter && s.suggested)
+}
+
+function applyFilter(
+  list: typeof products,
+  filter: string | null,
+  priceFilter: string | null,
+  sizeFilter: string | null,
+  query: string,
+) {
   let out = list
   if (filter === 'Alto giro') out = out.filter((p) => p.restockDays <= 32)
   else if (filter === 'Boa margem')
@@ -67,6 +79,7 @@ function applyFilter(list: typeof products, filter: string | null, priceFilter: 
   else if (filter === 'Lançamentos') out = out.filter((p) => p.badges.some((b) => b.tone === 'premium'))
 
   out = out.filter((p) => matchesPriceFilter(p, priceFilter))
+  out = out.filter((p) => matchesSizeFilter(p, sizeFilter))
 
   if (query.trim()) {
     const q = query.trim().toLowerCase()
@@ -77,10 +90,16 @@ function applyFilter(list: typeof products, filter: string | null, priceFilter: 
 
 // Agrupa as cores de uma mesma linha (ex: as 10 cores de Coil) num único card com seletor de
 // cor, marcando a de melhor performance — em vez de um card por cor no grid.
-function applyLineFilter(lines: ReturnType<typeof buildProductLines>, filter: string | null, priceFilter: string | null, query: string) {
+function applyLineFilter(
+  lines: ReturnType<typeof buildProductLines>,
+  filter: string | null,
+  priceFilter: string | null,
+  sizeFilter: string | null,
+  query: string,
+) {
   return lines
     .map((line) => {
-      const matching = applyFilter(line.colors, filter, priceFilter, query)
+      const matching = applyFilter(line.colors, filter, priceFilter, sizeFilter, query)
       if (matching.length === 0) return null
       const defaultId = matching.some((c) => c.id === line.bestSellerId) ? line.bestSellerId : matching[0].id
       return { ...line, defaultId }
@@ -104,6 +123,7 @@ export function Catalog() {
   const context = contextKey && contextConfig[contextKey] ? contextConfig[contextKey] : null
   const [filter, setFilter] = useState<string | null>(null)
   const [priceFilter, setPriceFilter] = useState<string | null>(null)
+  const [sizeFilter, setSizeFilter] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const toggleCart = useAppStore((s) => s.toggleCart)
   const cartItems = useAppStore((s) => s.cartItems)
@@ -241,7 +261,7 @@ export function Catalog() {
   const filteredProducts = context
     ? context.productIds.map((pid) => products.find((p) => p.id === pid)).filter((p): p is (typeof products)[number] => Boolean(p))
     : []
-  const productLines = context ? [] : applyLineFilter(buildProductLines(products), filter, priceFilter, query)
+  const productLines = context ? [] : applyLineFilter(buildProductLines(products), filter, priceFilter, sizeFilter, query)
 
   return (
     <DesktopPage>
@@ -276,7 +296,7 @@ export function Catalog() {
             <div>
               <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--text-primary)' }}>Catálogo Inteligente</h1>
               <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
-                {context ? context.heading : `${productLines.length} linhas de produto${filter || priceFilter ? ' · filtrado' : ''}`}
+                {context ? context.heading : `${productLines.length} linhas de produto${filter || priceFilter || sizeFilter ? ' · filtrado' : ''}`}
               </div>
             </div>
           </div>
@@ -324,6 +344,24 @@ export function Catalog() {
             {context && <div className="chip">Alto giro</div>}
             {context && <div className="chip">Boa margem</div>}
           </div>
+
+          {!context && (
+            <div className="gradebox" style={{ margin: '14px 0 0' }}>
+              <div className="title">Numeração</div>
+              <div className="sizerow">
+                {sizeFilters.map((size) => (
+                  <div
+                    key={size}
+                    className={`sizechip ${sizeFilter === size ? 'selected' : ''}`}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setSizeFilter(sizeFilter === size ? null : size)}
+                  >
+                    {size}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="catgrid-web">
             {context

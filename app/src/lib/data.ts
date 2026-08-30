@@ -285,10 +285,22 @@ const raw: RawProduct[] = [
   { sku: '2304-02', colorway: 'All White', collection: 'TG II', growthPct: 7, restockDays: 45, marginPct: 38, priceFactory: 279.9 },
 ]
 
-// Grade real confirmada com o cliente: numeração 34 a 44
-function buildSizes(): { size: string; suggested: boolean }[] {
-  const sizes = ['34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44']
-  return sizes.map((size, i) => ({ size, suggested: i > 1 && i < sizes.length - 2 }))
+// Grade real confirmada com o cliente: numeração 34 a 44. A faixa sugerida por SKU é ilustrativa
+// (não é dado real do cliente) — varia de forma determinística a partir do SKU, com um núcleo
+// 37–40 sempre coberto (quase todo tênis tem essas numerações) e as pontas variando por produto,
+// pra imitar como grade de estoque funciona de verdade (números centrais quase sempre disponíveis,
+// extremos nem sempre). Existe pra dar variação real ao filtro de numeração do Catálogo — antes
+// disso a faixa sugerida era idêntica (36–42) pra todo produto, o que tornaria o filtro decorativo.
+const ALL_SIZES = ['34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44']
+
+function buildSizes(sku: string): { size: string; suggested: boolean }[] {
+  let hash = 0
+  for (const ch of sku) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0
+  const belowCore = hash % 4 // 0..3 numerações abaixo do 37 (até o 34)
+  const aboveCore = Math.floor(hash / 4) % 5 // 0..4 numerações acima do 40 (até o 44)
+  const minIdx = ALL_SIZES.indexOf('37') - belowCore
+  const maxIdx = ALL_SIZES.indexOf('40') + aboveCore
+  return ALL_SIZES.map((size, i) => ({ size, suggested: i >= minIdx && i <= maxIdx }))
 }
 
 export const collectionTitle: Record<RawProduct['collection'], string> = {
@@ -362,7 +374,7 @@ export const products: Product[] = raw.map((r) => {
     badges,
     why,
     restockDays: r.restockDays,
-    suggestedSizes: buildSizes(),
+    suggestedSizes: buildSizes(r.sku),
   }
 })
 
