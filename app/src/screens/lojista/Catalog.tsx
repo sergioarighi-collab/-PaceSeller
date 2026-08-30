@@ -6,13 +6,16 @@ import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { ProductThumb } from '../../components/desktop/ProductThumb'
 import { ProductLineCard } from '../../components/desktop/ProductLineCard'
 import { useAppStore } from '../../lib/store'
-import { products } from '../../lib/data'
+import { products, collectionTitle } from '../../lib/data'
 import { formatBRL } from '../../lib/format'
 import { buildProductLines } from '../../lib/productLines'
 
 const categoryFilters = ['Alto giro', 'Boa margem', 'Lançamentos']
 const priceFilters = ['Até R$250', 'R$250 – R$320', 'Acima de R$320']
 const sizeFilters = ['34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44']
+// Ordem fixa (não alfabética) — cada linha nova entra no fim da lista, sem reordenar as que já
+// existem; `collectionTitle` já é a fonte única do nome de exibição de cada coleção.
+const collectionFilters = Object.keys(collectionTitle) as (keyof typeof collectionTitle)[]
 
 const contextConfig = {
   benchmark: {
@@ -70,6 +73,7 @@ function applyFilter(
   filter: string | null,
   priceFilter: string | null,
   sizeFilter: string | null,
+  collectionFilter: string | null,
   query: string,
 ) {
   let out = list
@@ -80,6 +84,7 @@ function applyFilter(
 
   out = out.filter((p) => matchesPriceFilter(p, priceFilter))
   out = out.filter((p) => matchesSizeFilter(p, sizeFilter))
+  if (collectionFilter) out = out.filter((p) => p.collection === collectionFilter)
 
   if (query.trim()) {
     const q = query.trim().toLowerCase()
@@ -95,11 +100,12 @@ function applyLineFilter(
   filter: string | null,
   priceFilter: string | null,
   sizeFilter: string | null,
+  collectionFilter: string | null,
   query: string,
 ) {
   return lines
     .map((line) => {
-      const matching = applyFilter(line.colors, filter, priceFilter, sizeFilter, query)
+      const matching = applyFilter(line.colors, filter, priceFilter, sizeFilter, collectionFilter, query)
       if (matching.length === 0) return null
       const defaultId = matching.some((c) => c.id === line.bestSellerId) ? line.bestSellerId : matching[0].id
       return { ...line, defaultId }
@@ -124,6 +130,7 @@ export function Catalog() {
   const [filter, setFilter] = useState<string | null>(null)
   const [priceFilter, setPriceFilter] = useState<string | null>(null)
   const [sizeFilter, setSizeFilter] = useState<string | null>(null)
+  const [collectionFilter, setCollectionFilter] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const toggleCart = useAppStore((s) => s.toggleCart)
   const cartItems = useAppStore((s) => s.cartItems)
@@ -261,7 +268,7 @@ export function Catalog() {
   const filteredProducts = context
     ? context.productIds.map((pid) => products.find((p) => p.id === pid)).filter((p): p is (typeof products)[number] => Boolean(p))
     : []
-  const productLines = context ? [] : applyLineFilter(buildProductLines(products), filter, priceFilter, sizeFilter, query)
+  const productLines = context ? [] : applyLineFilter(buildProductLines(products), filter, priceFilter, sizeFilter, collectionFilter, query)
 
   return (
     <DesktopPage>
@@ -296,7 +303,9 @@ export function Catalog() {
             <div>
               <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--text-primary)' }}>Catálogo Inteligente</h1>
               <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
-                {context ? context.heading : `${productLines.length} linhas de produto${filter || priceFilter || sizeFilter ? ' · filtrado' : ''}`}
+                {context
+                  ? context.heading
+                  : `${productLines.length} linhas de produto${filter || priceFilter || sizeFilter || collectionFilter ? ' · filtrado' : ''}`}
               </div>
             </div>
           </div>
@@ -344,6 +353,24 @@ export function Catalog() {
             {context && <div className="chip">Alto giro</div>}
             {context && <div className="chip">Boa margem</div>}
           </div>
+
+          {!context && (
+            <div className="gradebox" style={{ margin: '14px 0 0' }}>
+              <div className="title">Coleção</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {collectionFilters.map((c) => (
+                  <div
+                    key={c}
+                    className={`chip ${collectionFilter === c ? 'selected' : ''}`}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setCollectionFilter(collectionFilter === c ? null : c)}
+                  >
+                    {collectionTitle[c]}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {!context && (
             <div className="gradebox" style={{ margin: '14px 0 0' }}>
