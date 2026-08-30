@@ -166,6 +166,14 @@ Filtros (`Alto giro`/`Boa margem`/`Lançamentos`/busca) continuam operando por S
 
 A página da Linha Fusion (`Colecao.tsx`) usa o mesmo `ProductLineCard` (só 1 linha, sem grid).
 
+### Filtro de preço + sem filtro selecionado por padrão (ago/2026)
+
+- **`'Recomendado p/ você'` foi removido** dos chips de categoria — não fazia nenhuma filtragem de verdade (`applyFilter` não tinha um `if` pra esse valor, então já mostrava tudo) e vinha selecionado por padrão, o que passava a impressão de uma ordenação personalizada que não existe. Padrão agora é **`filter: null`**, nenhum chip de categoria selecionado, mostrando todas as linhas — igual ao comportamento de antes, só que honesto sobre o que está de fato acontecendo (subtítulo mudou de "ordenado por recomendado pra você" pra só `N linhas de produto`, com "· filtrado" quando algum filtro está ativo).
+- **Chips de categoria (`Alto giro`/`Boa margem`/`Lançamentos`) agora deselecionam ao clicar de novo** (`setFilter(filter === f ? null : f)`) — antes era radio puro, sempre um selecionado; sem o `'Recomendado p/ você'` como "opção vazia", precisava de um jeito de voltar pra "nenhum filtro".
+- **Novo filtro por preço** (`priceFilters` em `Catalog.tsx`): 3 baldes sobre `p.priceFactory` — `'Até R$250'`, `'R$250 – R$320'`, `'Acima de R$320'` (`matchesPriceFilter`). Cortes em R$250/R$320 são valores redondos escolhidos pela distribuição real do catálogo mock (R$145 a R$389,90, com bastante concentração entre R$260–300) — não é uma divisão perfeitamente equilibrada de SKUs, mas são números que o lojista reconhece de cabeça.
+- **Preço combina com categoria via AND**, não substitui — `applyFilter`/`applyLineFilter` agora recebem `filter` e `priceFilter` como dois parâmetros independentes, cada um seu próprio chip-group (separados por um divisor vertical no `.filterbar`), mesmo padrão de toggle (clicar nulifica).
+- **Views de contexto** (`?contexto=`) não ganharam filtro de preço — elas já mostram uma lista curada e pequena (3-6 produtos específicos do insight do Radar), filtrar por preço aí não agrega.
+
 `buildProductLines` foi extraído pra `lib/productLines.ts` (também exporta `deltaInfo`) porque é usado pelo Catálogo e pela Coleção Fusion; `deltaInfo` sozinho também é usado por `CarrinhoDetail.tsx` — ver seção seguinte.
 
 ## Planejar virou parte do fechamento do carrinho, não uma tela solta (ago/2026)

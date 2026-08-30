@@ -10,7 +10,8 @@ import { products } from '../../lib/data'
 import { formatBRL } from '../../lib/format'
 import { buildProductLines } from '../../lib/productLines'
 
-const filters = ['Recomendado p/ você', 'Alto giro', 'Boa margem', 'Lançamentos']
+const categoryFilters = ['Alto giro', 'Boa margem', 'Lançamentos']
+const priceFilters = ['Até R$250', 'R$250 – R$320', 'Acima de R$320']
 
 const contextConfig = {
   benchmark: {
@@ -48,12 +49,24 @@ const contextConfig = {
 
 type ContextKey = keyof typeof contextConfig
 
-function applyFilter(list: typeof products, filter: string, query: string) {
+// price em R$ de fábrica — os 3 baldes cobrem toda a faixa de preço do catálogo mock (R$145 a
+// R$389,90), com corte nos R$250/R$320 (não é uma divisão perfeitamente equilibrada de SKUs,
+// mas são valores redondos que fazem sentido pro lojista reconhecer de cabeça).
+function matchesPriceFilter(p: (typeof products)[number], priceFilter: string | null) {
+  if (priceFilter === 'Até R$250') return p.priceFactory <= 250
+  if (priceFilter === 'R$250 – R$320') return p.priceFactory > 250 && p.priceFactory <= 320
+  if (priceFilter === 'Acima de R$320') return p.priceFactory > 320
+  return true
+}
+
+function applyFilter(list: typeof products, filter: string | null, priceFilter: string | null, query: string) {
   let out = list
   if (filter === 'Alto giro') out = out.filter((p) => p.restockDays <= 32)
   else if (filter === 'Boa margem')
     out = out.filter((p) => p.badges.some((b) => b.label.startsWith('Margem') && Number(b.label.replace(/\D/g, '')) >= 42))
   else if (filter === 'Lançamentos') out = out.filter((p) => p.badges.some((b) => b.tone === 'premium'))
+
+  out = out.filter((p) => matchesPriceFilter(p, priceFilter))
 
   if (query.trim()) {
     const q = query.trim().toLowerCase()
@@ -64,10 +77,10 @@ function applyFilter(list: typeof products, filter: string, query: string) {
 
 // Agrupa as cores de uma mesma linha (ex: as 10 cores de Coil) num único card com seletor de
 // cor, marcando a de melhor performance — em vez de um card por cor no grid.
-function applyLineFilter(lines: ReturnType<typeof buildProductLines>, filter: string, query: string) {
+function applyLineFilter(lines: ReturnType<typeof buildProductLines>, filter: string | null, priceFilter: string | null, query: string) {
   return lines
     .map((line) => {
-      const matching = applyFilter(line.colors, filter, query)
+      const matching = applyFilter(line.colors, filter, priceFilter, query)
       if (matching.length === 0) return null
       const defaultId = matching.some((c) => c.id === line.bestSellerId) ? line.bestSellerId : matching[0].id
       return { ...line, defaultId }
@@ -89,7 +102,8 @@ export function Catalog() {
   const [searchParams, setSearchParams] = useSearchParams()
   const contextKey = searchParams.get('contexto') as ContextKey | null
   const context = contextKey && contextConfig[contextKey] ? contextConfig[contextKey] : null
-  const [filter, setFilter] = useState(filters[0])
+  const [filter, setFilter] = useState<string | null>(null)
+  const [priceFilter, setPriceFilter] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const toggleCart = useAppStore((s) => s.toggleCart)
   const cartItems = useAppStore((s) => s.cartItems)
@@ -227,7 +241,7 @@ export function Catalog() {
   const filteredProducts = context
     ? context.productIds.map((pid) => products.find((p) => p.id === pid)).filter((p): p is (typeof products)[number] => Boolean(p))
     : []
-  const productLines = context ? [] : applyLineFilter(buildProductLines(products), filter, query)
+  const productLines = context ? [] : applyLineFilter(buildProductLines(products), filter, priceFilter, query)
 
   return (
     <DesktopPage>
@@ -262,7 +276,7 @@ export function Catalog() {
             <div>
               <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--text-primary)' }}>Catálogo Inteligente</h1>
               <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
-                {context ? context.heading : `${productLines.length} linhas de produto · ordenado por recomendado pra você`}
+                {context ? context.heading : `${productLines.length} linhas de produto${filter || priceFilter ? ' · filtrado' : ''}`}
               </div>
             </div>
           </div>
@@ -283,11 +297,29 @@ export function Catalog() {
             {context ? (
               <div className="chip selected">{context.chip}</div>
             ) : (
-              filters.map((f) => (
-                <div key={f} className={`chip ${filter === f ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setFilter(f)}>
-                  {f}
-                </div>
-              ))
+              <>
+                {categoryFilters.map((f) => (
+                  <div
+                    key={f}
+                    className={`chip ${filter === f ? 'selected' : ''}`}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setFilter(filter === f ? null : f)}
+                  >
+                    {f}
+                  </div>
+                ))}
+                <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--border)' }} />
+                {priceFilters.map((f) => (
+                  <div
+                    key={f}
+                    className={`chip ${priceFilter === f ? 'selected' : ''}`}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setPriceFilter(priceFilter === f ? null : f)}
+                  >
+                    {f}
+                  </div>
+                ))}
+              </>
             )}
             {context && <div className="chip">Alto giro</div>}
             {context && <div className="chip">Boa margem</div>}
