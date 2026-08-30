@@ -11,7 +11,16 @@ import { formatBRL } from '../../lib/format'
 import { buildProductLines, comboPrice } from '../../lib/productLines'
 
 const categoryFilters = ['Alto giro', 'Boa margem', 'Lançamentos', 'Oportunidade perdida']
+// Texto do tooltip (atributo title, mesmo padrão já usado no resto do app — ver WebTopNav,
+// ProductLineCard) — explica o critério real por trás de cada chip, não só o rótulo.
+const categoryFilterTooltips: Record<string, string> = {
+  'Alto giro': 'Reposição recomendada em até 32 dias — produtos que vendem rápido',
+  'Boa margem': 'Margem estimada de 42% ou mais sobre o PDV',
+  Lançamentos: 'Produtos marcados como lançamento da coleção atual',
+  'Oportunidade perdida': 'Produtos que sua loja ainda não vende',
+}
 const priceFilters = ['Até R$250', 'R$250 – R$320', 'Acima de R$320']
+const priceFilterTooltip = 'Preço de fábrica — o que você paga, não o PDV sugerido ao consumidor'
 const sizeFilters = ['34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44']
 // Ordem fixa (não alfabética) — cada linha nova entra no fim da lista, sem reordenar as que já
 // existem; `collectionTitle` já é a fonte única do nome de exibição de cada coleção.
@@ -52,6 +61,11 @@ const contextConfig = {
 } as const
 
 type ContextKey = keyof typeof contextConfig
+
+const contextFilterTooltips: Record<ContextKey, string> = {
+  benchmark: 'Produtos em alta entre lojas do mesmo porte e região que a sua',
+  reposicao: 'Produtos vendendo mais rápido do que sua reposição atual dá conta',
+}
 
 // price em R$ de fábrica — os 3 baldes cobrem toda a faixa de preço do catálogo mock (R$145 a
 // R$389,90), com corte nos R$250/R$320 (não é uma divisão perfeitamente equilibrada de SKUs,
@@ -335,6 +349,7 @@ export function Catalog() {
                     key={f}
                     className={`chip ${filter === f ? 'selected' : ''}`}
                     style={{ cursor: 'pointer' }}
+                    title={categoryFilterTooltips[f]}
                     onClick={() => setFilter(filter === f ? null : f)}
                   >
                     {f}
@@ -346,6 +361,7 @@ export function Catalog() {
                     key={f}
                     className={`chip ${priceFilter === f ? 'selected' : ''}`}
                     style={{ cursor: 'pointer' }}
+                    title={priceFilterTooltip}
                     onClick={() => setPriceFilter(priceFilter === f ? null : f)}
                   >
                     {f}
@@ -357,6 +373,7 @@ export function Catalog() {
                     key={key}
                     className="chip"
                     style={{ cursor: 'pointer' }}
+                    title={contextFilterTooltips[key]}
                     onClick={() => {
                       searchParams.set('contexto', key)
                       setSearchParams(searchParams)
