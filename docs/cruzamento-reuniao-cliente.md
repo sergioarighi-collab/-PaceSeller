@@ -51,7 +51,7 @@ O cliente não decidiu ainda se a aprovação de crédito/pedido deve acontecer 
 
 ## 📌 Confirmado como fora de escopo do MVP (não desenhar agora)
 
-- **Combos** (misturar produto parado com produto de giro melhor) — ideia validada, bem recebida, mas é evolução futura, não requisito desta fase. Vale guardar a lógica de negócio por trás ("produto parado → oferta direcionada por perfil de lojista que absorveria aquele produto") porque ela é quase idêntica ao conceito que já usamos no bloco "Destaque da semana" do Radar — pode ser a mesma engine no futuro.
+- ~~**Combos**~~ **(implementado no protótipo em ago/2026, apesar de continuar fora do MVP formal)** — misturar produto parado com produto de giro melhor. Ideia validada, bem recebida em reunião, era "evolução futura, não requisito desta fase" — mas o cliente pediu explicitamente pra simular dentro do protótipo mesmo assim, como vantagem de venda pra próxima fase (mostrar a possibilidade, não é compromisso de entregar no MVP). Ver "Combos sugeridos" em `docs/guia-dev-frontend.md` pra como ficou. A lógica de negócio por trás ("produto parado → oferta direcionada por perfil de lojista que absorveria aquele produto") é quase idêntica ao conceito do bloco "Destaque da semana" do Radar — pode virar a mesma engine de verdade no futuro, hoje os dois são curados à mão.
 - **Controle de revenda em marketplace terceiro** (Mercado Livre, TikTok Shop) — reconhecido como fragilidade pelo próprio cliente, mas não prioritário agora.
 - **Política de preço diferenciada por perfil de cliente** — não existe hoje, preço de venda é único; só a condição de pagamento varia.
 - **Expansão internacional** — a operação Argentina é separada (distribuidora própria) e não entra no escopo do Pace Seller B2B agora.

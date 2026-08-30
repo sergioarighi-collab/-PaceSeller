@@ -1,4 +1,4 @@
-import type { Client, InsightCardData, Product, User, Carrinho } from './types'
+import type { Client, InsightCardData, Product, User, Carrinho, Combo } from './types'
 
 // Todas as pendências do lojista, agrupadas por prazo pra agir (ago/2026, substitui os 4 cards
 // soltos + a lista "por categoria" escondida atrás de um clique — ver docs/guia-dev-frontend.md).
@@ -377,6 +377,30 @@ export const products: Product[] = raw.map((r) => {
     suggestedSizes: buildSizes(r.sku),
   }
 })
+
+// "Combos sugeridos" do Catálogo (ago/2026) — fora do MVP confirmado em
+// docs/cruzamento-reuniao-cliente.md ("evolução futura, não requisito desta fase"), mas o
+// cliente pediu pra simular mesmo assim, como vantagem de venda pra próxima fase. Curados à mão
+// (não é um algoritmo de verdade) a partir de dado que já existe: o combo "clear" usa o único SKU
+// com riskCallout de estoque parado que a loja já vende (Flow XL Black — Fusion/TG II também têm
+// riskCallout mas nem têm foto real, ficariam estranhos aqui); o combo "pair" junta duas linhas
+// de alto crescimento sem nenhuma relação de negócio simulada além de "ambas vendem bem".
+export const combos: Combo[] = [
+  {
+    id: 'combo-1',
+    productIds: ['2502-17', '2101-25'],
+    discountPct: 10,
+    reason: 'Ajuda a girar o estoque parado',
+    reasonTone: 'clear',
+  },
+  {
+    id: 'combo-2',
+    productIds: ['1901-66', '2502-21'],
+    discountPct: 8,
+    reason: 'Comprados juntos com frequência',
+    reasonTone: 'pair',
+  },
+]
 
 export const clients: Client[] = [
   {

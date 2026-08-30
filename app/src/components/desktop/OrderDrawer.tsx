@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { useAppStore, cartSummary } from '../../lib/store'
+import { useAppStore, cartSummary, comboSummary } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { products } from '../../lib/data'
@@ -13,19 +13,24 @@ export function OrderDrawer() {
   const cartItems = useAppStore((s) => s.cartItems)
   const addToCart = useAppStore((s) => s.addToCart)
   const removeFromCart = useAppStore((s) => s.removeFromCart)
+  const cartCombos = useAppStore((s) => s.cartCombos)
+  const removeCombo = useAppStore((s) => s.removeCombo)
   const carrinhos = useAppStore((s) => s.carrinhos)
   const activeCarrinhoId = useAppStore((s) => s.activeCarrinhoId)
   const setActiveCarrinho = useAppStore((s) => s.setActiveCarrinho)
   const commitCartToCarrinho = useAppStore((s) => s.commitCartToCarrinho)
   const navigate = useNavigate()
-  const { lines, totalItems, totalValue } = cartSummary(cartItems)
+  const { lines, totalItems: itemsQty, totalValue: itemsValue } = cartSummary(cartItems)
+  const { entries: comboLines, totalItems: combosQty, totalValue: combosValue } = comboSummary(cartCombos)
+  const totalItems = itemsQty + combosQty
+  const totalValue = itemsValue + combosValue
   const marginPct = 38
   const gradeOk = totalItems >= GRADE_MINIMA_PARES
   const gradePct = Math.min(100, Math.round((totalItems / GRADE_MINIMA_PARES) * 100))
 
   // Fecha o pedido em montagem: vira um Pedido de verdade dentro do carrinho ativo (o carrinho
-  // único, se só há um; ou um carrinho novo) e limpa o cartItems pro próximo pedido. Não
-  // interrompe pra perguntar em qual carrinho entra — o drawer é sobre comprar, não sobre
+  // único, se só há um; ou um carrinho novo) e limpa o cartItems/cartCombos pro próximo pedido.
+  // Não interrompe pra perguntar em qual carrinho entra — o drawer é sobre comprar, não sobre
   // organizar carrinhos; se o padrão errar, dá pra mover o pedido depois em Meus Carrinhos.
   function handleAddToCart() {
     if (totalItems === 0) return
@@ -91,6 +96,26 @@ export function OrderDrawer() {
           </div>
 
           <div className="sidebar-itemlist">
+            {comboLines.map(({ combo, cp }) => (
+              <div className="sidebar-item" key={combo.id}>
+                <div className="si-thumb" style={{ display: 'flex' }}>
+                  <ProductThumb src={cp.p1.image} alt={cp.p1.name} iconSize={18} padding={3} />
+                </div>
+                <div className="si-info">
+                  <div className="si-name">
+                    Combo: {cp.p1.name.replace('Tênis Tesla ', '')} + {cp.p2.name.replace('Tênis Tesla ', '')}
+                  </div>
+                  <div className="si-meta">
+                    24 pares · {formatBRL(cp.finalPrice)} <span style={{ color: 'var(--positive)' }}>(−{combo.discountPct}%)</span>
+                  </div>
+                </div>
+                <div className="si-remove" style={{ cursor: 'pointer' }} onClick={() => removeCombo(combo.id)}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 6l12 12M18 6 6 18" />
+                  </svg>
+                </div>
+              </div>
+            ))}
             {lines.map(({ product, qty, value }) => (
               <div className="sidebar-item" key={product.id}>
                 <div className="si-thumb">

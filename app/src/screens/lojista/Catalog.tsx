@@ -6,11 +6,11 @@ import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { ProductThumb } from '../../components/desktop/ProductThumb'
 import { ProductLineCard } from '../../components/desktop/ProductLineCard'
 import { useAppStore } from '../../lib/store'
-import { products, collectionTitle } from '../../lib/data'
+import { products, collectionTitle, combos } from '../../lib/data'
 import { formatBRL } from '../../lib/format'
-import { buildProductLines } from '../../lib/productLines'
+import { buildProductLines, comboPrice } from '../../lib/productLines'
 
-const categoryFilters = ['Alto giro', 'Boa margem', 'Lançamentos']
+const categoryFilters = ['Alto giro', 'Boa margem', 'Lançamentos', 'Oportunidade perdida']
 const priceFilters = ['Até R$250', 'R$250 – R$320', 'Acima de R$320']
 const sizeFilters = ['34', '35', '36', '37', '38', '39', '40', '41', '42', '43', '44']
 // Ordem fixa (não alfabética) — cada linha nova entra no fim da lista, sem reordenar as que já
@@ -81,6 +81,7 @@ function applyFilter(
   else if (filter === 'Boa margem')
     out = out.filter((p) => p.badges.some((b) => b.label.startsWith('Margem') && Number(b.label.replace(/\D/g, '')) >= 42))
   else if (filter === 'Lançamentos') out = out.filter((p) => p.badges.some((b) => b.tone === 'premium'))
+  else if (filter === 'Oportunidade perdida') out = out.filter((p) => p.badges.some((b) => b.label === 'Oportunidade perdida'))
 
   out = out.filter((p) => matchesPriceFilter(p, priceFilter))
   out = out.filter((p) => matchesSizeFilter(p, sizeFilter))
@@ -135,6 +136,8 @@ export function Catalog() {
   const toggleCart = useAppStore((s) => s.toggleCart)
   const cartItems = useAppStore((s) => s.cartItems)
   const addToCart = useAppStore((s) => s.addToCart)
+  const cartCombos = useAppStore((s) => s.cartCombos)
+  const toggleCombo = useAppStore((s) => s.toggleCombo)
 
   const selectedProduct = products.find((p) => p.id === id)
 
@@ -348,6 +351,20 @@ export function Catalog() {
                     {f}
                   </div>
                 ))}
+                <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--border)' }} />
+                {(Object.keys(contextConfig) as ContextKey[]).map((key) => (
+                  <div
+                    key={key}
+                    className="chip"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                      searchParams.set('contexto', key)
+                      setSearchParams(searchParams)
+                    }}
+                  >
+                    {contextConfig[key].chip}
+                  </div>
+                ))}
               </>
             )}
             {context && <div className="chip">Alto giro</div>}
@@ -464,6 +481,69 @@ export function Catalog() {
           </div>
           {(context ? filteredProducts.length === 0 : productLines.length === 0) && (
             <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-secondary)', padding: '64px 0' }}>Nenhum produto encontrado</div>
+          )}
+
+          {!context && (
+            <>
+              <div className="web-section-title">Combos sugeridos</div>
+              <div className="combogrid">
+                {combos.map((combo) => {
+                  const cp = comboPrice(combo, products)
+                  if (!cp) return null
+                  const { p1, p2, sumFactory, finalPrice, savings } = cp
+                  const inCart = Boolean(cartCombos[combo.id])
+                  return (
+                    <div className="combocard" key={combo.id}>
+                      <div className={`combo-reason ${combo.reasonTone}`}>
+                        {combo.reasonTone === 'clear' ? '↕' : '★'} {combo.reason}
+                      </div>
+                      <div className="combo-products">
+                        <div className="combo-p" style={{ cursor: 'pointer' }} onClick={() => navigate(`/catalogo/${p1.id}`)}>
+                          <div className="pw-thumb">
+                            <ProductThumb src={p1.image} alt={p1.name} />
+                          </div>
+                          <div className="cpname">{p1.name.replace('Tênis Tesla ', '')}</div>
+                          <div className="cpcolor">{p1.colorway}</div>
+                        </div>
+                        <div className="combo-plus">+</div>
+                        <div className="combo-p" style={{ cursor: 'pointer' }} onClick={() => navigate(`/catalogo/${p2.id}`)}>
+                          <div className="pw-thumb">
+                            <ProductThumb src={p2.image} alt={p2.name} />
+                          </div>
+                          <div className="cpname">{p2.name.replace('Tênis Tesla ', '')}</div>
+                          <div className="cpcolor">{p2.colorway}</div>
+                        </div>
+                      </div>
+                      <div className="combo-pricing">
+                        <div className="combo-pricerow">
+                          <span className="combo-was">{formatBRL(sumFactory)}</span>
+                          <span className="combo-now">{formatBRL(finalPrice)}</span>
+                        </div>
+                        <div className="combo-save">
+                          Economia de {formatBRL(savings)} ({combo.discountPct}%)
+                        </div>
+                        <div
+                          className={`pw-addbtn ${inCart ? 'in-cart' : ''}`}
+                          style={{ cursor: 'pointer', marginTop: 10 }}
+                          onClick={() => toggleCombo(combo.id)}
+                        >
+                          {inCart ? (
+                            <>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                                <path d="M5 13l4 4L19 7" />
+                              </svg>
+                              No carrinho
+                            </>
+                          ) : (
+                            'Adicionar combo ao carrinho'
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
           )}
         </div>
       </div>

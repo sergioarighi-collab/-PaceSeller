@@ -1,4 +1,4 @@
-import type { Product } from './types'
+import type { Product, Combo } from './types'
 
 export interface ProductLine {
   collection: string
@@ -23,6 +23,18 @@ export function buildProductLines(list: Product[]): ProductLine[] {
     const bestSellerId = colors.reduce((a, b) => (b.growthPct > a.growthPct ? b : a)).id
     return { collection, colors, bestSellerId }
   })
+}
+
+// Preço combinado de um combo — sempre calculado a partir do priceFactory de cada produto (mesma
+// fonte que o Catálogo normal usa pra mostrar preço), nunca um valor fixo à parte. `products`
+// deve ser o array `products` de `lib/data.ts` — devolve `null` se algum SKU do combo não existir.
+export function comboPrice(combo: Combo, products: Product[]) {
+  const items = combo.productIds.map((id) => products.find((p) => p.id === id))
+  if (items.some((p) => !p)) return null
+  const [p1, p2] = items as [Product, Product]
+  const sumFactory = p1.priceFactory + p2.priceFactory
+  const finalPrice = Math.round(sumFactory * (1 - combo.discountPct / 100) * 100) / 100
+  return { p1, p2, sumFactory, finalPrice, savings: sumFactory - finalPrice }
 }
 
 export type DeltaTone = 'up' | 'down' | 'flat' | 'new'

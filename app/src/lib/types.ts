@@ -57,6 +57,17 @@ export interface MixItem {
   qty: number
 }
 
+// "Combos sugeridos" no Catálogo — dois produtos vendidos juntos com desconto sobre a soma dos
+// preços de fábrica. `reasonTone` só controla a cor do rótulo (ver Catalog.tsx), não é uma regra
+// de negócio própria.
+export interface Combo {
+  id: string
+  productIds: [string, string]
+  discountPct: number
+  reason: string
+  reasonTone: 'clear' | 'pair'
+}
+
 export const GRADE_MINIMA_PARES = 36
 
 export type PaymentCondition = '30' | '60' | '90' | 'a-vista'

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { Persona, User, Carrinho, Pedido, PedidoItem } from './types'
-import { users, products, initialCarrinhos } from './data'
+import { users, products, initialCarrinhos, combos } from './data'
+import { comboPrice } from './productLines'
 
 interface AppState {
   persona: Persona | null
@@ -35,6 +36,17 @@ interface AppState {
   addToCart: (productId: string, qty?: number) => void
   removeFromCart: (productId: string) => void
   toggleCart: (productId: string) => void
+
+  /**
+   * Combos adicionados ao pedido em montagem — `1` = combo presente, ausente = não. Um combo tem
+   * preço promocional sobre a soma dos dois produtos (ver `comboPrice` em `lib/productLines.ts`),
+   * então **não é** dois produtos entrando em `cartItems` a preço cheio — é uma linha própria, com
+   * seu próprio preço, que só existe combinada (por isso não tem `qty` livre por enquanto: ou o
+   * combo está no pedido, ou não está — sem stepper de quantidade ainda).
+   */
+  cartCombos: Record<string, number>
+  toggleCombo: (comboId: string) => void
+  removeCombo: (comboId: string) => void
 
   /** Drawer "Seu pedido" (carrinho em construção) — trigger no header, disponível em qualquer tela do lojista. */
   orderDrawerOpen: boolean
@@ -109,6 +121,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     else s.addToCart(productId, 12)
   },
 
+  cartCombos: {},
+  removeCombo: (comboId) =>
+    set((s) => {
+      const next = { ...s.cartCombos }
+      delete next[comboId]
+      return { cartCombos: next }
+    }),
+  toggleCombo: (comboId) => {
+    const s = get()
+    if (s.cartCombos[comboId]) s.removeCombo(comboId)
+    else set({ cartCombos: { ...s.cartCombos, [comboId]: 1 } })
+  },
+
   orderDrawerOpen: false,
   openOrderDrawer: () => set({ orderDrawerOpen: true }),
   closeOrderDrawer: () => set({ orderDrawerOpen: false }),
@@ -119,8 +144,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   setActiveCarrinho: (id) => set({ activeCarrinhoId: id }),
   commitCartToCarrinho: (targetCarrinhoId) => {
     const s = get()
-    const { lines, totalItems, totalValue } = cartSummary(s.cartItems)
-    if (totalItems === 0) return null
+    const { lines, totalItems: itemsQty, totalValue: itemsValue } = cartSummary(s.cartItems)
+    const { entries: comboLines, totalItems: combosQty, totalValue: combosValue } = comboSummary(s.cartCombos)
+    if (itemsQty === 0 && combosQty === 0) return null
 
     const items: PedidoItem[] = lines.map((l) => ({
       productId: l.product.id,
@@ -129,7 +155,22 @@ export const useAppStore = create<AppState>((set, get) => ({
       grade: gradeRangeLabel(l.product.suggestedSizes),
       value: l.value,
     }))
-    const pdvTotal = lines.reduce((sum, l) => sum + l.product.pricePdv * l.qty, 0)
+    // Combo vira um único PedidoItem sintético (productId = id do combo, não de um SKU real) —
+    // é assim que "preço promocional = item único" se traduz pro modelo de Pedido, sem precisar
+    // de um campo novo em PedidoItem. CarrinhoDetail's "Antes de fechar" simplesmente ignora esse
+    // id na comparação com ano passado (não bate com nenhum SKU), o que é o comportamento certo.
+    const comboItems: PedidoItem[] = comboLines.map(({ combo, cp }) => ({
+      productId: combo.id,
+      name: `Combo: ${cp.p1.name.replace('Tênis Tesla ', '')} + ${cp.p2.name.replace('Tênis Tesla ', '')}`,
+      qty: COMBO_PARES_PER_PRODUCT * 2,
+      grade: '—',
+      value: cp.finalPrice,
+    }))
+
+    const totalValue = itemsValue + combosValue
+    const pdvTotal =
+      lines.reduce((sum, l) => sum + l.product.pricePdv * l.qty, 0) +
+      comboLines.reduce((sum, { cp }) => sum + (cp.p1.pricePdv + cp.p2.pricePdv) * COMBO_PARES_PER_PRODUCT, 0)
     const marginPct = pdvTotal > 0 ? Math.round(((pdvTotal - totalValue) / pdvTotal) * 100) : 0
 
     const { carrinhos: base, carrinho } = getOrCreateCarrinho(s.carrinhos, targetCarrinhoId)
@@ -137,7 +178,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       id: `${carrinho.id}-p${carrinho.pedidos.length + 1}`,
       label: `Pedido ${carrinho.pedidos.length + 1}`,
       status: 'rascunho',
-      items,
+      items: [...items, ...comboItems],
       subtotal: totalValue,
       discount: 0,
       total: totalValue,
@@ -148,7 +189,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     const carrinhoId = carrinho.id
     const carrinhos = base.map((c) => (c.id === carrinhoId ? { ...c, updatedAt: 'agora', pedidos: [...c.pedidos, pedido] } : c))
 
-    set({ carrinhos, cartItems: {}, activeCarrinhoId: carrinhoId })
+    set({ carrinhos, cartItems: {}, cartCombos: {}, activeCarrinhoId: carrinhoId })
     return carrinhoId
   },
 
@@ -207,6 +248,28 @@ export function cartSummary(cartItems: Record<string, number>) {
   const totalItems = lines.reduce((sum, l) => sum + l.qty, 0)
   const totalValue = lines.reduce((sum, l) => sum + l.value, 0)
   return { lines, totalItems, totalValue }
+}
+
+// Pares de cada produto dentro de 1 combo (12 de cada = 24 pares no total) — fixo por enquanto,
+// não tem stepper de quantidade pro combo ainda (ver cartCombos em AppState).
+export const COMBO_PARES_PER_PRODUCT = 12
+
+// Resolve cartCombos (comboId → 1) em linhas de verdade com preço calculado, na mesma forma que
+// cartSummary faz pra cartItems — usado pelo drawer e pelo commitCartToCarrinho.
+export function comboSummary(cartCombos: Record<string, number>) {
+  const entries = Object.keys(cartCombos)
+    .filter((id) => cartCombos[id] > 0)
+    .map((id) => {
+      const combo = combos.find((c) => c.id === id)
+      if (!combo) return null
+      const cp = comboPrice(combo, products)
+      if (!cp) return null
+      return { combo, cp }
+    })
+    .filter((e): e is { combo: (typeof combos)[number]; cp: NonNullable<ReturnType<typeof comboPrice>> } => e !== null)
+  const totalItems = entries.length * COMBO_PARES_PER_PRODUCT * 2
+  const totalValue = entries.reduce((sum, e) => sum + e.cp.finalPrice, 0)
+  return { entries, totalItems, totalValue }
 }
 
 export const defaultTitular = users[0]
