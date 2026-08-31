@@ -36,6 +36,7 @@ interface AppState {
   addToCart: (productId: string, qty?: number) => void
   removeFromCart: (productId: string) => void
   toggleCart: (productId: string) => void
+  setCartQty: (productId: string, qty: number) => void
 
   /**
    * Combos adicionados ao pedido em montagem — `1` = combo presente, ausente = não. Um combo tem
@@ -137,6 +138,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     const s = get()
     if (s.cartItems[productId]) s.removeFromCart(productId)
     else s.addToCart(productId, 12)
+  },
+  // Ajuste de quantidade de um item já no pedido em montagem (stepper do drawer) — diferente de
+  // addToCart, não dispara peekOrderDrawer: o drawer já está aberto (é onde o stepper vive).
+  setCartQty: (productId, qty) => {
+    if (qty <= 0) {
+      get().removeFromCart(productId)
+      return
+    }
+    set((s) => ({ cartItems: { ...s.cartItems, [productId]: qty } }))
   },
 
   cartCombos: {},

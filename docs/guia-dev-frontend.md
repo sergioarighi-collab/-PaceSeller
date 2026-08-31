@@ -254,6 +254,18 @@ O usuário pediu pra repensar o drawer como um espaço de inteligência rápida:
 
 **Também fora desta rodada (pedido explícito de adiar):** repensar o modelo de Meus Carrinhos/multi-carrinho em si (hoje "confuso", nas palavras do usuário) — o rótulo "Vai para" e o "trocar" são uma melhoria de visibilidade em cima do modelo atual, não uma correção estrutural dele.
 
+### Stepper de quantidade no drawer (ago/2026)
+
+Gap real identificado pelo usuário: nem o card do Catálogo nem a Ficha de Decisão nunca deixavam o lojista escolher quantos pares queria — `toggleCart`/`addToCart(p.id, 12)` sempre entra com 12 pares fixos, e a linha do item no drawer só mostrava "qtd 24" como texto, sem jeito de ajustar depois (só dava pra remover o item inteiro).
+
+**Decisão de produto (discutida antes de implementar):** duas formas de resolver — (1) stepper no card/detalhe, decidindo a quantidade *antes* de adicionar, ou (2) manter o "Adicionar ao carrinho" como ação rápida com default de 12, e deixar a quantidade **editável depois, dentro do drawer**. Fomos de (2) — mesma filosofia de baixo atrito já usada pro "Vai para" (default silencioso + correção fácil, sem gate obrigatório a cada clique no Catálogo).
+
+- **`setCartQty(productId, qty)`** (`store.ts`) — nova action, seta a quantidade absoluta de um item já no `cartItems`; `qty <= 0` remove o item (chama `removeFromCart` internamente). Diferente de `addToCart`, **não chama `peekOrderDrawer()`** — o stepper só existe dentro do drawer já aberto, não faz sentido reabrir/re-armar o timer de peek por causa de um ajuste que já está acontecendo com o mouse em cima do painel (o hover já pausa o auto-close de qualquer forma).
+- **`OrderDrawer.tsx`**: cada linha de `lines` (produtos individuais, não combos) ganhou um `.stepper` (`− qty +`) entre o nome/valor e o botão de remover (`x`) — `value` (`formatBRL`) recalcula sozinho a cada clique porque vem de `cartSummary(cartItems)`, que já é derivado do store.
+- **CSS**: `.stepper`/`.stepbtn`/`.stepper .qty` extraídos do mockup (`telas-desktop-lojista.html`, já usados lá no modal "Ajustar quantidade" do Radar e no `.mixitem` do Planejamento aposentado) pra `mockup.css` — é a primeira vez que esse padrão visual é ligado a uma ação real da aplicação.
+- **Combos continuam sem stepper** (comentário já existente em `store.ts` perto de `COMBO_PARES_PER_PRODUCT`) — um combo é toggle on/off (0 ou 1 "conjunto" de 24 pares no preço promocional), não faria sentido "meio combo". Fora do escopo desse pedido, que era especificamente sobre produtos individuais.
+- **Continua fora do escopo**: nenhum seletor de quantidade no card do Catálogo nem na Ficha de Decisão — "Adicionar ao carrinho" continua entrando com 12 pares por padrão nesses dois lugares; o ajuste fino é só no drawer.
+
 ## Fotos de produto
 
 Extraídas dos catálogos PDF reais da Tesla Footwear (não são geradas/fake). Cobertura hoje: COIL, HERTZ, HERTZ ART (parcial), FLOW, FLOW XL. **Fusion e TG II não têm foto real** (não aparecem nos PDFs recebidos) — nesses casos `ProductThumb` cai automaticamente no ícone placeholder via `onError`, então nunca vai aparecer imagem quebrada, mas também não adianta tentar "consertar" apontando pra um arquivo que não existe.

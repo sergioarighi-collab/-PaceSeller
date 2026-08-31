@@ -20,6 +20,7 @@ export function OrderDrawer() {
   const cartItems = useAppStore((s) => s.cartItems)
   const addToCart = useAppStore((s) => s.addToCart)
   const removeFromCart = useAppStore((s) => s.removeFromCart)
+  const setCartQty = useAppStore((s) => s.setCartQty)
   const cartCombos = useAppStore((s) => s.cartCombos)
   const removeCombo = useAppStore((s) => s.removeCombo)
   const carrinhos = useAppStore((s) => s.carrinhos)
@@ -192,8 +193,15 @@ export function OrderDrawer() {
                 </div>
                 <div className="si-info">
                   <div className="si-name">{product.name}</div>
-                  <div className="si-meta">
-                    qtd {qty} · {formatBRL(value)}
+                  <div className="si-meta">{formatBRL(value)}</div>
+                </div>
+                <div className="stepper" style={{ flexShrink: 0 }}>
+                  <div className="stepbtn" onClick={() => setCartQty(product.id, qty - 1)}>
+                    −
+                  </div>
+                  <div className="qty">{qty}</div>
+                  <div className="stepbtn" onClick={() => setCartQty(product.id, qty + 1)}>
+                    +
                   </div>
                 </div>
                 <div className="si-remove" style={{ cursor: 'pointer' }} onClick={() => removeFromCart(product.id)}>
