@@ -1,14 +1,21 @@
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore, cartSummary, comboSummary } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { products } from '../../lib/data'
 import { ProductThumb } from './ProductThumb'
+import { WebModal } from './WebModal'
 
 const MIX_IDEAL_PCT = 70
+const PEEK_MS = 2200
+const PEEK_HOVER_GRACE_MS = 800
+const NEW_CARRINHO = 'novo' as const
 
 export function OrderDrawer() {
   const open = useAppStore((s) => s.orderDrawerOpen)
+  const autoClose = useAppStore((s) => s.orderDrawerAutoClose)
+  const peekToken = useAppStore((s) => s.peekToken)
   const closeOrderDrawer = useAppStore((s) => s.closeOrderDrawer)
   const cartItems = useAppStore((s) => s.cartItems)
   const addToCart = useAppStore((s) => s.addToCart)
@@ -28,17 +35,68 @@ export function OrderDrawer() {
   const gradeOk = totalItems >= GRADE_MINIMA_PARES
   const gradePct = Math.min(100, Math.round((totalItems / GRADE_MINIMA_PARES) * 100))
 
-  // Fecha o pedido em montagem: vira um Pedido de verdade dentro do carrinho ativo (o carrinho
-  // único, se só há um; ou um carrinho novo) e limpa o cartItems/cartCombos pro próximo pedido.
-  // Não interrompe pra perguntar em qual carrinho entra — o drawer é sobre comprar, não sobre
-  // organizar carrinhos; se o padrão errar, dá pra mover o pedido depois em Meus Carrinhos.
+  // Vai pra qual carrinho se o lojista não trocar manualmente — mesma regra do commit: o
+  // ativo (se ainda existir), senão o único que houver, senão cria um novo.
+  const resolvedTargetId =
+    activeCarrinhoId && carrinhos.some((c) => c.id === activeCarrinhoId) ? activeCarrinhoId : carrinhos.length === 1 ? carrinhos[0].id : null
+  const resolvedTargetName = resolvedTargetId ? carrinhos.find((c) => c.id === resolvedTargetId)?.name : null
+
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [picked, setPicked] = useState<string>(resolvedTargetId ?? NEW_CARRINHO)
+
+  // "Peek": abre sozinho a cada item adicionado (ver peekOrderDrawer no store) e some depois de
+  // ~2s — a menos que o mouse esteja em cima, aí some só ~0,8s depois do mouse sair. Um drawer
+  // aberto manualmente (autoClose:false) nunca é fechado por esse timer.
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hovering = useRef(false)
+
+  function clearCloseTimer() {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current)
+      closeTimer.current = null
+    }
+  }
+  function scheduleClose(ms: number) {
+    clearCloseTimer()
+    closeTimer.current = setTimeout(() => {
+      closeOrderDrawer()
+    }, ms)
+  }
+
+  useEffect(() => {
+    if (open && autoClose && !hovering.current) scheduleClose(PEEK_MS)
+    if (!open) clearCloseTimer()
+    return clearCloseTimer
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, autoClose, peekToken])
+
+  function handleMouseEnter() {
+    hovering.current = true
+    if (autoClose) clearCloseTimer()
+  }
+  function handleMouseLeave() {
+    hovering.current = false
+    if (autoClose && open) scheduleClose(PEEK_HOVER_GRACE_MS)
+  }
+
+  // Fecha o pedido em montagem: vira um Pedido de verdade dentro do carrinho escolhido (o
+  // rótulo "Vai para" já mostra qual, com "trocar" pra decidir diferente) e limpa o
+  // cartItems/cartCombos pro próximo pedido.
   function handleAddToCart() {
     if (totalItems === 0) return
-    const target = activeCarrinhoId && carrinhos.some((c) => c.id === activeCarrinhoId) ? activeCarrinhoId : carrinhos.length === 1 ? carrinhos[0].id : null
-    const carrinhoId = commitCartToCarrinho(target)
+    const carrinhoId = commitCartToCarrinho(resolvedTargetId)
     setActiveCarrinho(carrinhoId)
     closeOrderDrawer()
     navigate(carrinhoId ? `/carrinhos/${carrinhoId}` : '/carrinhos')
+  }
+
+  function openPicker() {
+    setPicked(resolvedTargetId ?? NEW_CARRINHO)
+    setPickerOpen(true)
+  }
+  function confirmPicker() {
+    setActiveCarrinho(picked === NEW_CARRINHO ? null : picked)
+    setPickerOpen(false)
   }
 
   // Sugestões pra completar o mix: produtos que a loja ainda não vende (badge "Oportunidade perdida"),
@@ -48,7 +106,7 @@ export function OrderDrawer() {
   return (
     <>
       <div className={`order-drawer-scrim ${open ? 'open' : ''}`} onClick={closeOrderDrawer} />
-      <div className={`order-drawer ${open ? 'open' : ''}`}>
+      <div className={`order-drawer ${open ? 'open' : ''}`} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
         <div className="od-head">
           <div>
             <div className="stitle">Seu pedido</div>
@@ -65,6 +123,17 @@ export function OrderDrawer() {
         </div>
 
         <div className="od-body">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+            <span style={{ color: 'var(--text-secondary)' }}>
+              Vai para: <b style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{resolvedTargetName ?? 'Novo carrinho'}</b>
+            </span>
+            {carrinhos.length > 0 && (
+              <span style={{ color: 'var(--info)', fontWeight: 600, cursor: 'pointer' }} onClick={openPicker}>
+                trocar
+              </span>
+            )}
+          </div>
+
           <div className="nudge-progress">
             <div className="np-label">
               <span>Grade mínima do pedido</span>
@@ -173,6 +242,54 @@ export function OrderDrawer() {
           </div>
         </div>
       </div>
+
+      {pickerOpen && (
+        <WebModal title="Em qual carrinho?" onClose={() => setPickerOpen(false)} width={420}
+          footer={
+            <>
+              <div className="btn-secondary" style={{ cursor: 'pointer' }} onClick={() => setPickerOpen(false)}>
+                Cancelar
+              </div>
+              <div className="btn-primary" style={{ cursor: 'pointer' }} onClick={confirmPicker}>
+                Confirmar
+              </div>
+            </>
+          }
+        >
+          <div style={{ padding: '8px 20px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {carrinhos.map((c) => (
+              <div
+                key={c.id}
+                className={`optioncard ${picked === c.id ? 'selected' : ''}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setPicked(c.id)}
+              >
+                <div>
+                  <div className="otitle">{c.name}</div>
+                  <div className="osub">
+                    {c.pedidos.length} pedido{c.pedidos.length > 1 ? 's' : ''} · Representante: {c.representative}
+                  </div>
+                </div>
+              </div>
+            ))}
+            <div
+              className={`optioncard ${picked === NEW_CARRINHO ? 'selected' : ''}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setPicked(NEW_CARRINHO)}
+            >
+              <div className="oicon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </div>
+              <div>
+                <div className="otitle">Novo carrinho</div>
+                <div className="osub">Cria um carrinho separado só pra esse pedido</div>
+              </div>
+            </div>
+          </div>
+        </WebModal>
+      )}
     </>
   )
 }

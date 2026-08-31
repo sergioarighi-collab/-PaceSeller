@@ -50,9 +50,25 @@ interface AppState {
 
   /** Drawer "Seu pedido" (carrinho em construção) — trigger no header, disponível em qualquer tela do lojista. */
   orderDrawerOpen: boolean
+  /**
+   * `true` quando o drawer está aberto por causa de um "peek" (abriu sozinho ao adicionar algo,
+   * não porque o lojista clicou no ícone) — só nesse caso o componente agenda o auto-fechamento.
+   * Abrir manualmente (ícone do header, ou `toggleOrderDrawer`) desliga o auto-close: o lojista
+   * pediu pra ver o pedido, não faz sentido sumir sozinho.
+   */
+  orderDrawerAutoClose: boolean
+  /** Incrementa a cada `peekOrderDrawer()` — o componente do drawer observa esse número (não só
+   * `orderDrawerOpen`) pra saber quando reiniciar o timer de auto-close, mesmo se o drawer já
+   * estava aberto (ex: dois itens adicionados em sequência devem renovar os ~2s, não somar). */
+  peekToken: number
   openOrderDrawer: () => void
   closeOrderDrawer: () => void
   toggleOrderDrawer: () => void
+  /** "Prateleira enchendo": abre o drawer por alguns segundos a cada item adicionado, sem exigir
+   * clique nenhum — ver `orderDrawerAutoClose`. Chamado de dentro de `addToCart`/`toggleCombo`,
+   * não precisa ser chamado manualmente pelas telas. Não derruba um drawer aberto manualmente
+   * pra modo auto-close — só "estende" um peek que já estava rolando. */
+  peekOrderDrawer: () => void
 
   /** Carrinhos de verdade (Meus Carrinhos) — cada um com N pedidos. Mutável: cresce quando o
    * lojista fecha o pedido em montagem no drawer (ver commitCartToCarrinho). */
@@ -104,11 +120,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   setActiveOrderId: (id) => set({ activeOrderId: id }),
 
   cartItems: { '2101-30': 24, '1901-67': 12, '2304-01': 4 },
-  addToCart: (productId, qty) =>
+  addToCart: (productId, qty) => {
     set((s) => {
       const nextQty = qty ?? (s.cartItems[productId] ? s.cartItems[productId] + 1 : 12)
       return { cartItems: { ...s.cartItems, [productId]: nextQty } }
-    }),
+    })
+    get().peekOrderDrawer()
+  },
   removeFromCart: (productId) =>
     set((s) => {
       const next = { ...s.cartItems }
@@ -131,13 +149,25 @@ export const useAppStore = create<AppState>((set, get) => ({
   toggleCombo: (comboId) => {
     const s = get()
     if (s.cartCombos[comboId]) s.removeCombo(comboId)
-    else set({ cartCombos: { ...s.cartCombos, [comboId]: 1 } })
+    else {
+      set({ cartCombos: { ...s.cartCombos, [comboId]: 1 } })
+      s.peekOrderDrawer()
+    }
   },
 
   orderDrawerOpen: false,
-  openOrderDrawer: () => set({ orderDrawerOpen: true }),
-  closeOrderDrawer: () => set({ orderDrawerOpen: false }),
-  toggleOrderDrawer: () => set((s) => ({ orderDrawerOpen: !s.orderDrawerOpen })),
+  orderDrawerAutoClose: false,
+  peekToken: 0,
+  openOrderDrawer: () => set({ orderDrawerOpen: true, orderDrawerAutoClose: false }),
+  closeOrderDrawer: () => set({ orderDrawerOpen: false, orderDrawerAutoClose: false }),
+  toggleOrderDrawer: () => set((s) => ({ orderDrawerOpen: !s.orderDrawerOpen, orderDrawerAutoClose: false })),
+  peekOrderDrawer: () =>
+    set((s) => ({
+      orderDrawerOpen: true,
+      // já aberto manualmente (autoClose:false) continua manual — peek nunca rebaixa isso.
+      orderDrawerAutoClose: s.orderDrawerOpen && !s.orderDrawerAutoClose ? false : true,
+      peekToken: s.peekToken + 1,
+    })),
 
   carrinhos: initialCarrinhos,
   activeCarrinhoId: null,

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useAppStore } from '../../lib/store'
+import { useAppStore, cartSummary, comboSummary } from '../../lib/store'
 
 const navItems = [
   { to: '/radar', label: 'Radar' },
@@ -12,8 +12,13 @@ export function WebTopNav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const activeUser = useAppStore((s) => s.activeUser)
   const toggleOrderDrawer = useAppStore((s) => s.toggleOrderDrawer)
+  const cartItems = useAppStore((s) => s.cartItems)
+  const cartCombos = useAppStore((s) => s.cartCombos)
   const navigate = useNavigate()
   const initials = activeUser?.initials ?? 'CA'
+  const { totalItems: itemsQty } = cartSummary(cartItems)
+  const { totalItems: combosQty } = comboSummary(cartCombos)
+  const bagCount = itemsQty + combosQty
 
   return (
     <div className="web-topnav">
@@ -43,12 +48,38 @@ export function WebTopNav() {
             <path d="M13.7 21a2 2 0 0 1-3.4 0" />
           </svg>
         </div>
-        <div className="navicon" style={{ cursor: 'pointer' }} onClick={toggleOrderDrawer} title="Seu pedido">
+        <div
+          className="navicon"
+          style={{ cursor: 'pointer', position: 'relative' }}
+          onClick={toggleOrderDrawer}
+          title="Seu pedido"
+        >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path d="M6 6h15l-1.5 9h-12L6 6Zm0 0-1-3H2" />
             <circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none" />
             <circle cx="17" cy="20" r="1.4" fill="currentColor" stroke="none" />
           </svg>
+          {bagCount > 0 && (
+            <span
+              style={{
+                position: 'absolute',
+                top: -4,
+                right: -4,
+                minWidth: 16,
+                height: 16,
+                padding: '0 3px',
+                borderRadius: 8,
+                background: 'var(--info)',
+                color: '#fff',
+                fontSize: 10,
+                fontWeight: 700,
+                lineHeight: '16px',
+                textAlign: 'center',
+              }}
+            >
+              {bagCount}
+            </span>
+          )}
         </div>
         <div className="avatar-wrap">
           <div className="avatar-chip" style={{ cursor: 'pointer' }} onClick={() => setMenuOpen((o) => !o)}>
