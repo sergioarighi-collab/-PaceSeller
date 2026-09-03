@@ -485,7 +485,7 @@ export const initialCarrinhos: Carrinho[] = [
   },
   {
     id: 'reposicao-rapida',
-    name: 'Reposição rápida',
+    name: 'Giro Hertz Black',
     representative: 'Ana',
     updatedAt: 'ontem',
     pedidos: [

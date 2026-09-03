@@ -275,7 +275,7 @@ Levantada pelo Sérgio — **a relação carrinho ↔ representante é assimétr
 ```
 Representante
   └─ Cliente (loja) — ex: Radical Skate
-       └─ Carrinho — ex: "Coleção Inverno", "Reposição rápida" (um cliente pode ter um ou mais carrinhos)
+       └─ Carrinho — ex: "Coleção Inverno", "Giro Hertz Black" (um cliente pode ter um ou mais carrinhos)
             └─ Pedido — ex: "Pedido 1" (30/60/90), "Pedido 2" (à vista) (um carrinho tem um ou mais pedidos — o caso mais comum é só 1; vira mais de 1 apenas quando o lojista precisa dividir por prazo/pagamento diferente)
 ```
 
