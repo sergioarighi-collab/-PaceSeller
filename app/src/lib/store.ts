@@ -398,6 +398,20 @@ export function resolveTargetCarrinhoId(carrinhos: Carrinho[], activeCarrinhoId:
   return null
 }
 
+export function pedidoPares(pedido: Pedido): number {
+  return pedido.items.reduce((sum, i) => sum + i.qty, 0)
+}
+
+// Qual ação faz sentido oferecer pra esse Pedido — usado tanto em MeusCarrinhos (linha condensada)
+// quanto em CarrinhoDetail (og-head), pra não duplicar a mesma árvore de decisão nos dois lugares.
+export type PedidoActionKind = 'acompanhar' | 'revisar' | 'enviar' | 'editar'
+export function pedidoActionKind(pedido: Pedido): PedidoActionKind {
+  if (pedido.status === 'pago') return 'acompanhar'
+  if (pedido.status === 'aguardando' && pedido.suggestedBy === 'representante') return 'revisar'
+  if (pedido.status === 'rascunho' && pedidoPares(pedido) >= GRADE_MINIMA_PARES) return 'enviar'
+  return 'editar'
+}
+
 // Faixa de grade sugerida pro pedido gerado a partir do cartItems — deriva do miolo de
 // `suggestedSizes` (as numerações centrais marcadas como sugeridas), mesma lógica visual do
 // "Grade sugerida" na Ficha de Decisão do Catálogo.

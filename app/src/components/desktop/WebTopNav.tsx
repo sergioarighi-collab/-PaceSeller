@@ -14,11 +14,24 @@ export function WebTopNav() {
   const toggleOrderDrawer = useAppStore((s) => s.toggleOrderDrawer)
   const cartItems = useAppStore((s) => s.cartItems)
   const cartCombos = useAppStore((s) => s.cartCombos)
+  const notifications = useAppStore((s) => s.notifications)
+  const notifOpen = useAppStore((s) => s.notifOpen)
+  const toggleNotifications = useAppStore((s) => s.toggleNotifications)
+  const closeNotifications = useAppStore((s) => s.closeNotifications)
+  const markAllNotificationsRead = useAppStore((s) => s.markAllNotificationsRead)
   const navigate = useNavigate()
   const initials = activeUser?.initials ?? 'CA'
   const { totalItems: itemsQty } = cartSummary(cartItems)
   const { totalItems: combosQty } = comboSummary(cartCombos)
   const bagCount = itemsQty + combosQty
+  const unreadCount = notifications.filter((n) => !n.read).length
+
+  // Abrir o dropdown já marca tudo como lido (mesmo padrão de outros apps de notificação) — não
+  // tem "não lida" individual persistindo depois que o lojista viu a lista.
+  function handleToggleNotifications() {
+    if (!notifOpen) markAllNotificationsRead()
+    toggleNotifications()
+  }
 
   return (
     <div className="web-topnav">
@@ -42,11 +55,64 @@ export function WebTopNav() {
             <path d="m21 21-4.3-4.3" />
           </svg>
         </div>
-        <div className="navicon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.7 21a2 2 0 0 1-3.4 0" />
-          </svg>
+        <div className="avatar-wrap">
+          <div className="navicon" style={{ cursor: 'pointer', position: 'relative' }} onClick={handleToggleNotifications} title="Notificações">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+            </svg>
+            {unreadCount > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  minWidth: 16,
+                  height: 16,
+                  padding: '0 3px',
+                  borderRadius: 8,
+                  background: 'var(--risk)',
+                  color: '#fff',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  lineHeight: '16px',
+                  textAlign: 'center',
+                }}
+              >
+                {unreadCount}
+              </span>
+            )}
+          </div>
+          {notifOpen && (
+            <>
+              <div style={{ position: 'fixed', inset: 0, zIndex: 9 }} onClick={closeNotifications} />
+              <div className="notif-menu">
+                <div className="nm-head">
+                  <span className="nm-title">Notificações</span>
+                </div>
+                {notifications.length === 0 ? (
+                  <div className="nm-empty">Nenhuma notificação por enquanto</div>
+                ) : (
+                  notifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className="nm-item"
+                      onClick={() => {
+                        closeNotifications()
+                        if (n.carrinhoId) navigate(`/carrinhos/${n.carrinhoId}`)
+                      }}
+                    >
+                      <span className={`nm-dot ${n.kind}`} />
+                      <div>
+                        <div className="nm-text">{n.text}</div>
+                        <div className="nm-time">{n.timeLabel}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
         </div>
         <div
           className="navicon"

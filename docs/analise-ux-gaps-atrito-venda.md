@@ -7,10 +7,10 @@
 
 ## 🔴 Alto impacto — atrito real que pode custar a venda
 
-### 1. O sino de notificação no TopNav não faz nada
+### ~~1. O sino de notificação no TopNav não faz nada~~ (implementado ago/2026)
 Toda tela autenticada tem um ícone de sino no canto superior direito — mas ele nunca ganhou um dropdown, um badge de contagem, nada. Isso parece pequeno, mas é estrutural: a plataforma inteira é baseada em **"a inteligência avisa, o lojista age"** — sem notificação de verdade, o lojista só descobre que "Ana comentou seu carrinho" ou "seu pedido atrasou" se abrir a tela certa por acaso. Isso mata o valor do produto de "cérebro do ecossistema" que documentamos lá no início.
 
-**Solução sugerida**: dropdown de notificações (mesmo padrão visual do menu do avatar), com pelo menos 3 tipos de evento: comentário do representante, mudança de status de pedido, novo insight de alta prioridade no Radar. Badge numérico no sino quando houver não lidas.
+**Solução sugerida** (implementada como parte do redesenho "Meus Carrinhos 2.0", ver `docs/guia-dev-frontend.md`): dropdown de notificações (mesmo padrão visual do menu do avatar), com pelo menos 3 tipos de evento: comentário do representante, mudança de status de pedido, novo insight de alta prioridade no Radar. Badge numérico no sino quando houver não lidas.
 
 ### 2. Nenhum jeito de dizer "não, obrigado" pra um insight
 Cada card do Radar assume que o lojista vai agir. Não existe um "dispensar"/"não é pra mim agora" em nenhum card. Na vida real, um lojista vai ignorar cards irrelevantes repetidamente — e sem um mecanismo de feedback, dois problemas acontecem: (a) a pessoa começa a ignorar o Radar inteiro por cansaço visual, (b) a plataforma nunca aprende que aquele tipo de sugestão não serve pra aquela loja.

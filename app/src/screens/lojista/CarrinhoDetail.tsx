@@ -5,7 +5,7 @@ import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { WebModal } from '../../components/desktop/WebModal'
 import { samePeriodLastYearQty } from '../../lib/data'
-import { useAppStore } from '../../lib/store'
+import { useAppStore, pedidoActionKind } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { deltaInfo } from '../../lib/productLines'
 import { formatBRL } from '../../lib/format'
@@ -25,6 +25,9 @@ export function CarrinhoDetail() {
   const carrinhos = useAppStore((s) => s.carrinhos)
   const setActiveCarrinho = useAppStore((s) => s.setActiveCarrinho)
   const movePedidoToCarrinho = useAppStore((s) => s.movePedidoToCarrinho)
+  const startEditPedido = useAppStore((s) => s.startEditPedido)
+  const sendPedidoToRepresentante = useAppStore((s) => s.sendPedidoToRepresentante)
+  const setRepCanEdit = useAppStore((s) => s.setRepCanEdit)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
 
   function shopMoreForThisCarrinho() {
@@ -125,6 +128,22 @@ export function CarrinhoDetail() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    {pedidoActionKind(pedido) === 'editar' && (
+                      <span
+                        style={{ fontSize: 11.5, color: 'var(--info)', fontWeight: 500, cursor: 'pointer' }}
+                        onClick={() => startEditPedido(cart.id, pedido.id)}
+                      >
+                        Editar no drawer
+                      </span>
+                    )}
+                    {pedidoActionKind(pedido) === 'enviar' && (
+                      <span
+                        style={{ fontSize: 11.5, color: 'var(--positive)', fontWeight: 600, cursor: 'pointer' }}
+                        onClick={() => sendPedidoToRepresentante(cart.id, pedido.id)}
+                      >
+                        Enviar pro representante
+                      </span>
+                    )}
                     {otherCarrinhos.length > 0 && pedido.status !== 'pago' && (
                       <span
                         style={{ fontSize: 11.5, color: 'var(--text-secondary)', fontWeight: 500, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}
@@ -255,6 +274,19 @@ export function CarrinhoDetail() {
             {formatBRL(totalValue)} · {cart.pedidos.length} pedido{cart.pedidos.length > 1 ? 's' : ''}
           </div>
           <div className="bubble">Cada pedido fecha e paga separado — o carrinho continua aberto até você decidir salvar ou enviar tudo</div>
+
+          <div
+            className="permswitch"
+            style={{ marginTop: 18 }}
+            onClick={() => setRepCanEdit(cart.id, !cart.repCanEdit)}
+            title="Simulado: hoje não existe desktop do representante pra aplicar essa permissão de verdade"
+          >
+            <div className={`swtrack ${cart.repCanEdit ? '' : 'off'}`}>
+              <div className="knob" />
+            </div>
+            {cart.representative} pode editar este carrinho
+          </div>
+
           <div className="sbtns">
             <div className="btn-secondary" style={{ cursor: 'pointer' }}>
               Salvar carrinho como rascunho

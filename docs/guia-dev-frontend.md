@@ -104,7 +104,7 @@ Antes: onboarding tinha 3 etapas, a 3ª perguntava "o que você quer fazer agora
 | Componente | Uso |
 |---|---|
 | `DesktopPage` | wrapper de página (fundo, min-height) — também monta o `OrderDrawer` globalmente, ver seção própria abaixo |
-| `WebTopNav` | navbar superior com menu do avatar e o ícone de sacola que abre o `OrderDrawer` |
+| `WebTopNav` | navbar superior com menu do avatar, o ícone de sacola que abre o `OrderDrawer` (com badge de contagem) e o sino de notificações (badge + dropdown, ver "Meus Carrinhos 2.0" abaixo) |
 | `Breadcrumb` | trilha de navegação abaixo da navbar |
 | `OrderDrawer` | painel "Seu pedido" que desliza por cima da página (ver seção própria abaixo) — mostra itens do `cartItems` do store, nudge de grade mínima e de mix, sugestões de produto |
 | `ProductThumb` | `<img>` de produto com fallback automático pro ícone placeholder (SVG de tênis) via `onError`, caso o SKU não tenha foto real ainda |
@@ -143,6 +143,7 @@ Um `Carrinho` é compartilhado com o representante fixo da loja e pode ter **1+ 
 - **`getOrCreateCarrinho`** (privada, `lib/store.ts`) — "acha pelo id, ou cria um novo" compartilhado por `commitCartToCarrinho` e `movePedidoToCarrinho`, os dois pontos que decidem "em qual carrinho isso entra".
 - **Bug de stacking corrigido nessa mudança** (ainda vale, mesmo com o seletor do drawer removido — o de mover pedido usa o mesmo `WebModal`): `.webmodal-scrim` tinha `z-index:30` e `position:absolute` — menor que `.order-drawer`/`.order-drawer-scrim` (`z-index:41`/`40`, `position:fixed`). Um `WebModal` aberto de dentro de um painel fixo (como o drawer) ficava visualmente por cima mas **inclicável**, porque o scrim do painel de baixo interceptava o clique. Corrigido pra `position:fixed;z-index:50` — acima de qualquer painel fixo da aplicação.
 - **Ainda não mutado por essa mudança**: `Payment.tsx`/"Confirmar pedido" continua sem persistir `status: 'pago'`/condição/forma de pagamento escolhidas — é só navegação, mesmo comportamento de antes. Agora que `carrinhos` é estado real, dá pra fechar esse gap depois sem mudar a arquitetura de novo.
+- **Campos novos em `Carrinho`/`Pedido` (ago/2026)** — `repCanEdit`, `autoSendOnGradeMinima`, `lastComment`, `daysSinceActivity`, `Pedido.suggestedBy` — ver seção "Meus Carrinhos 2.0" abaixo pro racional completo.
 
 ### Prazo de entrega
 
@@ -265,6 +266,54 @@ Gap real identificado pelo usuário: nem o card do Catálogo nem a Ficha de Deci
 - **CSS**: `.stepper`/`.stepbtn`/`.stepper .qty` extraídos do mockup (`telas-desktop-lojista.html`, já usados lá no modal "Ajustar quantidade" do Radar e no `.mixitem` do Planejamento aposentado) pra `mockup.css` — é a primeira vez que esse padrão visual é ligado a uma ação real da aplicação.
 - **Combos continuam sem stepper** (comentário já existente em `store.ts` perto de `COMBO_PARES_PER_PRODUCT`) — um combo é toggle on/off (0 ou 1 "conjunto" de 24 pares no preço promocional), não faria sentido "meio combo". Fora do escopo desse pedido, que era especificamente sobre produtos individuais.
 - **Continua fora do escopo**: nenhum seletor de quantidade no card do Catálogo nem na Ficha de Decisão — "Adicionar ao carrinho" continua entrando com 12 pares por padrão nesses dois lugares; o ajuste fino é só no drawer.
+
+## Meus Carrinhos 2.0 (ago/2026)
+
+Pedido do usuário: "vamos começar a rever o carrinho... acho que ele tem que mostrar todos carrinhos criados pelo lojista, fazer a ligação com o drawer, ajudar a identificar boas oportunidades, ser visualizado e editado, com permissão, pelo representante tb, com avisos e mensagens." A lista antiga (`MeusCarrinhos.tsx`) era só nome + badge de status agregado + botão "Abrir" — nenhum dos pedidos individuais aparecia, nenhuma ligação real com o drawer, nenhuma visibilidade de oportunidade. Esboçado primeiro como Artifact ("Meus Carrinhos 2.0", wireframe fiel aos tokens reais de `mockup.css`) pra alinhar antes de mexer em código de verdade — prática já usada antes pro `OrderDrawer`.
+
+**Decisões de escopo tomadas antes de implementar** (perguntadas diretamente, não assumidas):
+- **Representante edita "com permissão"** → simulado do lado do lojista (atribuição visível + toggle de permissão + pedidos que a Ana monta), **sem construir um desktop do representante de verdade** — `screens/representante/` continua sendo só a sobra do protótipo mobile antigo, fora de escopo (ver aviso no topo do guia).
+- **Pedido já fechado dentro de um carrinho** → volta a ser editável (reabre no drawer) enquanto `status !== 'pago'`; pago continua histórico/travado.
+- **"Fechamento automático de carrinho"** → dois mecanismos concretos, nenhum pula aprovação humana: (1) auto-envio pro representante quando a grade mínima é batida, (2) aviso de expiração de rascunho parado — não uma terceira ideia (pedido recorrente agendado) que foi cogitada e descartada nessa conversa.
+
+### Modelo de dados
+
+`Carrinho` (`lib/types.ts`) ganhou: `repCanEdit: boolean` (toggle de permissão simulado — não existe desktop do representante pra aplicar de verdade, é só o que aparece pro lojista), `autoSendOnGradeMinima: boolean`, `daysSinceActivity: number` (companion numérico de `updatedAt`, que continua sendo o texto solto tipo "há 2h" — os dois precisam ser atualizados juntos; um campo numérico à parte é mais simples que re-plumbing todo `updatedAt` pra `Date`, e seguindo o padrão já usado em `restockDays`/`deliveryEstimateDays`), `lastComment?: { author, text, timeLabel }`. `Pedido` ganhou `suggestedBy?: 'representante'`, marcando um pedido que a Ana montou (não o lojista) — "Montar Pedido Sugerido", direção validada em reunião com o cliente mas nunca desenhada até agora (ver `docs/cruzamento-reuniao-cliente.md`). Novo carrinho seed **"Sandálias Verão"** demonstra esse fluxo: `status: 'aguardando'` + `suggestedBy: 'representante'`, sem o lojista ter feito nada ainda.
+
+Novo tipo `NotificationItem` (`lib/types.ts`) + seed `initialNotifications` (`lib/data.ts`) — 3 tipos (`comment`/`status`/`insight`), gap que já estava mapeado em `analise-ux-gaps-atrito-venda.md` mas nunca implementado.
+
+**Bug de dado pré-existente, achado ao construir isso**: os valores dos `PedidoItem` no seed (`initialCarrinhos`) eram números soltos, escritos à mão, e **não batiam** com `product.priceFactory * qty` usando o preço real de `data.ts` (ex: Hertz Rose 18 pares tinha `value: 3400`, mas `145 × 18 = 2610`). Isso não importava enquanto os pedidos eram só exibidos como texto estático — mas agora que "Editar no drawer" reidrata e recalcula a partir do preço canônico, salvar um pedido **sem mudar nada** ia silenciosamente trocar o total exibido. Corrigido nos 2 pedidos que ficaram alcançáveis por edição (Coleção Inverno Pedido 1 e 2, Sandálias Verão Pedido 1) — os números de `subtotal`/`discount`/`total`/`marginPct` foram recalculados a partir do `priceFactory`/`pricePdv` reais. **Não corrigido** em "Giro Hertz Black" Pedido 1 (`status: 'pago'`) — pedido pago nunca é reaberto pra edição, então o número desatualizado ali é só cosmético/histórico, fora do raio de ação dessa mudança.
+
+### Store (`lib/store.ts`)
+
+- **`startEditPedido(carrinhoId, pedidoId)`** — reidrata `cartItems`/`cartCombos` a partir dos `PedidoItem[]` de um `Pedido` existente (detecta item de combo pelo `productId` bater com um `combo.id`) e abre o drawer manualmente (`orderDrawerAutoClose: false`, não é peek). **Substitui** qualquer rascunho solto que já estivesse no drawer — editar é uma sessão à parte, não soma. Não faz nada se `status === 'pago'`.
+- **`cancelEditPedido()`** — descarta a edição em andamento (não mexe no `Pedido` salvo), limpa o drawer.
+- **`commitCartToCarrinho`** ganhou um branch novo: se `editingPedido` estiver setado, **atualiza esse `Pedido` no lugar** (mesmo `id`/`label`/condição de pagamento, `items`/`subtotal`/`total`/`marginPct` recalculados) em vez de criar um novo — e aplica o envio automático (`autoSendOnGradeMinima` + `status === 'rascunho'` + pares ≥ 36 → vira `'aguardando'`) tanto nesse branch quanto no de criação normal.
+- **`setRepCanEdit(carrinhoId, value)`** / **`sendPedidoToRepresentante(carrinhoId, pedidoId)`** (essa última só age se `status === 'rascunho'` e a grade mínima já foi batida — mesma trava que "Ir para pagamento" já tinha).
+- **`resolveTargetCarrinhoId(carrinhos, activeCarrinhoId)`** — extraído do `OrderDrawer` (onde só existia inline) pra função exportada, porque `MeusCarrinhos` também precisa saber "pra qual carrinho o rascunho do drawer está indo" (linha "No drawer" nos cards, ver abaixo).
+- **`pedidoPares(pedido)`** / **`pedidoActionKind(pedido)`** — a árvore de decisão "que ação faz sentido oferecer pra esse pedido" (`'acompanhar'` se pago, `'revisar'` se aguardando+sugerido pela Ana, `'enviar'` se rascunho com grade batida, `'editar'` senão) virou uma função pura compartilhada — usada tanto em `MeusCarrinhos.tsx` (linha condensada) quanto em `CarrinhoDetail.tsx` (`og-head`), pra não duplicar a mesma lógica nos dois lugares.
+
+### `OrderDrawer.tsx`
+
+Quando `editingPedido` está setado, o rótulo "Vai para: X · trocar" vira **"Editando Pedido X · nome do carrinho"** com um link "Cancelar edição" (`cancelEditPedido`) — sem o seletor de destino, porque editar sempre volta pro carrinho onde o pedido já estava, não faz sentido "trocar". O botão do rodapé vira **"Salvar alterações"** em vez de "Adicionar ao carrinho".
+
+### `MeusCarrinhos.tsx` — reescrita completa
+
+- **KPIs no topo** (`.stattiles`, componente já existia, reaproveitado de `Colecao.tsx`): carrinhos abertos, pedidos ao todo, prontos pra enviar, valor em andamento — este último soma `pedido.total` de todo pedido `!== 'pago'` **mais o que está pendente no drawer** (ver linha "No drawer" abaixo). Isso resolve uma pergunta direta do usuário: "o carrinho em andamento mostra o valor do pedido que está no drawer?" — hoje sim.
+- **Barra de ações em lote** (`.bulkbar`) — duas linhas, calculadas de verdade a partir dos dados (não hardcoded): pedidos rascunho com grade batida ("Enviar pro representante", chama `sendPedidoToRepresentante` em lote) e pedidos que a Ana sugeriu esperando revisão ("Revisar sugestão", navega pro carrinho). Só aparece quando há algo pra mostrar.
+- **Cada carrinho lista os pedidos individualmente** (`.pedrow`) — status, barra de progresso da grade mínima, valor, e a ação certa (`pedidoActionKind`). Antes só existia esse nível de detalhe dentro do `CarrinhoDetail`.
+- **Linha "No drawer"** (`.pedrow.pending`) — aparece no card do carrinho-alvo (`resolveTargetCarrinhoId`) só quando há algo no drawer ainda não commitado (`cartItems`/`cartCombos` não vazios) e não é uma edição em andamento (`editingPedido` nulo, senão o valor já pertence a um pedido existente contado em outra linha, mostrar de novo seria duplicar).
+- **Sinais** (`.signalrow`) — chip de envio automático (real, lê `autoSendOnGradeMinima`) e aviso de expiração (real, `daysSinceActivity >= 7` — constante `EXPIRA_APOS_DIAS`) quando o carrinho tem pedido não-pago parado. **De propósito não tem** um terceiro chip de "sugestão de mix" por carrinho — isso existiria na artifact de proposta, mas não há hoje nenhuma computação real de "oportunidade de mix" por carrinho no código (o texto em "Antes de fechar" do `CarrinhoDetail` é estático, não calculado) — inventar um chip fake pareceria dado real sem ser. Sugestões de produto continuam existindo, só que via o mecanismo que já existe (`OrderDrawer`, "Sugestões pra completar o mix").
+- **Barra do representante** (`.repbar`) — mostra `cart.lastComment` quando existe, senão uma linha genérica se algum pedido foi `suggestedBy: 'representante'`. **O toggle de permissão não está aqui** — decisão consciente após o usuário perguntar se a tela não ficaria com informação demais pra controlar: o toggle é uma configuração que muda raramente, então foi pra `CarrinhoDetail` (sidebar), não pra cada card da lista.
+
+### `CarrinhoDetail.tsx`
+
+- Cabeçalho de cada pedido (`og-head`) ganhou os links "Editar no drawer" / "Enviar pro representante" (via `pedidoActionKind`), ao lado do "Mover pedido" que já existia.
+- Sidebar ganhou o toggle **"Ana pode editar este carrinho"** (`.permswitch`/`.swtrack`, novo padrão visual — não existia nenhum switch on/off no design system até agora, CSS novo em `mockup.css`) — `title` no elemento deixa explícito que é simulado (não existe desktop do representante pra aplicar de verdade).
+
+### `WebTopNav.tsx` — dropdown de notificações
+
+Sino ganhou badge (contagem de não-lidas) + dropdown (`.notif-menu`, mesmo padrão visual do `.avatar-menu`) — abrir o dropdown já marca tudo como lido (mesma UX de outros apps de notificação, não tem "não lida" persistindo depois que o lojista viu a lista). Clicar numa notificação com `carrinhoId` navega pro carrinho.
 
 ## Fotos de produto
 
