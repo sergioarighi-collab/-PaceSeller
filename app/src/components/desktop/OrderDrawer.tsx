@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAppStore, cartSummary, comboSummary } from '../../lib/store'
+import { useAppStore, cartSummary, comboSummary, resolveTargetCarrinhoId } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { products } from '../../lib/data'
@@ -27,6 +27,8 @@ export function OrderDrawer() {
   const activeCarrinhoId = useAppStore((s) => s.activeCarrinhoId)
   const setActiveCarrinho = useAppStore((s) => s.setActiveCarrinho)
   const commitCartToCarrinho = useAppStore((s) => s.commitCartToCarrinho)
+  const editingPedido = useAppStore((s) => s.editingPedido)
+  const cancelEditPedido = useAppStore((s) => s.cancelEditPedido)
   const navigate = useNavigate()
   const { lines, totalItems: itemsQty, totalValue: itemsValue } = cartSummary(cartItems)
   const { entries: comboLines, totalItems: combosQty, totalValue: combosValue } = comboSummary(cartCombos)
@@ -36,11 +38,13 @@ export function OrderDrawer() {
   const gradeOk = totalItems >= GRADE_MINIMA_PARES
   const gradePct = Math.min(100, Math.round((totalItems / GRADE_MINIMA_PARES) * 100))
 
-  // Vai pra qual carrinho se o lojista não trocar manualmente — mesma regra do commit: o
-  // ativo (se ainda existir), senão o único que houver, senão cria um novo.
-  const resolvedTargetId =
-    activeCarrinhoId && carrinhos.some((c) => c.id === activeCarrinhoId) ? activeCarrinhoId : carrinhos.length === 1 ? carrinhos[0].id : null
+  // Vai pra qual carrinho se o lojista não trocar manualmente — mesma regra do commit. Editando um
+  // pedido existente, o destino é sempre o carrinho onde ele já está (sem "trocar").
+  const resolvedTargetId = editingPedido ? editingPedido.carrinhoId : resolveTargetCarrinhoId(carrinhos, activeCarrinhoId)
   const resolvedTargetName = resolvedTargetId ? carrinhos.find((c) => c.id === resolvedTargetId)?.name : null
+  const editingPedidoLabel = editingPedido
+    ? carrinhos.find((c) => c.id === editingPedido.carrinhoId)?.pedidos.find((p) => p.id === editingPedido.pedidoId)?.label
+    : null
 
   const [pickerOpen, setPickerOpen] = useState(false)
   const [picked, setPicked] = useState<string>(resolvedTargetId ?? NEW_CARRINHO)
@@ -124,16 +128,27 @@ export function OrderDrawer() {
         </div>
 
         <div className="od-body">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-            <span style={{ color: 'var(--text-secondary)' }}>
-              Vai para: <b style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{resolvedTargetName ?? 'Novo carrinho'}</b>
-            </span>
-            {carrinhos.length > 0 && (
-              <span style={{ color: 'var(--info)', fontWeight: 600, cursor: 'pointer' }} onClick={openPicker}>
-                trocar
+          {editingPedido ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+              <span style={{ color: 'var(--text-secondary)' }}>
+                Editando <b style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{editingPedidoLabel}</b> · {resolvedTargetName}
               </span>
-            )}
-          </div>
+              <span style={{ color: 'var(--risk)', fontWeight: 600, cursor: 'pointer' }} onClick={cancelEditPedido}>
+                Cancelar edição
+              </span>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+              <span style={{ color: 'var(--text-secondary)' }}>
+                Vai para: <b style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{resolvedTargetName ?? 'Novo carrinho'}</b>
+              </span>
+              {carrinhos.length > 0 && (
+                <span style={{ color: 'var(--info)', fontWeight: 600, cursor: 'pointer' }} onClick={openPicker}>
+                  trocar
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="nudge-progress">
             <div className="np-label">
@@ -246,7 +261,7 @@ export function OrderDrawer() {
             style={totalItems > 0 ? { cursor: 'pointer' } : { cursor: 'not-allowed', opacity: 0.5 }}
             onClick={totalItems > 0 ? handleAddToCart : undefined}
           >
-            Adicionar ao carrinho
+            {editingPedido ? 'Salvar alterações' : 'Adicionar ao carrinho'}
           </div>
         </div>
       </div>

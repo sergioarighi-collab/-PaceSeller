@@ -93,14 +93,30 @@ export interface Pedido {
   paymentCondition?: PaymentCondition
   paymentMethod?: PaymentMethod
   deliveryEstimateDays: number
+  // Presente quando o pedido nasceu do lado do representante ("Montar Pedido Sugerido", validado
+  // em reunião com o cliente) em vez do lojista — hoje só simulado do lado do lojista, não existe
+  // desktop do representante ainda (ver docs/guia-dev-frontend.md).
+  suggestedBy?: 'representante'
 }
 
 export interface Carrinho {
   id: string
   name: string
   representative: string
+  // Texto relativo pra exibição ("há 2h", "ontem") — mantido solto de propósito, mesmo padrão já
+  // usado no resto do app. `daysSinceActivity` é o campo numérico paralelo usado pra cálculo
+  // (aviso de expiração de rascunho); os dois precisam ser atualizados juntos.
   updatedAt: string
+  daysSinceActivity: number
   pedidos: Pedido[]
+  // Toggle de permissão do lojista — simulado: não existe desktop do representante pra aplicar
+  // essa permissão de verdade ainda, é só o que aparece do lado do lojista (ver guia-dev-frontend.md).
+  repCanEdit: boolean
+  // Quando ligado, um Pedido "rascunho" que bate a grade mínima muda sozinho pro status
+  // "aguardando" (aprovação da Ana) ao ser salvo — não pula a aprovação humana, só tira o clique
+  // manual de "Enviar pro representante".
+  autoSendOnGradeMinima: boolean
+  lastComment?: { author: string; text: string; timeLabel: string }
 }
 
 export interface User {
@@ -108,4 +124,15 @@ export interface User {
   name: string
   initials: string
   role: 'titular' | 'auxiliar'
+}
+
+// Dropdown do sino no WebTopNav (ago/2026) — 3 tipos de evento mapeados desde
+// `analise-ux-gaps-atrito-venda.md`, nunca implementados até agora.
+export interface NotificationItem {
+  id: string
+  kind: 'comment' | 'status' | 'insight'
+  text: string
+  timeLabel: string
+  read: boolean
+  carrinhoId?: string
 }

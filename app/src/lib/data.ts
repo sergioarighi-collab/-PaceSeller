@@ -1,4 +1,4 @@
-import type { Client, InsightCardData, Product, User, Carrinho, Combo } from './types'
+import type { Client, InsightCardData, Product, User, Carrinho, Combo, NotificationItem } from './types'
 
 // Todas as pendências do lojista, agrupadas por prazo pra agir (ago/2026, substitui os 4 cards
 // soltos + a lista "por categoria" escondida atrás de um clique — ver docs/guia-dev-frontend.md).
@@ -453,6 +453,14 @@ export const initialCarrinhos: Carrinho[] = [
     name: 'Coleção Inverno',
     representative: 'Ana',
     updatedAt: 'há 2h',
+    daysSinceActivity: 0,
+    repCanEdit: true,
+    autoSendOnGradeMinima: true,
+    lastComment: {
+      author: 'Ana',
+      text: 'separei a sandália num pedido à vista pra você aproveitar o desconto — os outros itens ficam no prazo normal, tudo bem?',
+      timeLabel: 'há 40 min',
+    },
     pedidos: [
       {
         id: '4821-1',
@@ -488,6 +496,9 @@ export const initialCarrinhos: Carrinho[] = [
     name: 'Giro Hertz Black',
     representative: 'Ana',
     updatedAt: 'ontem',
+    daysSinceActivity: 1,
+    repCanEdit: true,
+    autoSendOnGradeMinima: false,
     pedidos: [
       {
         id: '4790-1',
@@ -504,6 +515,52 @@ export const initialCarrinhos: Carrinho[] = [
       },
     ],
   },
+  // Carrinho montado pela Ana pro lojista revisar — "Montar Pedido Sugerido", validado em reunião
+  // com o cliente (representante também monta carrinho, não só o lojista compartilha com ela).
+  {
+    id: 'sandalias-verao',
+    name: 'Sandálias Verão',
+    representative: 'Ana',
+    updatedAt: 'há 9 dias',
+    daysSinceActivity: 9,
+    repCanEdit: true,
+    autoSendOnGradeMinima: false,
+    pedidos: [
+      {
+        id: '4855-1',
+        label: 'Pedido 1',
+        status: 'aguardando',
+        suggestedBy: 'representante',
+        items: [
+          { productId: '1901-66', name: 'Tênis Tesla Coil Denim', qty: 22, grade: '36–40', value: 6160 },
+          { productId: '1901-67', name: 'Tênis Tesla Coil Black White', qty: 18, grade: '37–41', value: 6480 },
+        ],
+        subtotal: 12640,
+        discount: 0,
+        total: 12640,
+        marginPct: 39,
+        paymentCondition: '30',
+        deliveryEstimateDays: 15,
+      },
+    ],
+  },
+]
+
+// Dropdown de notificações do sino (WebTopNav) — gap mapeado em analise-ux-gaps-atrito-venda.md,
+// implementado ago/2026. 3 tipos: comentário do representante, mudança de status de pedido,
+// novo insight de alta prioridade no Radar.
+export const initialNotifications: NotificationItem[] = [
+  { id: 'n1', kind: 'comment', text: 'Ana comentou no pedido Coleção Inverno', timeLabel: 'há 40 min', read: false, carrinhoId: 'colecao-inverno' },
+  { id: 'n2', kind: 'status', text: 'Pedido Giro Hertz Black foi confirmado', timeLabel: 'ontem', read: false, carrinhoId: 'reposicao-rapida' },
+  {
+    id: 'n3',
+    kind: 'status',
+    text: 'Ana sugeriu um novo pedido — Sandálias Verão',
+    timeLabel: 'há 9 dias',
+    read: false,
+    carrinhoId: 'sandalias-verao',
+  },
+  { id: 'n4', kind: 'insight', text: 'Novo insight de alta prioridade no Radar', timeLabel: 'há 2 dias', read: true },
 ]
 
 // Quanto a loja comprou de cada SKU no mesmo período do ano passado — usado no checklist
