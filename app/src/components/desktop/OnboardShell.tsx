@@ -11,6 +11,7 @@ const steps = [
 export function OnboardShell({ step, children }: { step: 1 | 2; children: ReactNode }) {
   const navigate = useNavigate()
   const skipOnboarding = useAppStore((s) => s.skipOnboarding)
+  const completeProfile = useAppStore((s) => s.completeProfile)
 
   return (
     <DesktopPage>
@@ -32,6 +33,7 @@ export function OnboardShell({ step, children }: { step: 1 | 2; children: ReactN
             }}
             onClick={() => {
               skipOnboarding()
+              completeProfile()
               navigate('/radar')
             }}
           >

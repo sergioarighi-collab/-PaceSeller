@@ -16,6 +16,7 @@ const canaisVenda = ['Só loja física', 'Loja física + redes sociais', 'Loja f
 export function WizardStep2() {
   const navigate = useNavigate()
   const dismissOnboardingNotice = useAppStore((s) => s.dismissOnboardingNotice)
+  const completeProfile = useAppStore((s) => s.completeProfile)
   const [diff, setDiff] = useState<string[]>(['Atendimento especializado'])
   const [canais, setCanais] = useState<string[]>(['Loja física + redes sociais'])
   const [comingSoon, setComingSoon] = useState(false)
@@ -113,6 +114,7 @@ export function WizardStep2() {
             style={{ width: 180, cursor: 'pointer' }}
             onClick={() => {
               dismissOnboardingNotice()
+              completeProfile()
               navigate('/radar')
             }}
           >

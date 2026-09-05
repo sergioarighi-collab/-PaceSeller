@@ -19,6 +19,15 @@ interface AppState {
   skipOnboarding: () => void
   dismissOnboardingNotice: () => void
 
+  /**
+   * true depois que o lojista termina o onboarding uma vez (WizardStep2 "Ir para o meu radar")
+   * ou usa o link "Já configurei, ir para o Radar" — controla se o login pula o onboarding direto
+   * pro Radar. Diferente de `onboardingSkipped`: aquele é sobre a recomendação ainda ser genérica,
+   * este é sobre precisar preencher o formulário de novo ou não.
+   */
+  profileCompleted: boolean
+  completeProfile: () => void
+
   focusOpen: boolean
   openFocus: () => void
   closeFocus: () => void
@@ -144,6 +153,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   onboardingSkipped: false,
   skipOnboarding: () => set({ onboardingSkipped: true }),
   dismissOnboardingNotice: () => set({ onboardingSkipped: false }),
+
+  profileCompleted: false,
+  completeProfile: () => set({ profileCompleted: true }),
 
   focusOpen: false,
   openFocus: () => set({ focusOpen: true }),

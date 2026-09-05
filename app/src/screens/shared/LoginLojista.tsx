@@ -6,9 +6,17 @@ import { useAppStore } from '../../lib/store'
 export function LoginLojista() {
   const navigate = useNavigate()
   const setPersona = useAppStore((s) => s.setPersona)
+  const profileCompleted = useAppStore((s) => s.profileCompleted)
   const [email, setEmail] = useState('carlos@radicalskate.com.br')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+
+  // Perfil já preenchido (onboarding completo numa sessão anterior, ou "Já configurei" usado) —
+  // não faz sentido pedir pra preencher tudo de novo, vai direto pro Radar.
+  function enterAsLojista() {
+    setPersona('lojista')
+    navigate(profileCompleted ? '/radar' : '/onboarding/loja')
+  }
 
   return (
     <LoginSplitShell
@@ -46,26 +54,12 @@ export function LoginLojista() {
         </div>
       </div>
 
-      <div
-        className="btn-primary"
-        style={{ marginTop: 24, cursor: 'pointer' }}
-        onClick={() => {
-          setPersona('lojista')
-          navigate('/onboarding/loja')
-        }}
-      >
+      <div className="btn-primary" style={{ marginTop: 24, cursor: 'pointer' }} onClick={enterAsLojista}>
         Entrar
       </div>
 
       <div className="orrow">ou</div>
-      <div
-        className="btn-secondary"
-        style={{ cursor: 'pointer' }}
-        onClick={() => {
-          setPersona('lojista')
-          navigate('/onboarding/loja')
-        }}
-      >
+      <div className="btn-secondary" style={{ cursor: 'pointer' }} onClick={enterAsLojista}>
         Entrar com Google
       </div>
 
