@@ -5,7 +5,7 @@ import { useAppStore } from '../../lib/store'
 
 const steps = [
   { n: 1, title: 'Dados básicos', sub: 'Nome, segmento e região' },
-  { n: 2, title: 'Dados de vendas', sub: 'Ticket médio e categorias' },
+  { n: 2, title: 'Perfil da loja', sub: 'Diferencial e canais de venda' },
 ]
 
 export function OnboardShell({ step, children }: { step: 1 | 2; children: ReactNode }) {

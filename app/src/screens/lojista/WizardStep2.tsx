@@ -4,15 +4,20 @@ import { OnboardShell } from '../../components/desktop/OnboardShell'
 import { Toast } from '../../components/desktop/Toast'
 import { useAppStore } from '../../lib/store'
 
-const categorias = ['Coil', 'Hertz', 'Flow', 'Fusion']
-const sazonalidades = ['Inverno', 'Verão', 'Volta às aulas', 'Black Friday']
+// Substituem ticket médio/categorias/sazonalidade (ago/2026) — esses três eram, na prática, um
+// chute do lojista pra um dado que Pace Stock (conectado) ou o próprio histórico de pedidos no
+// Pace Seller (acumulado com o uso) vão entregar de verdade e melhor. Perguntar aqui era pedir
+// pro lojista adivinhar algo que em breve vira dado real — baixa qualidade e redundante ao mesmo
+// tempo. No lugar, perfil qualitativo que nem Pace Stock nem histórico de vendas conseguem
+// responder sozinhos, complementando o que a Etapa 1 já pergunta (segmento, porte, público-alvo).
+const diferenciais = ['Atendimento especializado', 'Preço competitivo', 'Variedade de marcas', 'Localização', 'Presença digital forte']
+const canaisVenda = ['Só loja física', 'Loja física + redes sociais', 'Loja física + e-commerce próprio', 'Também vendo em marketplace']
 
 export function WizardStep2() {
   const navigate = useNavigate()
   const dismissOnboardingNotice = useAppStore((s) => s.dismissOnboardingNotice)
-  const [ticket, setTicket] = useState('R$ 180,00')
-  const [cats, setCats] = useState<string[]>(['Coil', 'Hertz'])
-  const [saz, setSaz] = useState<string[]>(['Inverno'])
+  const [diff, setDiff] = useState<string[]>(['Atendimento especializado'])
+  const [canais, setCanais] = useState<string[]>(['Loja física + redes sociais'])
   const [comingSoon, setComingSoon] = useState(false)
 
   function toggle(list: string[], setList: (v: string[]) => void, value: string) {
@@ -22,8 +27,8 @@ export function WizardStep2() {
   return (
     <OnboardShell step={2}>
       <div className="omhead">
-        <h2>Fale sobre suas vendas</h2>
-        <div className="omsub">Quanto mais dados, mais preciso fica o seu radar — pode conectar automaticamente ou preencher na mão.</div>
+        <h2>Fale sobre sua loja</h2>
+        <div className="omsub">Isso ajuda o Radar a te conhecer melhor. Dado de venda de verdade vem de uma das duas formas abaixo.</div>
       </div>
       <div className="onboard-form">
         <div className="fieldgroup" style={{ marginTop: 0 }}>
@@ -45,44 +50,56 @@ export function WizardStep2() {
           </div>
         </div>
         <div className="divider-text" style={{ maxWidth: 520, marginLeft: 0 }}>
-          ou preencha manualmente
+          ou continue sem conectar por enquanto
         </div>
-        <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: -8, marginBottom: 20, maxWidth: 520, lineHeight: 1.5 }}>
-          Sem conectar, o Radar usa só o que você preencher aqui — recomendações com dado real de vendas chegam depois de
-          alguns meses, quando seu histórico se consolidar no sistema.
-        </div>
-        <div className="fieldrow2">
-          <div className="fieldgroup">
-            <div className="flabel">Ticket médio</div>
-            <input className="textinput" value={ticket} onChange={(e) => setTicket(e.target.value)} />
+        <div
+          style={{
+            display: 'flex',
+            gap: 12,
+            alignItems: 'flex-start',
+            maxWidth: 520,
+            background: 'var(--risk-dim)',
+            border: '1px solid var(--risk)',
+            borderRadius: 6,
+            padding: '13px 16px',
+            marginBottom: 24,
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--risk)" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}>
+            <path d="M12 9v3M12 16h.01" />
+            <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+          </svg>
+          <div style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.55 }}>
+            <b>Sem conectar, seu Radar começa sem dado de venda nenhum</b> — as recomendações ficam genéricas até você
+            registrar pedidos suficientes aqui no Pace Seller, o que costuma levar alguns meses de uso.
           </div>
-          <div className="fieldgroup">
-            <div className="flabel">Categorias mais vendidas</div>
-            <div className="chipselect">
-              {categorias.map((c) => (
-                <div
-                  key={c}
-                  className={`chip ${cats.includes(c) ? 'selected' : ''}`}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => toggle(cats, setCats, c)}
-                >
-                  {c}
-                </div>
-              ))}
-            </div>
+        </div>
+        <div className="fieldgroup" style={{ marginTop: 0 }}>
+          <div className="flabel">O que mais diferencia sua loja</div>
+          <div className="chipselect">
+            {diferenciais.map((d) => (
+              <div
+                key={d}
+                className={`chip ${diff.includes(d) ? 'selected' : ''}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => toggle(diff, setDiff, d)}
+              >
+                {d}
+              </div>
+            ))}
           </div>
         </div>
         <div className="fieldgroup">
-          <div className="flabel">Sazonalidade forte</div>
+          <div className="flabel">Como você vende hoje</div>
           <div className="chipselect">
-            {sazonalidades.map((s) => (
+            {canaisVenda.map((c) => (
               <div
-                key={s}
-                className={`chip ${saz.includes(s) ? 'selected' : ''}`}
+                key={c}
+                className={`chip ${canais.includes(c) ? 'selected' : ''}`}
                 style={{ cursor: 'pointer' }}
-                onClick={() => toggle(saz, setSaz, s)}
+                onClick={() => toggle(canais, setCanais, c)}
               >
-                {s}
+                {c}
               </div>
             ))}
           </div>
@@ -107,7 +124,7 @@ export function WizardStep2() {
       {comingSoon && (
         <Toast
           title="Pace Stock — em breve"
-          sub="A conexão de estoque com a indústria é um módulo separado, ainda não integrado aqui — preencha manualmente por enquanto"
+          sub="A conexão de estoque com a indústria é um módulo separado, ainda não integrado aqui — continue sem conectar por enquanto"
           onClose={() => setComingSoon(false)}
         />
       )}
