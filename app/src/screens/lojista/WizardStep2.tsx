@@ -35,7 +35,7 @@ export function WizardStep2() {
             </div>
             <div>
               <div className="otitle">Conectar meu estoque via Pace Stock</div>
-              <div className="osub">Aceite convites de indústrias parceiras e importe estoque/vendas automaticamente todo dia</div>
+              <div className="osub">Radar com inteligência real desde o primeiro dia — sem esperar meses de histórico de vendas</div>
             </div>
             <div className="ochev">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -46,6 +46,10 @@ export function WizardStep2() {
         </div>
         <div className="divider-text" style={{ maxWidth: 520, marginLeft: 0 }}>
           ou preencha manualmente
+        </div>
+        <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: -8, marginBottom: 20, maxWidth: 520, lineHeight: 1.5 }}>
+          Sem conectar, o Radar usa só o que você preencher aqui — recomendações com dado real de vendas chegam depois de
+          alguns meses, quando seu histórico se consolidar no sistema.
         </div>
         <div className="fieldrow2">
           <div className="fieldgroup">
