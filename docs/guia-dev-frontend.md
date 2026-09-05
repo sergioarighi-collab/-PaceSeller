@@ -342,6 +342,15 @@ Diferente da seção acima (decisões que o cliente pediu pra adiar), isto aqui 
 
 - **Módulo de campanha (criação de cards pra Instagram/WhatsApp)** — gerar peça de divulgação pronta pra produtos que precisam de empurrão de marketing. Mencionado como o próximo passo natural do card "Baixo giro" que existe hoje em `lojistaRadarInsights` (`ins-11`, Radar → grupo "Nos próximos 30 dias") — hoje esse card só linka pra Ficha de Decisão do produto porque não existe nenhuma tela de campanha ainda. Quando isso for retomado, esse é o ponto de entrada natural (o CTA do card provavelmente muda de "Ver produto" pra algo como "Criar campanha").
 
+## Aviso de estoque insuficiente (ago/2026)
+
+Gap real identificado pelo usuário: nada avisava o lojista se o pedido (no drawer, ainda em montagem, ou já dentro de um Pedido salvo) pedisse mais pares do que existe — especialmente relevante se ele demorar pra fechar e o estoque mudar nesse meio tempo.
+
+- **`Product.stockPares`** (`types.ts`/`data.ts`) — pares disponíveis na fábrica agora, dado mock determinístico por SKU (`buildStockPares`, mesmo princípio de `buildSizes`: sem hash, todo produto teria "estoque infinito" e o aviso nunca dispararia). Lançamentos (`premium`) ficam numa faixa bem mais baixa (24–63 pares) que o resto (60–239) — reforça o texto que já existia em `why` ("Peça de lançamento — estoque ainda limitado").
+- **Decisão de produto (discutida antes de implementar):** o aviso dispara comparando a quantidade pedida com `stockPares` — não com "tempo parado" (isso já existe separado, é o aviso de expiração de carrinho em `MeusCarrinhos.tsx`). E só aparece **dentro do drawer/carrinho** (`OrderDrawer.tsx` e `CarrinhoDetail.tsx`), não no Catálogo — é sinal pro momento de decidir fechar, não decoração de card.
+- **Onde**: linha vermelha "Só restam N pares em estoque" abaixo do item, tanto no `OrderDrawer` (pedido ainda em `cartItems`, comparando com o `qty` do stepper) quanto no `CarrinhoDetail` (pedido já salvo como `Pedido`, comparando com `PedidoItem.qty` via lookup em `products` por `productId` — combos não têm produto real nesse lookup, `find` retorna `undefined` e o aviso simplesmente não aparece pra eles, comportamento correto).
+- **É só aviso, não bloqueio** — não impede adicionar, "Ir para pagamento" nem "Enviar pro representante". O usuário pediu pra sinalizar, não pra travar; travar seria uma regra de negócio nova que não foi confirmada com o cliente.
+
 ## Auditoria "todo botão leva a uma ação" (ago/2026)
 
 Pedido explícito do usuário: nenhum elemento clicável do fluxo desktop do lojista deveria ficar sem reação — e o caminho fechamento do carrinho → pagamento precisava estar redondo de ponta a ponta. Varredura em todo `screens/lojista` + `components/desktop` (grep por `cursor:pointer` sem `onClick` correspondente).

@@ -37,6 +37,10 @@ export interface Product {
   why: string[]
   restockDays: number
   suggestedSizes: { size: string; suggested: boolean }[]
+  // Pares disponíveis na fábrica agora — dado mock (não vem de nenhum ERP real ainda), determinístico
+  // por SKU como suggestedSizes. Usado só pra avisar quando o pedido (drawer/carrinho) pede mais do
+  // que existe, não é uma regra de negócio confirmada com o cliente.
+  stockPares: number
 }
 
 export interface Client {

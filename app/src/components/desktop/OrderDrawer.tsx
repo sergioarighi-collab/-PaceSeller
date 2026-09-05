@@ -209,6 +209,11 @@ export function OrderDrawer() {
                 <div className="si-info">
                   <div className="si-name">{product.name}</div>
                   <div className="si-meta">{formatBRL(value)}</div>
+                  {qty > product.stockPares && (
+                    <div className="si-meta" style={{ color: 'var(--risk)' }}>
+                      Só restam {product.stockPares} pares em estoque
+                    </div>
+                  )}
                 </div>
                 <div className="stepper" style={{ flexShrink: 0 }}>
                   <div className="stepbtn" onClick={() => setCartQty(product.id, qty - 1)}>

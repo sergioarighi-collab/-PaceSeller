@@ -303,6 +303,16 @@ function buildSizes(sku: string): { size: string; suggested: boolean }[] {
   return ALL_SIZES.map((size, i) => ({ size, suggested: i >= minIdx && i <= maxIdx }))
 }
 
+// Estoque de pares disponíveis na fábrica agora — dado mock, determinístico por SKU (mesmo
+// princípio de buildSizes: sem isso, todo produto teria "estoque infinito" e o aviso de falta de
+// estoque no drawer/carrinho nunca disparia de verdade). Lançamentos (premium) ficam numa faixa
+// bem mais baixa, reforçando o texto que já existe em `why` ("estoque ainda limitado").
+function buildStockPares(sku: string, premium?: boolean): number {
+  let hash = 0
+  for (const ch of sku) hash = (hash * 13 + ch.charCodeAt(0)) >>> 0
+  return premium ? 24 + (hash % 40) : 60 + (hash % 180)
+}
+
 export const collectionTitle: Record<RawProduct['collection'], string> = {
   COIL: 'Coil',
   HERTZ: 'Hertz',
@@ -375,6 +385,7 @@ export const products: Product[] = raw.map((r) => {
     why,
     restockDays: r.restockDays,
     suggestedSizes: buildSizes(r.sku),
+    stockPares: buildStockPares(r.sku, r.premium),
   }
 })
 

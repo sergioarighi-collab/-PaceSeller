@@ -5,7 +5,7 @@ import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { WebModal } from '../../components/desktop/WebModal'
 import { Toast } from '../../components/desktop/Toast'
-import { samePeriodLastYearQty } from '../../lib/data'
+import { products, samePeriodLastYearQty } from '../../lib/data'
 import { useAppStore, pedidoActionKind } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { deltaInfo } from '../../lib/productLines'
@@ -160,17 +160,26 @@ export function CarrinhoDetail() {
                   </div>
                 </div>
                 <div className="og-body">
-                  {pedido.items.map((item, i) => (
-                    <div className="cartline" key={i}>
-                      <div>
-                        <div className="cname">{item.name}</div>
-                        <div className="cmeta">
-                          qtd {item.qty} · grade {item.grade}
+                  {pedido.items.map((item, i) => {
+                    const product = products.find((p) => p.id === item.productId)
+                    const outOfStock = product && item.qty > product.stockPares
+                    return (
+                      <div className="cartline" key={i}>
+                        <div>
+                          <div className="cname">{item.name}</div>
+                          <div className="cmeta">
+                            qtd {item.qty} · grade {item.grade}
+                          </div>
+                          {outOfStock && (
+                            <div className="cmeta" style={{ color: 'var(--risk)' }}>
+                              Só restam {product.stockPares} pares em estoque — pedido demorou pra fechar
+                            </div>
+                          )}
                         </div>
+                        <div className="cval">{formatBRL(item.value)}</div>
                       </div>
-                      <div className="cval">{formatBRL(item.value)}</div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
                 <div className="og-footer">
                   <span className="og-total">
