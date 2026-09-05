@@ -34,8 +34,8 @@ export function WizardStep2() {
               </svg>
             </div>
             <div>
-              <div className="otitle">Conectar meu sistema de vendas</div>
-              <div className="osub">Importa e atualiza os dados automaticamente todo dia</div>
+              <div className="otitle">Conectar meu estoque via Pace Stock</div>
+              <div className="osub">Aceite convites de indústrias parceiras e importe estoque/vendas automaticamente todo dia</div>
             </div>
             <div className="ochev">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -102,8 +102,8 @@ export function WizardStep2() {
 
       {comingSoon && (
         <Toast
-          title="Integração em breve"
-          sub="Ainda não conectamos com sistemas de vendas — preencha manualmente por enquanto"
+          title="Pace Stock — em breve"
+          sub="A conexão de estoque com a indústria é um módulo separado, ainda não integrado aqui — preencha manualmente por enquanto"
           onClose={() => setComingSoon(false)}
         />
       )}
