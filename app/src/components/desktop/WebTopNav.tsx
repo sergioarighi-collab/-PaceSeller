@@ -47,7 +47,7 @@ export function WebTopNav() {
               {item.label}
             </NavLink>
           ))}
-          <span style={{ color: 'var(--text-tertiary)', cursor: 'default' }}>Clientes</span>
+          <span style={{ color: 'var(--text-tertiary)', cursor: 'default' }} title="Histórico de pedidos fechados e recompra — futuro">Pedidos</span>
         </div>
       </div>
       <div className="navright">
