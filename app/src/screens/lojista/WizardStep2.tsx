@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { OnboardShell } from '../../components/desktop/OnboardShell'
+import { Toast } from '../../components/desktop/Toast'
 import { useAppStore } from '../../lib/store'
 
 const categorias = ['Coil', 'Hertz', 'Flow', 'Fusion']
@@ -12,6 +13,7 @@ export function WizardStep2() {
   const [ticket, setTicket] = useState('R$ 180,00')
   const [cats, setCats] = useState<string[]>(['Coil', 'Hertz'])
   const [saz, setSaz] = useState<string[]>(['Inverno'])
+  const [comingSoon, setComingSoon] = useState(false)
 
   function toggle(list: string[], setList: (v: string[]) => void, value: string) {
     setList(list.includes(value) ? list.filter((x) => x !== value) : [...list, value])
@@ -25,7 +27,7 @@ export function WizardStep2() {
       </div>
       <div className="onboard-form">
         <div className="fieldgroup" style={{ marginTop: 0 }}>
-          <div className="optioncard" style={{ maxWidth: 520, cursor: 'pointer' }}>
+          <div className="optioncard" style={{ maxWidth: 520, cursor: 'pointer' }} onClick={() => setComingSoon(true)}>
             <div className="oicon">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M4 4h16v4H4zM4 12h16v4H4zM8 8v4M16 8v4" />
@@ -97,6 +99,14 @@ export function WizardStep2() {
           </div>
         </div>
       </div>
+
+      {comingSoon && (
+        <Toast
+          title="Integração em breve"
+          sub="Ainda não conectamos com sistemas de vendas — preencha manualmente por enquanto"
+          onClose={() => setComingSoon(false)}
+        />
+      )}
     </OnboardShell>
   )
 }

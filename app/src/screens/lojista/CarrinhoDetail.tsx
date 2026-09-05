@@ -4,6 +4,7 @@ import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { WebModal } from '../../components/desktop/WebModal'
+import { Toast } from '../../components/desktop/Toast'
 import { samePeriodLastYearQty } from '../../lib/data'
 import { useAppStore, pedidoActionKind } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
@@ -40,6 +41,7 @@ export function CarrinhoDetail() {
   const otherCarrinhos = carrinhos.filter((c) => c.id !== cart.id)
   const [movingPedidoId, setMovingPedidoId] = useState<string | null>(null)
   const [movePicked, setMovePicked] = useState<string>(NEW_CARRINHO)
+  const [savedToast, setSavedToast] = useState(false)
 
   function openMovePicker(pedidoId: string) {
     setMovingPedidoId(pedidoId)
@@ -212,14 +214,15 @@ export function CarrinhoDetail() {
             Criar novo pedido neste carrinho
           </div>
 
-          <div className="activitynote">
-            <div className="aavatar">AN</div>
-            <div className="atext">
-              <span className="aname">Ana:</span> separei a sandália num pedido à vista pra você aproveitar o desconto — os
-              outros itens ficam no prazo normal, tudo bem?
-              <div className="atime">há 40 min</div>
+          {cart.lastComment && (
+            <div className="activitynote">
+              <div className="aavatar">AN</div>
+              <div className="atext">
+                <span className="aname">{cart.lastComment.author}:</span> {cart.lastComment.text}
+                <div className="atime">{cart.lastComment.timeLabel}</div>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="qualitybox">
             <div className="qtitle">Antes de fechar</div>
@@ -288,7 +291,7 @@ export function CarrinhoDetail() {
           </div>
 
           <div className="sbtns">
-            <div className="btn-secondary" style={{ cursor: 'pointer' }}>
+            <div className="btn-secondary" style={{ cursor: 'pointer' }} onClick={() => setSavedToast(true)}>
               Salvar carrinho como rascunho
             </div>
             <a
@@ -354,6 +357,10 @@ export function CarrinhoDetail() {
             </div>
           </div>
         </WebModal>
+      )}
+
+      {savedToast && (
+        <Toast title="Carrinho salvo como rascunho" sub={`${cart.name} continua aberto — volte quando quiser`} onClose={() => setSavedToast(false)} />
       )}
     </DesktopPage>
   )

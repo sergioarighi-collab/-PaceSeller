@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
@@ -12,6 +13,26 @@ export function Chat() {
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
   const pedido = cart.pedidos.find((p) => p.id === pedidoId) ?? cart.pedidos[0]
   const outroPedido = cart.pedidos.find((p) => p.id !== pedido.id)
+
+  // Thread é um roteiro fixo (não é chat de verdade, não tem backend) — mensagens novas do lojista
+  // só se somam localmente ao final, pra "Enviar" deixar de ser um botão decorativo sem virar um
+  // chat real com a Ana (que exigiria um backend que este protótipo não tem).
+  const [myMessages, setMyMessages] = useState<string[]>([])
+  const [draft, setDraft] = useState('')
+  const threadEndRef = useRef<HTMLDivElement>(null)
+
+  // .chat-thread tem altura fixa com scroll interno (não é a página toda que rola) — sem isso, a
+  // própria mensagem que o lojista acabou de mandar fica invisível abaixo da dobra.
+  useEffect(() => {
+    threadEndRef.current?.scrollIntoView({ block: 'end' })
+  }, [myMessages])
+
+  function sendMessage() {
+    const text = draft.trim()
+    if (!text) return
+    setMyMessages((m) => [...m, text])
+    setDraft('')
+  }
 
   return (
     <DesktopPage>
@@ -94,11 +115,29 @@ export function Chat() {
                   <div className="msg-time">09:41</div>
                 </div>
               </div>
+
+              {myMessages.map((text, i) => (
+                <div className="msg-row mine" key={i}>
+                  <div className="msg-avatar">CA</div>
+                  <div>
+                    <div className="msg-bubble">{text}</div>
+                    <div className="msg-time">agora</div>
+                  </div>
+                </div>
+              ))}
+              <div ref={threadEndRef} />
             </div>
 
             <div className="chat-inputbar">
-              <div className="chat-input">Escreva uma mensagem para Ana...</div>
-              <div className="chat-send">
+              <input
+                className="chat-input"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                placeholder="Escreva uma mensagem para Ana..."
+                style={{ border: 'none', outline: 'none', font: 'inherit', color: 'inherit' }}
+              />
+              <div className="chat-send" style={{ cursor: 'pointer' }} onClick={sendMessage}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="m3 3 18 9-18 9V3Z" />
                 </svg>

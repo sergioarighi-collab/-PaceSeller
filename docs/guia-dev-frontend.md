@@ -341,6 +341,24 @@ Diferente da seção acima (decisões que o cliente pediu pra adiar), isto aqui 
 
 - **Módulo de campanha (criação de cards pra Instagram/WhatsApp)** — gerar peça de divulgação pronta pra produtos que precisam de empurrão de marketing. Mencionado como o próximo passo natural do card "Baixo giro" que existe hoje em `lojistaRadarInsights` (`ins-11`, Radar → grupo "Nos próximos 30 dias") — hoje esse card só linka pra Ficha de Decisão do produto porque não existe nenhuma tela de campanha ainda. Quando isso for retomado, esse é o ponto de entrada natural (o CTA do card provavelmente muda de "Ver produto" pra algo como "Criar campanha").
 
+## Auditoria "todo botão leva a uma ação" (ago/2026)
+
+Pedido explícito do usuário: nenhum elemento clicável do fluxo desktop do lojista deveria ficar sem reação — e o caminho fechamento do carrinho → pagamento precisava estar redondo de ponta a ponta. Varredura em todo `screens/lojista` + `components/desktop` (grep por `cursor:pointer` sem `onClick` correspondente).
+
+**Confirmado que já funciona de ponta a ponta:** `CarrinhoDetail` ("Ir para pagamento") → `Payment` ("Confirmar pedido") → `OrderConfirmed` ("Acompanhar pedido"/"Voltar ao radar") — a cadeia toda já estava ligada antes desta auditoria, só os botões secundários dentro do caminho é que tinham gaps.
+
+**Corrigidos:**
+- **`CarrinhoDetail.tsx`**: "Salvar carrinho como rascunho" não tinha `onClick` — agora mostra um `Toast` de confirmação (não navega pra lugar nenhum: o carrinho já é persistido no store assim que existe, não há um estado "não salvo" de verdade nesse modelo de dados, então o botão só confirma o que já é true). Também corrigido um bug de conteúdo: o `activitynote` (comentário da Ana) estava **hardcoded** com o texto de Coleção Inverno, aparecendo igual em qualquer carrinho — agora lê `cart.lastComment` (mesmo campo já usado no `repbar` de `MeusCarrinhos.tsx`) e some quando o carrinho não tem comentário.
+- **`Payment.tsx`**: "Copiar código" (PIX) e "Copiar linha digitável" (boleto) agora usam `navigator.clipboard.writeText` de verdade + `Toast`; "Baixar PDF" mostra um `Toast` simulando o download (não existe geração real de PDF neste protótipo).
+- **`Chat.tsx`**: o campo de mensagem e o botão de enviar eram 100% decorativos (`<div>` estático, sem `<input>`). Virou um input controlado local — mensagens novas do lojista entram no fim da thread roteirizada (não é chat de verdade, sem backend, ver comentário no código). **Bug encontrado ao testar**: `.chat-thread` tem `height:600px` + `overflow-y:auto` — a própria mensagem enviada ficava invisível abaixo da dobra do scroll interno. Corrigido com uma sentinela (`threadEndRef`) + `scrollIntoView` a cada mensagem nova.
+- **`WebTopNav.tsx`**: ícone de busca (lupa) não fazia nada — agora navega pro Catálogo, onde a busca de verdade já existe. Itens do menu do avatar ("Meu perfil", "Configurações", "Minha loja") não têm tela nenhuma construída — em vez de deixar mudos, mostram `Toast` "em breve" (mais honesto que um clique morto e silencioso).
+- **`WizardStep2.tsx`**: "Conectar meu sistema de vendas" (integração de ERP) não tinha ação — mostra `Toast` "em breve", reforçando o "ou preencha manualmente" que já existia ao lado.
+- **`LoginLojista.tsx`**: "Entrar com Google" não tinha ação — passou a simular o mesmo login de sucesso que o botão "Entrar" (não existe distinção real de provedor de auth neste protótipo).
+
+**Fora do escopo desta auditoria, sinalizado mas não corrigido** (as duas telas usam o sistema de design antigo, `components/ui`/`components/layout`, documentado no topo deste guia como "não retrabalhado nesta leva" — consertar só o `onClick` sem migrar a tela pro sistema desktop seria remendo no lugar errado):
+- `Loyalty.tsx` ("Enviar campanha personalizada") — botão real (`components/ui/Button.tsx`) sem `onClick`.
+- `WhoIsUsing.tsx` ("+ Adicionar auxiliar", fluxo do representante) — mesmo padrão.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

@@ -3,9 +3,13 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
+import { Toast } from '../../components/desktop/Toast'
 import { useAppStore } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
 import type { PaymentCondition, PaymentMethod } from '../../lib/types'
+
+const PIX_CODE = '00020126580014BR.GOV.BCB.PIX0136a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d5204000053039865406108.005802BR5913TESLA SKATE6009SAO PAULO62070503***6304'
+const BOLETO_LINE = '34191.79001 01043.510047 91020.150008 4 96060000108000'
 
 export function Payment() {
   const navigate = useNavigate()
@@ -17,6 +21,12 @@ export function Payment() {
 
   const [condition, setCondition] = useState<PaymentCondition>(pedido.paymentCondition ?? '30')
   const [method, setMethod] = useState<PaymentMethod>(pedido.paymentMethod ?? 'pix')
+  const [toast, setToast] = useState<{ title: string; sub: string } | null>(null)
+
+  function copyToClipboard(text: string, title: string) {
+    navigator.clipboard?.writeText(text).catch(() => {})
+    setToast({ title, sub: 'Copiado pra área de transferência' })
+  }
 
   const otherPedidos = cart.pedidos.filter((p) => p.id !== pedido.id)
 
@@ -141,7 +151,11 @@ export function Payment() {
                     00020126580014BR.GOV.BCB.PIX0136a1b2c3d4-e5f6-4a5b-8c9d-0e1f2a3b4c5d5204000053039865406108.005802BR5913TESLA
                     SKATE6009SAO PAULO62070503***6304
                   </div>
-                  <div className="btn-secondary" style={{ width: 180, marginTop: 12, cursor: 'pointer' }}>
+                  <div
+                    className="btn-secondary"
+                    style={{ width: 180, marginTop: 12, cursor: 'pointer' }}
+                    onClick={() => copyToClipboard(PIX_CODE, 'Código PIX copiado')}
+                  >
                     Copiar código
                   </div>
                   <div className="pix-timer">
@@ -216,10 +230,18 @@ export function Payment() {
                 <div className="boleto-barcode" />
                 <div className="boleto-linha">34191.79001 01043.510047 91020.150008 4 96060000108000</div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-                  <div className="btn-secondary" style={{ width: 170, cursor: 'pointer' }}>
+                  <div
+                    className="btn-secondary"
+                    style={{ width: 170, cursor: 'pointer' }}
+                    onClick={() => copyToClipboard(BOLETO_LINE, 'Linha digitável copiada')}
+                  >
                     Copiar linha digitável
                   </div>
-                  <div className="btn-secondary" style={{ width: 170, cursor: 'pointer' }}>
+                  <div
+                    className="btn-secondary"
+                    style={{ width: 170, cursor: 'pointer' }}
+                    onClick={() => setToast({ title: 'Boleto baixado', sub: 'PDF salvo na sua pasta de downloads' })}
+                  >
                     Baixar PDF
                   </div>
                 </div>
@@ -299,6 +321,8 @@ export function Payment() {
           </div>
         </div>
       </div>
+
+      {toast && <Toast title={toast.title} sub={toast.sub} onClose={() => setToast(null)} />}
     </DesktopPage>
   )
 }

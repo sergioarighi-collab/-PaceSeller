@@ -58,7 +58,14 @@ export function LoginLojista() {
       </div>
 
       <div className="orrow">ou</div>
-      <div className="btn-secondary" style={{ cursor: 'pointer' }}>
+      <div
+        className="btn-secondary"
+        style={{ cursor: 'pointer' }}
+        onClick={() => {
+          setPersona('lojista')
+          navigate('/onboarding/loja')
+        }}
+      >
         Entrar com Google
       </div>
 
