@@ -32,8 +32,9 @@ export function WizardStep2() {
         <div className="omsub">Isso ajuda o Radar a te conhecer melhor. Dado de venda de verdade vem de uma das duas formas abaixo.</div>
       </div>
       <div className="onboard-form">
-        <div className="fieldgroup" style={{ marginTop: 0 }}>
-          <div className="optioncard" style={{ maxWidth: 520, cursor: 'pointer' }} onClick={() => setComingSoon(true)}>
+        <div className="block-label">Dado de vendas</div>
+        <div className="data-block">
+          <div className="optioncard" style={{ cursor: 'pointer' }} onClick={() => setComingSoon(true)}>
             <div className="oicon">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M4 4h16v4H4zM4 12h16v4H4zM8 8v4M16 8v4" />
@@ -49,60 +50,52 @@ export function WizardStep2() {
               </svg>
             </div>
           </div>
-        </div>
-        <div className="divider-text" style={{ maxWidth: 520, marginLeft: 0 }}>
-          ou continue sem conectar por enquanto
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            gap: 12,
-            alignItems: 'flex-start',
-            maxWidth: 520,
-            background: 'var(--risk-dim)',
-            border: '1px solid var(--risk)',
-            borderRadius: 6,
-            padding: '13px 16px',
-            marginBottom: 24,
-          }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--risk)" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}>
-            <path d="M12 9v3M12 16h.01" />
-            <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
-          </svg>
-          <div style={{ fontSize: 12, color: 'var(--text-primary)', lineHeight: 1.55 }}>
-            <b>Sem conectar, seu Radar começa sem dado de venda nenhum</b> — as recomendações ficam genéricas até você
-            registrar pedidos suficientes aqui no Pace Seller, o que costuma levar alguns meses de uso.
+          <div className="divider-text" style={{ margin: '16px 0 12px' }}>
+            ou continue sem conectar
+          </div>
+          <div className="risk-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--risk)" strokeWidth="2">
+              <path d="M12 9v3M12 16h.01" />
+              <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+            </svg>
+            <p>
+              <b>Sem conectar, seu Radar começa sem dado de venda nenhum</b> — as recomendações ficam genéricas até você
+              registrar pedidos suficientes aqui no Pace Seller, o que costuma levar alguns meses de uso.
+            </p>
           </div>
         </div>
-        <div className="fieldgroup" style={{ marginTop: 0 }}>
-          <div className="flabel">O que mais diferencia sua loja</div>
-          <div className="chipselect">
-            {diferenciais.map((d) => (
-              <div
-                key={d}
-                className={`chip ${diff.includes(d) ? 'selected' : ''}`}
-                style={{ cursor: 'pointer' }}
-                onClick={() => toggle(diff, setDiff, d)}
-              >
-                {d}
-              </div>
-            ))}
+
+        <div className="profile-block">
+          <div className="block-label">Perfil da loja</div>
+          <div className="fieldgroup" style={{ marginTop: 0 }}>
+            <div className="flabel">O que mais diferencia sua loja</div>
+            <div className="chipselect">
+              {diferenciais.map((d) => (
+                <div
+                  key={d}
+                  className={`chip ${diff.includes(d) ? 'selected' : ''}`}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => toggle(diff, setDiff, d)}
+                >
+                  {d}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="fieldgroup">
-          <div className="flabel">Como você vende hoje</div>
-          <div className="chipselect">
-            {canaisVenda.map((c) => (
-              <div
-                key={c}
-                className={`chip ${canais.includes(c) ? 'selected' : ''}`}
-                style={{ cursor: 'pointer' }}
-                onClick={() => toggle(canais, setCanais, c)}
-              >
-                {c}
-              </div>
-            ))}
+          <div className="fieldgroup">
+            <div className="flabel">Como você vende hoje</div>
+            <div className="chipselect">
+              {canaisVenda.map((c) => (
+                <div
+                  key={c}
+                  className={`chip ${canais.includes(c) ? 'selected' : ''}`}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => toggle(canais, setCanais, c)}
+                >
+                  {c}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 36 }}>
