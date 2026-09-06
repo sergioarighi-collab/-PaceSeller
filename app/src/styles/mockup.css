@@ -555,8 +555,8 @@
   .pw-swatch.active{border-color:var(--black);border-width:2px;padding:1.5px;}
   .pw-swatch img{width:100%;height:100%;object-fit:contain;}
   .pw-swatch-star{position:absolute;top:-4px;right:-4px;width:13px;height:13px;border-radius:50%;background:var(--black);color:#fff;display:flex;align-items:center;justify-content:center;}
-  .pw-addbtn{width:100%;text-align:center;padding:9px;border-radius:4px;font-size:12.5px;font-weight:600;background:var(--surface);border:1px solid var(--border-strong);color:var(--text-primary);}
-  .pw-addbtn.in-cart{background:var(--positive-dim);border-color:var(--positive);color:var(--positive);display:flex;align-items:center;justify-content:center;gap:6px;}
+  .pw-addbtn{width:100%;text-align:center;padding:9px;border-radius:4px;font-size:12.5px;font-weight:600;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary);}
+  .pw-addbtn.in-cart{background:var(--black);border-color:var(--black);color:var(--on-black);display:flex;align-items:center;justify-content:center;gap:6px;}
 
   /* Combos sugeridos (Catálogo) — card com dois produtos + preço combinado */
   .combogrid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;}
