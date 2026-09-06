@@ -536,7 +536,8 @@
   .filterbar{display:flex;gap:12px;align-items:center;margin-top:18px;}
   .filterbar .searchbox{flex:1;max-width:340px;}
   .catgrid-web{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:20px;background:var(--surface-2);padding:20px;border-radius:8px;}
-  .pcard-web{background:var(--surface);border:none;border-radius:6px;overflow:hidden;position:relative;display:flex;flex-direction:column;}
+  .pcard-web{background:var(--surface);border:none;border-radius:6px;overflow:hidden;position:relative;display:flex;flex-direction:column;transition:transform .15s ease,box-shadow .15s ease;}
+  .pcard-web:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(20,20,22,0.1);}
   .pcard-web .pw-thumb{height:180px;background:var(--surface);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;}
   .pcard-web .pw-instock{position:absolute;top:12px;left:12px;background:var(--black);color:#fff;font-family:var(--mono);font-size:9.5px;text-transform:uppercase;padding:4px 8px;border-radius:3px;}
   .pcard-web .pw-body{padding:16px;display:flex;flex-direction:column;flex:1;}
