@@ -75,7 +75,7 @@ export function Chat() {
               <div className="msg-row mine">
                 <div className="msg-avatar">CA</div>
                 <div>
-                  <div className="msg-bubble">Valeu por avisar! E sobre o carrinho da Coleção Inverno, aquele pedido separado da sandália?</div>
+                  <div className="msg-bubble">Valeu por avisar! E sobre o carrinho da Coleção Inverno, aquele pedido separado da Hertz Rose?</div>
                   <div className="msg-time">09:15</div>
                 </div>
               </div>

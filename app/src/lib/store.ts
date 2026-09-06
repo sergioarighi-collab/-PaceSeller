@@ -164,7 +164,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeOrderId: 'o1',
   setActiveOrderId: (id) => set({ activeOrderId: id }),
 
-  cartItems: { '2101-30': 24, '1901-67': 12, '2304-01': 4 },
+  cartItems: {},
   addToCart: (productId, qty) => {
     set((s) => {
       const nextQty = qty ?? (s.cartItems[productId] ? s.cartItems[productId] + 1 : 12)

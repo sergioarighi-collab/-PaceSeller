@@ -469,7 +469,7 @@ export const initialCarrinhos: Carrinho[] = [
     autoSendOnGradeMinima: true,
     lastComment: {
       author: 'Ana',
-      text: 'separei a sandália num pedido à vista pra você aproveitar o desconto — os outros itens ficam no prazo normal, tudo bem?',
+      text: 'separei a Hertz Rose num pedido à vista pra você aproveitar o desconto — os outros itens ficam no prazo normal, tudo bem?',
       timeLabel: 'há 40 min',
     },
     pedidos: [
@@ -528,9 +528,11 @@ export const initialCarrinhos: Carrinho[] = [
   },
   // Carrinho montado pela Ana pro lojista revisar — "Montar Pedido Sugerido", validado em reunião
   // com o cliente (representante também monta carrinho, não só o lojista compartilha com ela).
+  // Nome/conteúdo tem que bater com a linha real dos produtos — Tesla Skate só vende tênis, sem
+  // linha de sandália (ver docs/auditoria-navegacao.md), daí "Coil Verão" pros dois pares Coil.
   {
-    id: 'sandalias-verao',
-    name: 'Sandálias Verão',
+    id: 'coil-verao',
+    name: 'Coil Verão',
     representative: 'Ana',
     updatedAt: 'há 9 dias',
     daysSinceActivity: 9,
@@ -566,10 +568,10 @@ export const initialNotifications: NotificationItem[] = [
   {
     id: 'n3',
     kind: 'status',
-    text: 'Ana sugeriu um novo pedido — Sandálias Verão',
+    text: 'Ana sugeriu um novo pedido — Coil Verão',
     timeLabel: 'há 9 dias',
     read: false,
-    carrinhoId: 'sandalias-verao',
+    carrinhoId: 'coil-verao',
   },
   { id: 'n4', kind: 'insight', text: 'Novo insight de alta prioridade no Radar', timeLabel: 'há 2 dias', read: true },
 ]

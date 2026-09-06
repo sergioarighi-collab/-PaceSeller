@@ -300,6 +300,13 @@ export function CarrinhoDetail() {
           </div>
 
           <div className="sbtns">
+            <div
+              className="btn-secondary"
+              style={{ cursor: 'pointer' }}
+              onClick={() => navigate(`/carrinhos/${cart.id}/${cart.pedidos[0].id}/chat`)}
+            >
+              Falar com {cart.representative}
+            </div>
             <div className="btn-secondary" style={{ cursor: 'pointer' }} onClick={() => setSavedToast(true)}>
               Salvar carrinho como rascunho
             </div>
