@@ -1,12 +1,11 @@
 import type { ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAppStore } from '../../lib/store'
-import { RadarIcon, CatalogIcon, PlanIcon, OrdersIcon, ClientsIcon } from './icons'
+import { RadarIcon, CatalogIcon, OrdersIcon, ClientsIcon } from './icons'
 
 const lojistaNav = [
   { to: '/radar', label: 'Radar', icon: RadarIcon },
   { to: '/catalogo', label: 'Catálogo', icon: CatalogIcon },
-  { to: '/planejamento', label: 'Planejar', icon: PlanIcon },
   { to: '/pedidos', label: 'Pedidos', icon: OrdersIcon },
   { to: '/fidelizacao', label: 'Clientes', icon: ClientsIcon },
 ]
