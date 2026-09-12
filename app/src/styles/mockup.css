@@ -141,6 +141,20 @@
   .sizechip.on{border-color:var(--black);background:var(--surface-2);color:var(--text-primary);font-weight:600;}
   .sizechip.selected{background:var(--black);border-color:var(--black);color:#fff;font-weight:600;}
 
+  /* Grade em folha (set/2026) — seleção real por numeração na Ficha de Decisão, no lugar do
+     .sizerow estático (que só mostrava o miolo sugerido, sem input nenhum). Formato de folha de
+     grade de pedido de fábrica: um input numérico por numeração, lado a lado. */
+  .gradefill{font-size:11.5px;font-family:var(--mono);color:var(--info);background:var(--info-dim);border:none;padding:6px 10px;border-radius:5px;font-weight:600;}
+  .gradefill:hover{filter:brightness(0.97);}
+  .sheet{display:grid;grid-template-columns:repeat(11,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+  .sheetcol{background:var(--surface);display:flex;flex-direction:column;}
+  .sheetcol .sz{font-family:var(--mono);font-size:11.5px;font-weight:600;text-align:center;padding:7px 2px;color:var(--text-secondary);background:var(--surface-2);}
+  .sheetcol.suggested .sz{color:var(--text-primary);background:var(--surface-3);}
+  .sheetcol input{width:100%;border:none;text-align:center;font-family:var(--mono);font-size:13px;padding:8px 2px;color:var(--text-primary);background:transparent;}
+  .sheetcol input:focus{outline:2px solid var(--black);outline-offset:-2px;}
+  .gradetotal{font-size:12px;color:var(--text-secondary);margin-top:10px;}
+  .gradetotal .n{font-family:var(--mono);font-weight:600;color:var(--text-primary);}
+
   /* PLANNING */
   .planhead{padding:16px 18px 4px;}
   .planhead .kicker{font-size:11px;font-family:var(--mono);color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;}

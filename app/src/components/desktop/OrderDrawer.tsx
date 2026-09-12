@@ -21,6 +21,7 @@ export function OrderDrawer() {
   const addToCart = useAppStore((s) => s.addToCart)
   const removeFromCart = useAppStore((s) => s.removeFromCart)
   const setCartQty = useAppStore((s) => s.setCartQty)
+  const cartItemSizes = useAppStore((s) => s.cartItemSizes)
   const cartCombos = useAppStore((s) => s.cartCombos)
   const removeCombo = useAppStore((s) => s.removeCombo)
   const carrinhos = useAppStore((s) => s.carrinhos)
@@ -212,6 +213,15 @@ export function OrderDrawer() {
                   {qty > product.stockPares && (
                     <div className="si-meta" style={{ color: 'var(--risk)' }}>
                       Só restam {product.stockPares} pares em estoque
+                    </div>
+                  )}
+                  {cartItemSizes[product.id] && (
+                    <div
+                      className="si-meta"
+                      style={{ color: 'var(--info)', fontWeight: 600, cursor: 'pointer' }}
+                      onClick={() => navigate(`/catalogo/${product.id}`)}
+                    >
+                      Editar grade
                     </div>
                   )}
                 </div>

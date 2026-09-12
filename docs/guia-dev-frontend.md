@@ -446,6 +446,29 @@ Trocado por uma legenda sempre visível abaixo dos chips Pequena/Média/Grande, 
 
 **Padrão geral daqui pra frente**: informação que precisa estar disponível em qualquer dispositivo (não só desktop com mouse) vai em texto visível (`.fhint` ou equivalente), não em `title`/tooltip — mesmo este protótipo sendo desktop-only por ora (ver topo do guia), decisões de copy/explicação já pensam em responsivo pra não precisar retrabalho depois.
 
+## Grade por numeração de verdade na Ficha de Decisão (set/2026)
+
+Gap identificado pelo usuário: a "Grade sugerida" na Ficha de Decisão era só decorativa — mostrava o miolo de numerações do produto (`Product.suggestedSizes`, ver `buildSizes()` em `data.ts`), mas o lojista não selecionava nada ali. A quantidade que ia pro carrinho vinha só do "Adicionar ao carrinho" (12 pares default) ou do stepper genérico do drawer, e o texto "grade 37–41" de cada `PedidoItem` era **sempre** derivado do miolo sugerido do produto (`gradeRangeLabel`), nunca do que o lojista realmente pediu.
+
+Decidido via esboço de artifact comparando duas opções ("Grade em folha" com inputs numéricos vs. "Contador por numeração" com steppers por chip) — usuário escolheu **Opção A, grade em folha**. Depois, discutido em conversa **onde** isso deveria viver: card do Catálogo e drawer ficaram de fora (grid de 11 colunas não cabe numa lista densa nem numa gaveta de ~375px), só a Ficha de Decisão ganhou o input real, com um link de volta a partir do drawer.
+
+**Modelo de dado** (`types.ts`/`store.ts`):
+- `PedidoItem.sizes?: Record<numeração, qty>` — opcional; só populado pros itens que passaram pela grade em folha. Ausente pro "Adicionar ao carrinho" rápido do card (que continua sem seleção por numeração, por decisão de escopo).
+- `cartItemSizes: Record<productId, Record<numeração, qty>>` no store — paralelo a `cartItems` (que continua sendo só o total, usado por `cartSummary`/drawer/badges). Esparso: só tem entrada pros produtos que passaram pela grade em folha.
+- `setCartItemSizes(productId, sizes)` — nova action: soma vira `cartItems[productId]`, distribuição vira `cartItemSizes[productId]`. Zerar tudo remove o produto (mesmo comportamento de `setCartQty(id, 0)`).
+- `setCartQty` (stepper genérico do drawer, +/- ao lado de cada linha) **apaga** a entrada de `cartItemSizes` do produto ao mudar o total — uma vez que o total muda sem dizer em qual numeração, a distribuição registrada deixa de ser verdade, e o rótulo de grade daquele item volta a cair pro miolo sugerido (comportamento honesto, não um bug).
+- `commitCartToCarrinho` usa `gradeLabelFromSizes(sizes)` (novo helper — min/max das numerações com qty>0) quando `cartItemSizes[productId]` existe, senão cai pro `gradeRangeLabel` de sempre. `PedidoItem.sizes` é gravado no pedido junto.
+- `startEditPedido`/`cancelEditPedido` fazem o round-trip completo: reabrir um pedido no drawer ("Editar no drawer") reidrata `cartItemSizes` a partir de `item.sizes`, então "Editar grade" (ver abaixo) reabre a Ficha de Decisão com os números exatos de quando o pedido foi montado.
+
+**UI** (`Catalog.tsx`, dentro do branch `if (selectedProduct)`, que é a Ficha de Decisão):
+- `.gradebox` trocou o `.sizerow` estático por `.sheet`/`.sheetcol` — um input numérico por numeração (34–44), numerações sugeridas destacadas (`.suggested`, fundo `--surface-3`). Total somado embaixo (`.gradetotal`).
+- Botão "Preencher sugestão" (`.gradefill`) distribui 12 pares (mesmo default histórico do quick-add) igualmente pelas numerações sugeridas do produto — `Math.ceil(12 / nº de numerações sugeridas)` cada, não necessariamente batendo exato em 12 (arredondamento pra cima).
+- Estado `sizeQty` mora no componente `Catalog()` (não dentro do `if`, por causa das Rules of Hooks — a Ficha de Decisão é um branch condicional dentro do mesmo componente que lista o grid). `useEffect` nele reseta/pré-preenche a partir de `cartItemSizes[id]` toda vez que o parâmetro de rota `id` muda — importante pro round-trip funcionar sem remontar o componente.
+- CTA final vira `handleAddToCart` chamando `setCartItemSizes` (não mais `addToCart(id, 12)`); desabilitado enquanto `totalPares === 0`. Rótulo muda pra "Atualizar carrinho" quando o produto já está no carrinho — ao contrário do comportamento antigo (que não fazia nada num segundo clique se já estivesse `inCart`), agora sempre sincroniza o carrinho com o que está na tela, o que é necessário já que os números podem ter mudado.
+- **Decisão consciente**: não existe gate de "grade mínima" (36 pares) na Ficha de Decisão — essa trava é do **pedido** (soma de vários produtos), não de um produto isolado; ela já existe corretamente no drawer e no `CarrinhoDetail`. Bloquear o "Adicionar ao carrinho" de um produto só até ele sozinho bater 36 pares quebraria o fluxo normal de montar um pedido com vários produtos menores.
+
+**`OrderDrawer.tsx`**: cada linha com `cartItemSizes[product.id]` definido ganha um link "Editar grade" (mesmo estilo de link pequeno colorido já usado em outros lugares do app) que navega pra `/catalogo/:id` — a Ficha de Decisão do produto, já pré-preenchida. Link some sozinho se o stepper genérico for usado (a numeração deixou de ser válida).
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

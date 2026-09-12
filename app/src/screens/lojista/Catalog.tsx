@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
@@ -9,6 +9,11 @@ import { useAppStore } from '../../lib/store'
 import { products, collectionTitle, combos } from '../../lib/data'
 import { formatBRL } from '../../lib/format'
 import { buildProductLines, comboPrice } from '../../lib/productLines'
+
+// Quantidade default de um "Preencher sugestão" na grade em folha — mesmo valor usado há tempos
+// pelo "Adicionar ao carrinho" rápido do card do Catálogo (addToCart(id, 12)), só que agora
+// distribuído pelas numerações sugeridas do produto em vez de ir tudo pra uma linha só.
+const GRADE_AUTOFILL_PARES = 12
 
 const categoryFilters = ['Alto giro', 'Boa margem', 'Lançamentos', 'Oportunidade perdida']
 // Texto do tooltip (atributo title, mesmo padrão já usado no resto do app — ver WebTopNav,
@@ -149,9 +154,19 @@ export function Catalog() {
   const [query, setQuery] = useState('')
   const toggleCart = useAppStore((s) => s.toggleCart)
   const cartItems = useAppStore((s) => s.cartItems)
-  const addToCart = useAppStore((s) => s.addToCart)
   const cartCombos = useAppStore((s) => s.cartCombos)
   const toggleCombo = useAppStore((s) => s.toggleCombo)
+  const cartItemSizes = useAppStore((s) => s.cartItemSizes)
+  const setCartItemSizes = useAppStore((s) => s.setCartItemSizes)
+
+  // Grade em folha da Ficha de Decisão — estado por numeração (34-44) do produto aberto. Recarrega
+  // sempre que o produto muda (troca de rota /catalogo/:id), pré-preenchendo com o que já estiver
+  // no carrinho pra esse produto (cartItemSizes) em vez de sempre começar zerado.
+  const [sizeQty, setSizeQtyState] = useState<Record<string, number>>({})
+  useEffect(() => {
+    setSizeQtyState(id ? (cartItemSizes[id] ?? {}) : {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
   const selectedProduct = products.find((p) => p.id === id)
 
@@ -159,6 +174,29 @@ export function Catalog() {
     const p = selectedProduct
     const inCart = Boolean(cartItems[p.id])
     const margin = Math.round(((p.pricePdv - p.priceFactory) / p.pricePdv) * 100)
+    const totalPares = Object.values(sizeQty).reduce((sum, n) => sum + n, 0)
+
+    function setSize(size: string, value: number) {
+      const qty = Math.max(0, Math.min(999, value))
+      setSizeQtyState((cur) => ({ ...cur, [size]: qty }))
+    }
+
+    function autofillGrade() {
+      const suggested = p.suggestedSizes.filter((s) => s.suggested)
+      const perSize = Math.ceil(GRADE_AUTOFILL_PARES / suggested.length)
+      const next: Record<string, number> = {}
+      suggested.forEach((s) => {
+        next[s.size] = perSize
+      })
+      setSizeQtyState(next)
+    }
+
+    function handleAddToCart() {
+      if (totalPares === 0) return
+      setCartItemSizes(p.id, sizeQty)
+      navigate('/carrinhos')
+    }
+
     return (
       <DesktopPage>
         <WebTopNav />
@@ -244,14 +282,32 @@ export function Catalog() {
                 Reposição recomendada em {p.restockDays} dias
               </div>
 
-              <div className="gradebox" style={{ margin: '24px 0 0' }}>
-                <div className="title">Grade sugerida</div>
-                <div className="sizerow">
+              <div className="gradebox" style={{ margin: '24px 0 0', maxWidth: 520 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 10 }}>
+                  <div className="title" style={{ marginBottom: 0 }}>
+                    Grade por numeração
+                  </div>
+                  <div className="gradefill" style={{ cursor: 'pointer' }} onClick={autofillGrade}>
+                    Preencher sugestão
+                  </div>
+                </div>
+                <div className="sheet">
                   {p.suggestedSizes.map((s) => (
-                    <div className={`sizechip ${s.suggested ? 'on' : ''}`} key={s.size}>
-                      {s.size}
+                    <div className={`sheetcol ${s.suggested ? 'suggested' : ''}`} key={s.size}>
+                      <div className="sz">{s.size}</div>
+                      <input
+                        type="number"
+                        min={0}
+                        inputMode="numeric"
+                        value={sizeQty[s.size] || ''}
+                        placeholder="0"
+                        onChange={(e) => setSize(s.size, parseInt(e.target.value || '0', 10))}
+                      />
                     </div>
                   ))}
+                </div>
+                <div className="gradetotal">
+                  <span className="n">{totalPares}</span> {totalPares === 1 ? 'par selecionado' : 'pares selecionados'}
                 </div>
               </div>
 
@@ -262,13 +318,10 @@ export function Catalog() {
                 <div style={{ display: 'flex', gap: 12 }}>
                   <div
                     className="btn-primary"
-                    style={{ flex: 1, cursor: 'pointer' }}
-                    onClick={() => {
-                      if (!inCart) addToCart(p.id, 12)
-                      navigate('/carrinhos')
-                    }}
+                    style={{ flex: 1, cursor: totalPares > 0 ? 'pointer' : 'not-allowed', opacity: totalPares > 0 ? 1 : 0.5 }}
+                    onClick={handleAddToCart}
                   >
-                    {inCart ? 'No carrinho ✓ — ver carrinho' : 'Adicionar ao carrinho'}
+                    {inCart ? 'Atualizar carrinho' : 'Adicionar ao carrinho'}
                   </div>
                 </div>
                 <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 10 }}>
