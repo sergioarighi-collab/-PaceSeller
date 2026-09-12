@@ -5,6 +5,10 @@ import { OnboardShell } from '../../components/desktop/OnboardShell'
 const segmentos = ['Streetwear', 'Casual', 'Esportivo', 'Feminino']
 const portes = ['Pequena', 'Média', 'Grande']
 const publicos = ['Jovem adulto', 'Teen', 'Adulto', 'Família']
+// Perguntas qualitativas que nem Pace Stock nem histórico de pedidos respondem sozinhos — moradas
+// aqui (não na Etapa 2) porque são dado cadastral da loja, não dado de vendas (set/2026).
+const diferenciais = ['Atendimento especializado', 'Preço competitivo', 'Variedade de marcas', 'Localização', 'Presença digital forte']
+const canaisVenda = ['Só loja física', 'Loja física + redes sociais', 'Loja física + e-commerce próprio', 'Também vendo em marketplace']
 
 export function WizardStep1() {
   const navigate = useNavigate()
@@ -12,9 +16,11 @@ export function WizardStep1() {
   const [segmento, setSegmento] = useState('Streetwear')
   const [porte, setPorte] = useState('Média')
   const [publico, setPublico] = useState<string[]>(['Jovem adulto', 'Teen'])
+  const [diff, setDiff] = useState<string[]>(['Atendimento especializado'])
+  const [canais, setCanais] = useState<string[]>(['Loja física + redes sociais'])
 
-  function togglePublico(p: string) {
-    setPublico((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]))
+  function toggle(list: string[], setList: (v: string[]) => void, value: string) {
+    setList(list.includes(value) ? list.filter((x) => x !== value) : [...list, value])
   }
 
   return (
@@ -88,9 +94,39 @@ export function WizardStep1() {
                 key={p}
                 className={`chip ${publico.includes(p) ? 'selected' : ''}`}
                 style={{ cursor: 'pointer' }}
-                onClick={() => togglePublico(p)}
+                onClick={() => toggle(publico, setPublico, p)}
               >
                 {p}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="fieldgroup">
+          <div className="flabel">O que mais diferencia sua loja</div>
+          <div className="chipselect">
+            {diferenciais.map((d) => (
+              <div
+                key={d}
+                className={`chip ${diff.includes(d) ? 'selected' : ''}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => toggle(diff, setDiff, d)}
+              >
+                {d}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="fieldgroup">
+          <div className="flabel">Como você vende hoje</div>
+          <div className="chipselect">
+            {canaisVenda.map((c) => (
+              <div
+                key={c}
+                className={`chip ${canais.includes(c) ? 'selected' : ''}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => toggle(canais, setCanais, c)}
+              >
+                {c}
               </div>
             ))}
           </div>

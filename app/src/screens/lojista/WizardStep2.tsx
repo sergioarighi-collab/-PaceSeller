@@ -4,26 +4,11 @@ import { OnboardShell } from '../../components/desktop/OnboardShell'
 import { Toast } from '../../components/desktop/Toast'
 import { useAppStore } from '../../lib/store'
 
-// Substituem ticket médio/categorias/sazonalidade (ago/2026) — esses três eram, na prática, um
-// chute do lojista pra um dado que Pace Stock (conectado) ou o próprio histórico de pedidos no
-// Pace Seller (acumulado com o uso) vão entregar de verdade e melhor. Perguntar aqui era pedir
-// pro lojista adivinhar algo que em breve vira dado real — baixa qualidade e redundante ao mesmo
-// tempo. No lugar, perfil qualitativo que nem Pace Stock nem histórico de vendas conseguem
-// responder sozinhos, complementando o que a Etapa 1 já pergunta (segmento, porte, público-alvo).
-const diferenciais = ['Atendimento especializado', 'Preço competitivo', 'Variedade de marcas', 'Localização', 'Presença digital forte']
-const canaisVenda = ['Só loja física', 'Loja física + redes sociais', 'Loja física + e-commerce próprio', 'Também vendo em marketplace']
-
 export function WizardStep2() {
   const navigate = useNavigate()
   const dismissOnboardingNotice = useAppStore((s) => s.dismissOnboardingNotice)
   const completeProfile = useAppStore((s) => s.completeProfile)
-  const [diff, setDiff] = useState<string[]>(['Atendimento especializado'])
-  const [canais, setCanais] = useState<string[]>(['Loja física + redes sociais'])
   const [comingSoon, setComingSoon] = useState(false)
-
-  function toggle(list: string[], setList: (v: string[]) => void, value: string) {
-    setList(list.includes(value) ? list.filter((x) => x !== value) : [...list, value])
-  }
 
   return (
     <OnboardShell step={2}>
@@ -62,40 +47,6 @@ export function WizardStep2() {
               <b>Sem conectar, seu Radar começa sem dado de venda nenhum</b> — as recomendações ficam genéricas até você
               registrar pedidos suficientes aqui no Pace Seller, o que costuma levar alguns meses de uso.
             </p>
-          </div>
-        </div>
-
-        <div className="profile-block">
-          <div className="block-label">Perfil comercial</div>
-          <div className="fieldgroup" style={{ marginTop: 0 }}>
-            <div className="flabel">O que mais diferencia sua loja</div>
-            <div className="chipselect">
-              {diferenciais.map((d) => (
-                <div
-                  key={d}
-                  className={`chip ${diff.includes(d) ? 'selected' : ''}`}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => toggle(diff, setDiff, d)}
-                >
-                  {d}
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="fieldgroup">
-            <div className="flabel">Como você vende hoje</div>
-            <div className="chipselect">
-              {canaisVenda.map((c) => (
-                <div
-                  key={c}
-                  className={`chip ${canais.includes(c) ? 'selected' : ''}`}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => toggle(canais, setCanais, c)}
-                >
-                  {c}
-                </div>
-              ))}
-            </div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 12, marginTop: 36 }}>

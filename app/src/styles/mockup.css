@@ -443,17 +443,15 @@
   .onboard-form{max-width:640px;margin-top:36px;}
   .onboard-form .fieldgroup{padding:0;margin-top:22px;}
   .onboard-form .fieldrow2{margin-top:22px;}
-  /* Agrupamento por bloco (ago/2026) — "dado de vendas" (Pace Stock + aviso de risco) e "perfil
-     da loja" (campos) flutuavam soltos em sequência, sem indicar que são duas perguntas
-     diferentes. Rótulo de seção (mesmo estilo mono do .flabel) + fundo cinza agrupando o bloco
-     de dados cria separação real sem introduzir cor nova. */
+  /* Agrupamento por bloco (ago/2026) — o card do Pace Stock e o aviso de risco flutuavam soltos
+     em sequência dentro da Etapa 2. Rótulo de seção (mesmo estilo mono do .flabel) + fundo cinza
+     agrupando o bloco de dados cria separação visual sem introduzir cor nova. */
   .block-label{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin-bottom:10px;font-weight:600;}
   .data-block{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:18px;}
   .data-block .optioncard{background:var(--surface);}
   .risk-box{display:flex;gap:12px;align-items:flex-start;background:var(--risk-dim);border:1px solid var(--risk);border-radius:6px;padding:13px 16px;}
   .risk-box svg{flex-shrink:0;margin-top:1px;}
   .risk-box p{margin:0;font-size:12px;color:var(--text-primary);line-height:1.55;}
-  .profile-block{margin-top:28px;}
   /* CTA final com sombra leve (mesma família do hover dos cards de produto) — sinaliza que é a
      ação que fecha a etapa, sem mudar a cor (preto sólido já é o mais forte do sistema). */
   .onboard-form .btn-primary{box-shadow:0 4px 14px rgba(20,20,22,.18);}

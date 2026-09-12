@@ -4,8 +4,8 @@ import { DesktopPage } from './DesktopPage'
 import { useAppStore } from '../../lib/store'
 
 const steps = [
-  { n: 1, title: 'Perfil da Loja', sub: 'Nome, segmento e região' },
-  { n: 2, title: 'Integração de Dados', sub: 'Estoque, vendas e diferenciais' },
+  { n: 1, title: 'Perfil da Loja', sub: 'Nome, segmento, região e diferenciais' },
+  { n: 2, title: 'Integração de Dados', sub: 'Estoque e dado de vendas' },
 ]
 
 export function OnboardShell({ step, children }: { step: 1 | 2; children: ReactNode }) {
