@@ -424,7 +424,7 @@ O app fica em `app/`, não na raiz do repo (não existe `package.json` na raiz).
 Pedido do usuário: renomear os títulos das duas etapas do stepper (não os `<h2>` de cada tela, que continuam descritivos) e explicar melhor o critério de "porte da loja".
 
 - **`OnboardShell.tsx`** (`steps`): etapa 1 "Dados básicos" → **"Perfil da Loja"**; etapa 2 "Perfil da loja" → **"Integração de Dados"** (sub-texto também ajustado: "Estoque, vendas e diferenciais"). Como a etapa 1 passou a se chamar "Perfil da Loja", o `block-label` interno da etapa 2 que também dizia "Perfil da loja" (agrupando os chips de `diferenciais`/`canaisVenda` em `WizardStep2.tsx`) foi renomeado pra **"Perfil comercial"**, pra não duplicar o termo em dois níveis diferentes do fluxo. `WizardStep1.tsx` teve o `<h2>` da própria tela ajustado de "Dados básicos da loja" pra "Perfil da loja", acompanhando o novo nome da etapa no stepper.
-- **Tooltip de "Porte da loja"** (`WizardStep1.tsx`): ícone de informação (círculo com "i", SVG inline, sem novo componente) ao lado do `.flabel`, usando o atributo `title` nativo — mesmo padrão de tooltip já usado no resto do app (ver `Catalog.tsx`, filtros). Texto explica o critério por trás dos 3 chips (Pequena/Média/Grande): faturamento anual, na mesma referência usada pela Receita Federal/BNDES pra classificar porte de empresa (até R$ 4,8 mi = pequena/ME-EPP, até R$ 300 mi = média, acima = grande). `.flabel` virou `display:flex` (só pra caber o ícone ao lado do texto) e ganhou a classe `.finfo-icon` reutilizável — qualquer outro campo do onboarding (ou de fora dele) pode usar o mesmo padrão de ícone+tooltip sem CSS novo.
+- **Tooltip de "Porte da loja"** (`WizardStep1.tsx`), **primeira versão, depois substituída** (ver seção "Legenda fixa..." abaixo pro estado final): ícone de informação (círculo com "i", SVG inline) ao lado do `.flabel`, usando o atributo `title` nativo — mesmo padrão de tooltip já usado no resto do app (ver `Catalog.tsx`, filtros). Explicava o critério por trás dos 3 chips (Pequena/Média/Grande): faturamento anual, mesma referência usada pela Receita Federal/BNDES pra classificar porte de empresa.
 
 ## Onboarding: diferenciais/canais de venda voltam pra Etapa 1 (set/2026)
 
@@ -434,6 +434,17 @@ Pedido do usuário: os campos "O que mais diferencia sua loja" (`diferenciais`) 
 - **`WizardStep2.tsx`**: perdeu o bloco `.profile-block`/"Perfil comercial" inteiro — sobra só o card do Pace Stock + aviso de risco ("Dado de vendas"). `<h2>`/subtítulo da tela não mudaram (continuam descrevendo "dado de venda de verdade vem de uma das duas formas abaixo", que ainda é verdade).
 - **`mockup.css`**: `.profile-block` removida (ficou órfã, sem nenhum uso depois da mudança). `.block-label`/`.data-block` continuam em uso (agrupam só o card do Pace Stock agora).
 - **`OnboardShell.tsx`** (`steps`): sub-textos ajustados pra refletir o novo conteúdo de cada etapa — etapa 1 "Nome, segmento, região e diferenciais", etapa 2 "Estoque e dado de vendas" (era "Estoque, vendas e diferenciais", que citava um campo que não está mais lá).
+
+## "Porte da loja": tooltip vira legenda fixa (set/2026)
+
+O tooltip via `title` nativo (ver seção acima) tinha dois problemas descobertos em uso real: (1) o usuário tentou achá-lo num deploy do Vercel que estava congelado num commit anterior a essa mudança — não achou, e isso levantou a dúvida certa; (2) mesmo funcionando, `title` depende de hover, que **não existe em touch** — qualquer versão mobile/responsiva futura perderia a explicação por completo, já que não tem equivalente nativo de "passar o mouse" no touch.
+
+Trocado por uma legenda sempre visível abaixo dos chips Pequena/Média/Grande, em vez de informação sob demanda:
+- **`WizardStep1.tsx`**: removido o ícone SVG + `title` do `.flabel` "Porte da loja". Adicionado um `<div className="fhint">` logo depois do `.chipselect`, com o mesmo texto explicativo (faturamento anual, referência Receita Federal/BNDES).
+- **`mockup.css`**: `.finfo-icon` removida (ficou órfã — nenhum outro campo do app chegou a usar o padrão ícone+tooltip). `.flabel` voltou a `display:block` puro (o `display:flex` só existia pra alinhar o ícone). Nova classe `.fieldgroup .fhint` (11.5px, `--text-tertiary`, `max-width:340px`) — reutilizável em qualquer campo que precise de uma legenda de apoio sem depender de hover.
+- Resultado visual: como "Segmento" tem uma linha a mais de chips que "Porte da loja" na mesma `fieldrow2`, a legenda ocupa exatamente o espaço vazio abaixo dos chips de porte, sem alongar a coluna nem desalinhar as duas colunas entre si.
+
+**Padrão geral daqui pra frente**: informação que precisa estar disponível em qualquer dispositivo (não só desktop com mouse) vai em texto visível (`.fhint` ou equivalente), não em `title`/tooltip — mesmo este protótipo sendo desktop-only por ora (ver topo do guia), decisões de copy/explicação já pensam em responsivo pra não precisar retrabalho depois.
 
 ## Regras de negócio confirmadas (não são chute)
 

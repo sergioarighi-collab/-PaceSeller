@@ -51,18 +51,7 @@ export function WizardStep1() {
             </div>
           </div>
           <div className="fieldgroup">
-            <div className="flabel">
-              Porte da loja
-              <span
-                className="finfo-icon"
-                title="Baseado no faturamento anual — mesma referência usada pela Receita Federal: até R$ 4,8 milhões é pequena (ME/EPP), até R$ 300 milhões é média, acima disso é grande."
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 16v-5M12 8h.01" />
-                </svg>
-              </span>
-            </div>
+            <div className="flabel">Porte da loja</div>
             <div className="chipselect">
               {portes.map((p) => (
                 <div
@@ -74,6 +63,10 @@ export function WizardStep1() {
                   {p}
                 </div>
               ))}
+            </div>
+            <div className="fhint">
+              Baseado no faturamento anual — mesma referência da Receita Federal: até R$ 4,8 mi é pequena (ME/EPP), até
+              R$ 300 mi é média, acima disso é grande.
             </div>
           </div>
         </div>
