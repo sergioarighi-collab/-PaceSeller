@@ -83,6 +83,11 @@ export interface PedidoItem {
   qty: number
   grade: string
   value: number
+  /** Quantidade por numeração (34–44) escolhida na Ficha de Decisão ("grade em folha") — presente
+   * só quando o item veio desse fluxo; ausente pro "Adicionar ao carrinho" rápido do card do
+   * Catálogo, que continua sem seleção por numeração. Quando presente, é a fonte real de `grade`
+   * (ver `gradeLabelFromSizes` em `store.ts`) em vez do miolo sugerido do produto. */
+  sizes?: Record<string, number>
 }
 
 export interface Pedido {

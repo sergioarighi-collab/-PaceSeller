@@ -49,6 +49,19 @@ interface AppState {
   setCartQty: (productId: string, qty: number) => void
 
   /**
+   * Quantidade por numeração (34–44) do pedido em montagem, só pros produtos que passaram pela
+   * "grade em folha" da Ficha de Decisão — mapa esparso, nem todo `productId` de `cartItems` tem
+   * entrada aqui (o "Adicionar ao carrinho" rápido do card do Catálogo não define numeração).
+   * `setCartQty` (stepper genérico do drawer) apaga a entrada do produto ao mudar o total: uma vez
+   * que o total é alterado sem dizer em qual numeração, a distribuição registrada deixa de ser
+   * verdade, então o rótulo de grade volta a cair pro miolo sugerido do produto.
+   */
+  cartItemSizes: Record<string, Record<string, number>>
+  /** Define a quantidade por numeração de um produto — soma vira `cartItems[productId]`. Zerar
+   * tudo remove o produto do pedido (mesmo comportamento de `setCartQty(id, 0)`). */
+  setCartItemSizes: (productId: string, sizes: Record<string, number>) => void
+
+  /**
    * Combos adicionados ao pedido em montagem — `1` = combo presente, ausente = não. Um combo tem
    * preço promocional sobre a soma dos dois produtos (ver `comboPrice` em `lib/productLines.ts`),
    * então **não é** dois produtos entrando em `cartItems` a preço cheio — é uma linha própria, com
@@ -176,7 +189,9 @@ export const useAppStore = create<AppState>((set, get) => ({
     set((s) => {
       const next = { ...s.cartItems }
       delete next[productId]
-      return { cartItems: next }
+      const nextSizes = { ...s.cartItemSizes }
+      delete nextSizes[productId]
+      return { cartItems: next, cartItemSizes: nextSizes }
     }),
   toggleCart: (productId) => {
     const s = get()
@@ -184,13 +199,33 @@ export const useAppStore = create<AppState>((set, get) => ({
     else s.addToCart(productId, 12)
   },
   // Ajuste de quantidade de um item já no pedido em montagem (stepper do drawer) — diferente de
-  // addToCart, não dispara peekOrderDrawer: o drawer já está aberto (é onde o stepper vive).
+  // addToCart, não dispara peekOrderDrawer: o drawer já está aberto (é onde o stepper vive). Apaga
+  // a numeração registrada do produto (ver cartItemSizes) — o stepper genérico não sabe em qual
+  // numeração o ajuste entra, então a distribuição anterior deixa de ser verdade.
   setCartQty: (productId, qty) => {
     if (qty <= 0) {
       get().removeFromCart(productId)
       return
     }
-    set((s) => ({ cartItems: { ...s.cartItems, [productId]: qty } }))
+    set((s) => {
+      const nextSizes = { ...s.cartItemSizes }
+      delete nextSizes[productId]
+      return { cartItems: { ...s.cartItems, [productId]: qty }, cartItemSizes: nextSizes }
+    })
+  },
+
+  cartItemSizes: {},
+  setCartItemSizes: (productId, sizes) => {
+    const qty = Object.values(sizes).reduce((sum, n) => sum + n, 0)
+    if (qty <= 0) {
+      get().removeFromCart(productId)
+      return
+    }
+    set((s) => ({
+      cartItems: { ...s.cartItems, [productId]: qty },
+      cartItemSizes: { ...s.cartItemSizes, [productId]: sizes },
+    }))
+    get().peekOrderDrawer()
   },
 
   cartCombos: {},
@@ -234,13 +269,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     const totalItems = itemsQty + combosQty
     if (totalItems === 0) return null
 
-    const items: PedidoItem[] = lines.map((l) => ({
-      productId: l.product.id,
-      name: l.product.name,
-      qty: l.qty,
-      grade: gradeRangeLabel(l.product.suggestedSizes),
-      value: l.value,
-    }))
+    const items: PedidoItem[] = lines.map((l) => {
+      const sizes = s.cartItemSizes[l.product.id]
+      return {
+        productId: l.product.id,
+        name: l.product.name,
+        qty: l.qty,
+        grade: sizes ? gradeLabelFromSizes(sizes) : gradeRangeLabel(l.product.suggestedSizes),
+        value: l.value,
+        sizes,
+      }
+    })
     // Combo vira um único PedidoItem sintético (productId = id do combo, não de um SKU real) —
     // é assim que "preço promocional = item único" se traduz pro modelo de Pedido, sem precisar
     // de um campo novo em PedidoItem. CarrinhoDetail's "Antes de fechar" simplesmente ignora esse
@@ -278,7 +317,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           }),
         }
       })
-      set({ carrinhos, cartItems: {}, cartCombos: {}, editingPedido: null })
+      set({ carrinhos, cartItems: {}, cartCombos: {}, cartItemSizes: {}, editingPedido: null })
       return editing.carrinhoId
     }
 
@@ -301,7 +340,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       c.id === carrinhoId ? { ...c, updatedAt: 'agora', daysSinceActivity: 0, pedidos: [...c.pedidos, pedido] } : c,
     )
 
-    set({ carrinhos, cartItems: {}, cartCombos: {}, activeCarrinhoId: carrinhoId })
+    set({ carrinhos, cartItems: {}, cartCombos: {}, cartItemSizes: {}, activeCarrinhoId: carrinhoId })
     return carrinhoId
   },
 
@@ -313,20 +352,25 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     const cartItems: Record<string, number> = {}
     const cartCombos: Record<string, number> = {}
+    const cartItemSizes: Record<string, Record<string, number>> = {}
     for (const item of pedido.items) {
       if (combos.some((c) => c.id === item.productId)) cartCombos[item.productId] = 1
-      else cartItems[item.productId] = item.qty
+      else {
+        cartItems[item.productId] = item.qty
+        if (item.sizes) cartItemSizes[item.productId] = item.sizes
+      }
     }
     set({
       cartItems,
       cartCombos,
+      cartItemSizes,
       editingPedido: { carrinhoId, pedidoId },
       activeCarrinhoId: carrinhoId,
       orderDrawerOpen: true,
       orderDrawerAutoClose: false,
     })
   },
-  cancelEditPedido: () => set({ cartItems: {}, cartCombos: {}, editingPedido: null }),
+  cancelEditPedido: () => set({ cartItems: {}, cartCombos: {}, cartItemSizes: {}, editingPedido: null }),
 
   setRepCanEdit: (carrinhoId, value) =>
     set((s) => ({ carrinhos: s.carrinhos.map((c) => (c.id === carrinhoId ? { ...c, repCanEdit: value } : c)) })),
@@ -431,6 +475,17 @@ function gradeRangeLabel(sizes: { size: string; suggested: boolean }[]) {
   const suggested = sizes.filter((s) => s.suggested)
   const pick = suggested.length > 0 ? suggested : sizes
   return `${pick[0].size}–${pick[pick.length - 1].size}`
+}
+
+// Faixa de grade real, a partir da numeração que o lojista de fato escolheu na "grade em folha"
+// da Ficha de Decisão — usada no lugar de gradeRangeLabel sempre que o item tem cartItemSizes.
+export function gradeLabelFromSizes(sizes: Record<string, number>) {
+  const active = Object.entries(sizes)
+    .filter(([, qty]) => qty > 0)
+    .map(([size]) => size)
+    .sort()
+  if (active.length === 0) return '—'
+  return `${active[0]}–${active[active.length - 1]}`
 }
 
 export function cartSummary(cartItems: Record<string, number>) {
