@@ -66,7 +66,7 @@ export function WizardStep2() {
         </div>
 
         <div className="profile-block">
-          <div className="block-label">Perfil da loja</div>
+          <div className="block-label">Perfil comercial</div>
           <div className="fieldgroup" style={{ marginTop: 0 }}>
             <div className="flabel">O que mais diferencia sua loja</div>
             <div className="chipselect">

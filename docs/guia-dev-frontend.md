@@ -415,6 +415,17 @@ Pedido do usuário: percorrer o fluxo inteiro como um lojista de verdade faria �
 - **Botão "Adicionar ao carrinho" da Ficha de Decisão não segue a convenção cinza/preto** do grid do Catálogo (`.pw-addbtn`/`.pw-addbtn.in-cart`, ago/2026): usa `.btn-primary` puro, sempre preto. Avaliado e decidido **não mudar** — a convenção cinza→preto existe pra dar feedback de estado num grid denso, escaneado rapidamente; a Ficha de Decisão é um CTA isolado de página de decisão, no mesmo padrão de "Confirmar pedido"/"Ir para pagamento" (sempre pretos). Aplicar cinza ali destoaria do resto do app, não o contrário.
 - **Countdown do PIX ("Expira em 29:47") é texto estático**, não conta de verdade — cosmético, sem prioridade num protótipo sem backend.
 
+## Deploy no Vercel — `vercel.json` na raiz (set/2026)
+
+O app fica em `app/`, não na raiz do repo (não existe `package.json` na raiz). Só havia um `vercel.json` dentro de `app/` (com o rewrite `/(.*) → /index.html` pro roteamento client-side do SPA). Sem o Root Directory do projeto configurado como `app` no painel do Vercel, o build roda na raiz vazia, não acha nada pra buildar, e o deploy cai em 404 `NOT_FOUND` antes de chegar no React. Criado `/vercel.json` na raiz com `buildCommand: "cd app && npm install && npm run build"` + `outputDirectory: "app/dist"`, testado localmente rodando o mesmo comando a partir da raiz do repo — funciona independente da config manual do painel. Se o Root Directory já estiver setado como `app` nas settings do projeto, esse arquivo da raiz é ignorado (Vercel usa o `vercel.json` de dentro do Root Directory) — nesse caso um 404 seria outra causa (build quebrado numa run específica, ou um link de preview antigo/removido), não esse.
+
+## Onboarding: nomenclatura das etapas + tooltip de "Porte da loja" (set/2026)
+
+Pedido do usuário: renomear os títulos das duas etapas do stepper (não os `<h2>` de cada tela, que continuam descritivos) e explicar melhor o critério de "porte da loja".
+
+- **`OnboardShell.tsx`** (`steps`): etapa 1 "Dados básicos" → **"Perfil da Loja"**; etapa 2 "Perfil da loja" → **"Integração de Dados"** (sub-texto também ajustado: "Estoque, vendas e diferenciais"). Como a etapa 1 passou a se chamar "Perfil da Loja", o `block-label` interno da etapa 2 que também dizia "Perfil da loja" (agrupando os chips de `diferenciais`/`canaisVenda` em `WizardStep2.tsx`) foi renomeado pra **"Perfil comercial"**, pra não duplicar o termo em dois níveis diferentes do fluxo. `WizardStep1.tsx` teve o `<h2>` da própria tela ajustado de "Dados básicos da loja" pra "Perfil da loja", acompanhando o novo nome da etapa no stepper.
+- **Tooltip de "Porte da loja"** (`WizardStep1.tsx`): ícone de informação (círculo com "i", SVG inline, sem novo componente) ao lado do `.flabel`, usando o atributo `title` nativo — mesmo padrão de tooltip já usado no resto do app (ver `Catalog.tsx`, filtros). Texto explica o critério por trás dos 3 chips (Pequena/Média/Grande): faturamento anual, na mesma referência usada pela Receita Federal/BNDES pra classificar porte de empresa (até R$ 4,8 mi = pequena/ME-EPP, até R$ 300 mi = média, acima = grande). `.flabel` virou `display:flex` (só pra caber o ícone ao lado do texto) e ganhou a classe `.finfo-icon` reutilizável — qualquer outro campo do onboarding (ou de fora dele) pode usar o mesmo padrão de ícone+tooltip sem CSS novo.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
