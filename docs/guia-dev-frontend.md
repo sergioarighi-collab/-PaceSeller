@@ -502,6 +502,12 @@ Problema prático: nenhuma linha do catálogo mock overflowava o suficiente pra 
 
 **Segundo corte real, corrigido sem padding**: usuário reportou continuar vendo corte mesmo depois do fix de auto-scroll — dessa vez nos **cantos** de cada swatch. Causa: `.pw-swatch` é um quadrado (44×44) e a foto é bem mais larga que alta (~1,73:1); `object-fit:contain` encaixa pela largura, preenchendo os 44px horizontais **de ponta a ponta, sem margem nenhuma** — como o box tem `border-radius` + `overflow:hidden`, a curva do canto arredondado corta visualmente a ponta/calcanhar do tênis que chega exatamente na borda. Primeira tentativa de correção foi aumentar padding + deixar o box mais alto (44×52) — resolvia o corte, mas o usuário achou que "não ficou bom" (revertido, ver histórico do commit). **Fix que ficou**: `border-radius` de `5px` pra `2px` — ataca a mesma causa (a curva do canto é o que corta) sem precisar de mais padding nem mudar a proporção/tamanho do box. 44×44 continua igual, o conteúdo visível do swatch não encolhe.
 
+## Miniatura de produto unificada em 44px no app inteiro (set/2026)
+
+Pedido do usuário: depois de ajustar tamanho/proporção/`border-radius` da miniatura do swatch de cor no Catálogo (`.pw-swatch`, ver seções acima), aplicar a mesma miniatura (mesmo tamanho, mesmo `border-radius`) em todo o resto do app onde uma foto pequena de produto aparece — evita cada tela ter seu próprio tamanho "quase igual, mas não igual".
+
+Levantamento de todo lugar com `<ProductThumb>` numa miniatura pequena (fora do produto principal da Ficha de Decisão, que é grande de propósito, e dos cards de combo do Catálogo, que também são maiores/secundários, não miniaturas de linha): eram **3 tamanhos diferentes** antes desse ajuste — `.si-thumb` (linha do drawer, 34px), `.sg-thumb` (sugestões do drawer, 38px), `.thumbrow .thumb` (preview de carrinho em `MeusCarrinhos.tsx`, 36px) — cada um com seu próprio `border-radius` (3px/4px/4px) também. Todos padronizados pra **44px, `border-radius:2px`**, igual ao `.pw-swatch` do Catálogo. `iconSize`/`padding` do `ProductThumb` interno também padronizados pra `19`/`2` (mesmos valores do swatch) nos 4 lugares (`OrderDrawer.tsx` linhas do carrinho + combos + sugestões, `MeusCarrinhos.tsx` preview por carrinho).
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

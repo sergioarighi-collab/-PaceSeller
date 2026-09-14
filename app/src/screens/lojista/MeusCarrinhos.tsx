@@ -220,7 +220,7 @@ export function MeusCarrinhos() {
                       if (!product) return null
                       return (
                         <div className="thumb" key={id}>
-                          <ProductThumb src={product.image} alt={product.name} iconSize={16} padding={4} />
+                          <ProductThumb src={product.image} alt={product.name} iconSize={19} padding={2} />
                         </div>
                       )
                     })}

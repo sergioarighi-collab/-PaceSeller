@@ -185,7 +185,7 @@ export function OrderDrawer() {
             {comboLines.map(({ combo, cp }) => (
               <div className="sidebar-item" key={combo.id}>
                 <div className="si-thumb" style={{ display: 'flex' }}>
-                  <ProductThumb src={cp.p1.image} alt={cp.p1.name} iconSize={18} padding={3} />
+                  <ProductThumb src={cp.p1.image} alt={cp.p1.name} iconSize={19} padding={2} />
                 </div>
                 <div className="si-info">
                   <div className="si-name">
@@ -205,7 +205,7 @@ export function OrderDrawer() {
             {lines.map(({ product, qty, value }) => (
               <div className="sidebar-item" key={product.id}>
                 <div className="si-thumb">
-                  <ProductThumb src={product.image} alt={product.name} iconSize={18} padding={3} />
+                  <ProductThumb src={product.image} alt={product.name} iconSize={19} padding={2} />
                 </div>
                 <div className="si-info">
                   <div className="si-name">{product.name}</div>
@@ -253,7 +253,7 @@ export function OrderDrawer() {
               {suggestions.map((p) => (
                 <div className="suggest-row" key={p.id}>
                   <div className="sg-thumb">
-                    <ProductThumb src={p.image} alt={p.name} iconSize={16} padding={3} />
+                    <ProductThumb src={p.image} alt={p.name} iconSize={19} padding={2} />
                   </div>
                   <div className="sg-info">
                     <div className="sg-name">{p.name}</div>

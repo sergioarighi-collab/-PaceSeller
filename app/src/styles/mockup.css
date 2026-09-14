@@ -289,7 +289,9 @@
   .cc-meta{font-family:var(--mono);font-size:11px;color:var(--text-tertiary);margin-top:4px;}
 
   .thumbrow{display:flex;gap:6px;margin-top:12px;}
-  .thumbrow .thumb{width:36px;height:36px;border-radius:4px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);overflow:hidden;position:relative;}
+  /* 44px/2px de radius — mesma miniatura do swatch de cor do Catálogo (.pw-swatch), pra manter
+     consistência do tamanho de foto de produto no app inteiro (set/2026). */
+  .thumbrow .thumb{width:44px;height:44px;border-radius:2px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);overflow:hidden;position:relative;}
 
   .pedrow{display:flex;align-items:center;gap:14px;background:var(--surface-2);border:1px solid var(--border-soft);border-radius:5px;padding:10px 13px;margin-top:8px;}
   .pedrow.pending{background:var(--info-dim);border:1px dashed var(--info);}
@@ -566,7 +568,8 @@
 
   .order-drawer .suggest-title{font-size:11px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--text-tertiary);margin-top:22px;margin-bottom:10px;}
   .order-drawer .suggest-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:9px 10px;margin-top:8px;}
-  .order-drawer .sg-thumb{width:38px;height:38px;border-radius:4px;background:var(--surface-2);border:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
+  /* 44px/2px de radius — mesma miniatura do swatch de cor do Catálogo (.pw-swatch). */
+  .order-drawer .sg-thumb{width:44px;height:44px;border-radius:2px;background:var(--surface-2);border:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
   .order-drawer .sg-info{flex:1;min-width:0;}
   .order-drawer .sg-name{font-size:12px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .order-drawer .sg-meta{font-size:11px;color:var(--text-tertiary);margin-top:1px;}
@@ -653,7 +656,8 @@
 
   .sidebar-itemlist{margin-top:16px;display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;}
   .sidebar-item{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:8px 10px;}
-  .sidebar-item .si-thumb{width:34px;height:34px;border-radius:3px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+  /* 44px/2px de radius — mesma miniatura do swatch de cor do Catálogo (.pw-swatch). */
+  .sidebar-item .si-thumb{width:44px;height:44px;border-radius:2px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
   .sidebar-item .si-info{flex:1;min-width:0;}
   .sidebar-item .si-name{font-size:12px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .sidebar-item .si-meta{font-size:10.5px;color:var(--text-tertiary);font-family:var(--mono);margin-top:1px;}
