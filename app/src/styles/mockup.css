@@ -609,7 +609,11 @@
   .pw-swatch-track::-webkit-scrollbar{display:none;}
   .pw-swatch-arrow{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--surface);border:1px solid var(--border-strong);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;}
   .pw-swatch-arrow:hover{background:var(--surface-2);color:var(--text-primary);}
-  .pw-swatch{width:44px;height:44px;border-radius:5px;border:1.5px solid var(--border);background:var(--surface);padding:2px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;transition:border-color .12s ease;}
+  /* border-radius baixo de propósito (era 5px) — a foto é bem mais larga que alta e encosta nas
+     bordas esquerda/direita quase sem margem (ver guia-dev-frontend.md), então um canto muito
+     arredondado corta visualmente a ponta/calcanhar do tênis. 2px praticamente elimina essa área
+     de corte sem precisar aumentar padding nem mudar a proporção do box (44x44 continua igual). */
+  .pw-swatch{width:44px;height:44px;border-radius:2px;border:1.5px solid var(--border);background:var(--surface);padding:2px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;transition:border-color .12s ease;}
   .pw-swatch:hover{border-color:var(--border-strong);}
   .pw-swatch.active{border-color:var(--black);border-width:2px;padding:1.5px;}
   .pw-swatch img{width:100%;height:100%;object-fit:contain;}
