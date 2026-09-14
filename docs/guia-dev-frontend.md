@@ -470,6 +470,16 @@ Decidido via esboço de artifact comparando duas opções ("Grade em folha" com 
 
 **`OrderDrawer.tsx`**: cada linha com `cartItemSizes[product.id]` definido ganha um link "Editar grade" (mesmo estilo de link pequeno colorido já usado em outros lugares do app) que navega pra `/catalogo/:id` — a Ficha de Decisão do produto, já pré-preenchida. Link some sozinho se o stepper genérico for usado (a numeração deixou de ser válida).
 
+## Card de produto: faixa de cores em carrossel, só no hover (set/2026)
+
+Pedido do usuário: linhas com muitas cores (COIL tem 10, FLOW XL tem 9 — ver `data.ts`) quebravam a faixa de miniaturas em 2-3 linhas dentro do card (`.pw-swatchrow` original tinha `flex-wrap:wrap`), deixando os cards de altura inconsistente no grid. Pedido: sempre uma linha só (carrossel quando não couber tudo) + a faixa de fotos só aparece no hover do card, sumindo ao tirar o mouse.
+
+**`ProductLineCard.tsx`** (único componente com seletor de cor — os cards de contexto/benchmark em `Catalog.tsx` não têm):
+- A faixa de swatches saiu de dentro do `.pw-body` (fluxo normal do card) e virou overlay absoluto ancorado em `.pw-thumb` (a área da foto, já `position:relative`, altura fixa 180px). Isso é o que resolve os dois pedidos ao mesmo tempo: (1) escondida por padrão (`opacity:0`) e revelada só com `.pcard-web:hover .pw-swatch-overlay{opacity:1}` — puramente CSS, sem JS de show/hide; (2) por estar em overlay (não empurra layout), o card **nunca muda de altura** entre hover e normal — importante porque `.catgrid-web` é CSS Grid, que estica a fileira inteira pro item mais alto, então um card crescendo no hover bagunçaria os vizinhos da mesma fileira.
+- Carrossel: scroll horizontal nativo dentro de `.pw-swatch-track` (`overflow-x:auto`, barra de scroll escondida via `scrollbar-width:none`), com dois botões de seta (`.pw-swatch-arrow`) chamando `trackRef.current.scrollBy({left: ±108, behavior:'smooth'})`. Sem lib de carrossel nova.
+- **As setas só aparecem quando há overflow de verdade** — medido (`el.scrollWidth > el.clientWidth`), não por um número fixo de cores. Tentativa inicial foi um limite chutado (`colors.length > 7`), mas a largura real do card varia com o viewport (num grid de 3 colunas a 1440px, até 10 cores cabem numa linha só sem cortar — só overflow de verdade num viewport mais estreito, tipo 1024px) — um número fixo geraria setas mortas (não overflow) ou faltando (overflow sem setas) dependendo da largura da tela. `useEffect` mede `trackRef` no mount e num listener de `resize`; funciona porque o overlay começa com `opacity:0`, não `display:none` — elemento invisível ainda tem dimensão real pra medir.
+- `.pw-colorway` (nome da cor selecionada, abaixo do preço) continua sempre visível — o lojista não perde a informação de qual cor está vendo só porque a faixa de miniaturas está escondida.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
