@@ -481,6 +481,16 @@ Pedido do usuário: linhas com muitas cores (COIL tem 10, FLOW XL tem 9 — ver 
 
 **Posição — testada, revertida**: por um tempo, a faixa saiu do overlay sobre a foto e foi pro corpo do card, logo acima do botão "Adicionar ao carrinho" (`.pw-swatchrow-inline`/`.pw-swatch-content`, altura sempre reservada pra não mudar a altura do card no hover). Essa versão teve um bug real: `height:30px` + `padding-top:11px` com `box-sizing:border-box` deixava só 19px pro conteúdo, e o `.pw-swatch` de 30px vazava por cima do botão — corrigido na hora (`height:40px` incluindo padding+borda). Mesmo corrigido, o usuário decidiu voltar pra versão original (overlay sobre a foto, descrita acima) — o card ficou "mais distribuído" foi a tentativa, mas overlay-sobre-a-foto é a versão que ficou. Guardado aqui só pra não redescobrir o mesmo bug de box-model se alguém tentar essa posição de novo no futuro.
 
+## `.pw-thumb`: 180px → 240px — resolve "card muito horizontal" e "foto cortada" (set/2026)
+
+Duas queixas do usuário que eram, na real, **a mesma causa raiz**: (1) o card do produto parecia "muito horizontal"; (2) ao trocar de cor pelo swatch, a foto do produto parecia cortada. Nenhuma das duas é bug de fato "cortando" nada — é aritmética de proporção.
+
+As fotos reais (`public/products/*.jpg`) são todas 900×520px (proporção ~1,73:1). `.pw-thumb` tinha `height:180px` — com o card em ~424px de largura (grid de 3 colunas a 1440px), a caixa da foto ficava em ~2,36:1, **mais larga que a própria foto**. Com `object-fit:contain`, o navegador encaixa pela dimensão mais "apertada" pra caber tudo sem cortar — aqui, a altura. Resultado: a imagem preenche 100% dos 180px de altura (sem gap vertical nenhum, tocando topo e base da caixa), com letterbox só nas laterais. Nada é clipado de verdade (`overflow` nunca entra em jogo, é só a matemática do `contain`), mas visualmente o tênis fica "grudado" nas bordas de cima/baixo, sem a margem que a foto tem quando vista sozinha — e como a foto domina a maior parte do card, isso também é o que fazia o card inteiro parecer mais horizontal do que vertical.
+
+**Diagnóstico**, não achismo: confirmado medindo `getBoundingClientRect()`/`getComputedStyle()` do `<img>` (objectFit realmente `contain`, caixa da img batendo exatamente com `.pw-thumb`) e comparando visualmente a foto renderizada dentro do card com a foto crua servida direto pela URL (`/products/1901-06.jpg`) — a foto crua tem margem generosa em volta do tênis, a versão "espremida" em 180px de altura não.
+
+**Fix**: `.pcard-web .pw-thumb{height:240px}` — mais perto da proporção real das fotos (~1,77:1 numa caixa de 424×240, contra 1,73:1 da foto), devolvendo a margem vertical E deixando o card como um todo menos esticado horizontalmente. Resolve as duas queixas com uma mudança só, porque eram a mesma causa.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

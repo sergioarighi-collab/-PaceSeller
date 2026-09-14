@@ -578,7 +578,14 @@
   .catgrid-web{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:20px;background:var(--surface-2);padding:20px;border-radius:8px;}
   .pcard-web{background:var(--surface);border:none;border-radius:6px;overflow:hidden;position:relative;display:flex;flex-direction:column;transition:transform .15s ease,box-shadow .15s ease;}
   .pcard-web:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(20,20,22,0.1);}
-  .pcard-web .pw-thumb{height:180px;background:var(--surface);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;}
+  /* 240px (era 180px, set/2026) — as fotos reais são ~900x520 (proporção ~1,73:1), mas a 180px
+     de altura contra ~424px de largura do card a caixa ficava em ~2,36:1: bem mais larga que a
+     foto. Com object-fit:contain isso força o encaixe pela altura (a dimensão mais apertada),
+     então a imagem tocava a borda de cima/baixo sem margem nenhuma — dava sensação de corte sem
+     cortar de fato (nada é clipado, é só a foto preenchendo 100% da altura disponível). 240px
+     deixa a proporção da caixa mais perto da foto (~1,77:1), devolvendo a margem vertical, e de
+     quebra deixa o card como um todo menos "esticado" horizontalmente (outro pedido do usuário). */
+  .pcard-web .pw-thumb{height:240px;background:var(--surface);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;}
   .pcard-web .pw-instock{position:absolute;top:12px;left:12px;background:var(--black);color:#fff;font-family:var(--mono);font-size:9.5px;text-transform:uppercase;padding:4px 8px;border-radius:3px;}
   .pcard-web .pw-body{padding:16px;display:flex;flex-direction:column;flex:1;}
   .pcard-web .pw-name{font-family:var(--display);font-size:15.5px;font-weight:700;color:var(--text-primary);}
