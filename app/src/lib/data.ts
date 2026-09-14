@@ -246,6 +246,17 @@ const raw: RawProduct[] = [
   { sku: '1901-66', colorway: 'Denim', collection: 'COIL', growthPct: 31, restockDays: 26, marginPct: 45, premium: true },
   { sku: '1901-67', colorway: 'Black White', collection: 'COIL', growthPct: 16, restockDays: 36, marginPct: 40, priceFactory: 310, pricePdv: 510 },
   { sku: '1901-68', colorway: 'Off White', collection: 'COIL', growthPct: 8, restockDays: 34, marginPct: 39 },
+  // 1901-71 a 1901-76: numerações extras só pra ter uma linha com cores demais pra caber numa
+  // linha só (exercita o carrossel de verdade em qualquer largura de tela, não só num viewport
+  // estreito) — fotos reaproveitadas das 6 primeiras (mesmo arquivo .jpg duplicado sob SKU novo,
+  // não é foto real da cor). Trocar pelas fotos de verdade quando o catálogo real tiver mais
+  // colorways de COIL do que as 10 originais.
+  { sku: '1901-71', colorway: 'Sand', collection: 'COIL', growthPct: 6, restockDays: 42, marginPct: 39 },
+  { sku: '1901-72', colorway: 'Olive', collection: 'COIL', growthPct: 13, restockDays: 37, marginPct: 40 },
+  { sku: '1901-73', colorway: 'Navy', collection: 'COIL', growthPct: 19, restockDays: 33, marginPct: 41 },
+  { sku: '1901-74', colorway: 'Burgundy', collection: 'COIL', growthPct: 10, restockDays: 39, marginPct: 40 },
+  { sku: '1901-75', colorway: 'Charcoal', collection: 'COIL', growthPct: 24, restockDays: 31, marginPct: 42 },
+  { sku: '1901-76', colorway: 'Ice Blue', collection: 'COIL', growthPct: 15, restockDays: 36, marginPct: 40 },
   // HERTZ — 2101
   { sku: '2101-02', colorway: 'Black Reflect', collection: 'HERTZ', growthPct: 12, restockDays: 48, marginPct: 37 },
   { sku: '2101-16', colorway: 'All White', collection: 'HERTZ', growthPct: 6, restockDays: 44, marginPct: 36 },

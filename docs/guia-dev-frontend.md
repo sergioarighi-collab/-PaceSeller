@@ -491,7 +491,12 @@ As fotos reais (`public/products/*.jpg`) são todas 900×520px (proporção ~1,7
 
 **Fix**: `.pcard-web .pw-thumb{height:240px}` — mais perto da proporção real das fotos (~1,77:1 numa caixa de 424×240, contra 1,73:1 da foto), devolvendo a margem vertical E deixando o card como um todo menos esticado horizontalmente. Resolve as duas queixas com uma mudança só, porque eram a mesma causa.
 
-## Regras de negócio confirmadas (não são chute)
+## Carrossel de cores: dado de teste real + swatch maior (set/2026)
+
+Problema prático: nenhuma linha do catálogo mock overflowava o suficiente pra mostrar as setas do carrossel num viewport normal (1440px) — só forçando a janela mais estreita (~1024px) dava pra ver o carrossel funcionando de verdade (ver seção acima). Pedido do usuário: criar um card com cores demais de propósito, só pra poder testar/mostrar o carrossel sem precisar apertar a janela — e, já que ia mexer nisso, aproveitar pra aumentar um pouco (~15%) o tamanho dos swatches, que estavam pequenos demais pra dar pra reconhecer o tênis.
+
+- **`data.ts`**: linha COIL ganhou 6 SKUs extras (`1901-71` a `1901-76`, colorways Sand/Olive/Navy/Burgundy/Charcoal/Ice Blue), passando de 10 pra 16 cores — força overflow real em qualquer largura de tela razoável. **As fotos desses 6 SKUs são cópias dos arquivos das 6 primeiras cores** (`public/products/1901-06.jpg` → `1901-71.jpg` etc.) — não são fotos de verdade da cor nova, é só pra exercitar o componente. Comentário no código sinaliza isso pra trocar pelas fotos reais quando o catálogo tiver colorways de COIL de verdade além das 10 originais.
+- **`.pw-swatch`**: `30px` → `35px` (+15%, valor pedido pelo usuário). `ProductThumb` dentro do swatch (`iconSize`) foi de 13 pra 15 junto, mantendo a proporção do ícone de fallback (SVG de tênis genérico, usado só se a foto falhar em carregar).
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
 - Preço fábrica/PDV, grade mínima de 36 pares, referência de produto (formato Linha-Ano-Lançamento-Cor), prazo de ~15 dias: todos confirmados em reunião real com o cliente — ver `docs/cruzamento-reuniao-cliente.md`.

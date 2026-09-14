@@ -95,7 +95,7 @@ export function ProductLineCard({
                     setSelectedIdx(i)
                   }}
                 >
-                  <ProductThumb src={c.image} alt={c.colorway} iconSize={13} padding={2} />
+                  <ProductThumb src={c.image} alt={c.colorway} iconSize={15} padding={2} />
                   {c.id === bestSellerId && (
                     <span className="pw-swatch-star">
                       <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
