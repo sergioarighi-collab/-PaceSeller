@@ -5,7 +5,7 @@ import { useAppStore } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
 import { ProductThumb } from './ProductThumb'
 
-const SWATCH_SCROLL_STEP = 138 // ~3 swatches (40px + 6px de gap cada)
+const SWATCH_SCROLL_STEP = 150 // ~3 swatches (44px + 6px de gap cada)
 
 const badgeToneClass: Record<Severity, string> = {
   positive: 'pos',
@@ -33,12 +33,24 @@ export function ProductLineCard({
   )
   const [selectedIdx, setSelectedIdx] = useState(initialIdx)
   const trackRef = useRef<HTMLDivElement>(null)
+  const activeSwatchRef = useRef<HTMLDivElement>(null)
   // Setas de carrossel só aparecem quando a faixa de cores realmente não cabe inteira — medido de
   // verdade (scrollWidth > clientWidth), não um número fixo de cores: a largura do card muda
   // com o viewport, então um limite chutado (ex: "acima de 7 cores") ou fica arrow morta quando
   // cabe tudo, ou deixa de aparecer quando devia. .pw-swatch-overlay começa com opacity:0 (não
   // display:none), então dá pra medir mesmo sem o card estar em hover.
   const [hasOverflow, setHasOverflow] = useState(false)
+  // Garante que o swatch selecionado sempre fique inteiro visível na faixa, nunca cortado na
+  // borda do scroll — sem isso, a cor selecionada por padrão podia cair bem no limite da área
+  // visível (scrollLeft inicial é sempre 0) e aparecer com a foto cortada pela metade, mesmo sem
+  // nenhum bug de proporção envolvido (era só a faixa nunca rolar até o item ativo). Depende
+  // também de hasOverflow: quando as setas aparecem/somem, a largura útil do track muda (elas
+  // roubam espaço dele), então o scroll precisa ser recalculado — sem isso, o item podia ficar
+  // visível na 1ª renderização (sem overflow detectado ainda) e cortado um instante depois,
+  // quando as setas apareciam e encolhiam o track.
+  useEffect(() => {
+    activeSwatchRef.current?.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' })
+  }, [selectedIdx, hasOverflow])
   useEffect(() => {
     function checkOverflow() {
       const el = trackRef.current
@@ -88,6 +100,7 @@ export function ProductLineCard({
               {colors.map((c, i) => (
                 <div
                   key={c.id}
+                  ref={i === selectedIdx ? activeSwatchRef : undefined}
                   className={`pw-swatch ${i === selectedIdx ? 'active' : ''}`}
                   title={c.id === bestSellerId ? `${c.colorway} — mais vendida da linha` : c.colorway}
                   onClick={(e) => {
@@ -95,7 +108,7 @@ export function ProductLineCard({
                     setSelectedIdx(i)
                   }}
                 >
-                  <ProductThumb src={c.image} alt={c.colorway} iconSize={17} padding={2} />
+                  <ProductThumb src={c.image} alt={c.colorway} iconSize={19} padding={2} />
                   {c.id === bestSellerId && (
                     <span className="pw-swatch-star">
                       <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
