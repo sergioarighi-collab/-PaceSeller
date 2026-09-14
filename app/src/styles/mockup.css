@@ -590,21 +590,14 @@
   .pw-priceblock .pw-pdvlabel{font-family:var(--mono);font-size:11px;color:var(--text-secondary);}
   .pw-priceblock .pw-margintag{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--positive);background:var(--positive-dim);padding:2px 7px;border-radius:4px;white-space:nowrap;}
   .pcard-web .pw-badgerow{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;}
-  /* Faixa de cores acima do botão "Adicionar ao carrinho" (set/2026) — no fluxo normal do
-     .pw-body, não sobreposta à foto (posição anterior). Altura sempre reservada, então o card
-     nunca muda de altura entre hover/normal mesmo com o conteúdo (.pw-swatch-content) escondendo/
-     aparecendo via opacity no hover do card — importante porque CSS Grid estica a fileira inteira
-     pro item mais alto, então uma mudança de altura no hover bagunçaria os cards vizinhos.
-     Cuidado de box-model: com border-box, height do .pw-swatchrow-inline já INCLUI padding-top +
-     border — por isso é 40px (9 padding + 1 borda + 30 de sobra pro conteúdo), não 30px "limpo"
-     (bug real: com height:30px o padding comia parte da caixa, sobrando menos de 30px pro
-     .pw-swatch de 30px, que vazava por cima do botão). .pw-swatch-content tem height:30px
-     explícito (não 100%) por causa disso. Nunca quebra linha: scroll horizontal nativo (sem lib
-     de carrossel nova), com setas só quando a faixa não cabe inteira (hasOverflow, medido de
-     verdade via JS, não um número fixo de cores). */
-  .pw-swatchrow-inline{height:40px;margin-top:11px;padding-top:9px;border-top:1px solid var(--border);}
-  .pw-swatch-content{display:flex;align-items:center;gap:5px;height:30px;opacity:0;transform:translateY(4px);pointer-events:none;transition:opacity .15s ease,transform .15s ease;}
-  .pcard-web:hover .pw-swatch-content{opacity:1;transform:translateY(0);pointer-events:auto;}
+  /* Faixa de cores em overlay (set/2026) — sobreposta à foto (position:absolute, ancorada em
+     .pw-thumb que já é position:relative), não no fluxo do .pw-body. Some por padrão, só aparece
+     no hover do card (.pcard-web:hover) — assim o card nunca muda de altura entre os dois estados,
+     o que evitaria puxar a fileira inteira do grid junto (CSS Grid estica a fileira pro maior
+     item). Nunca quebra linha: scroll horizontal nativo por baixo (sem lib de carrossel nova),
+     com setas só quando a linha tem cores demais pra caber (SWATCH_CAROUSEL_THRESHOLD). */
+  .pw-swatch-overlay{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:5px;padding:8px;background:var(--surface);border-top:1px solid var(--border);opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .15s ease,transform .15s ease;}
+  .pcard-web:hover .pw-swatch-overlay{opacity:1;transform:translateY(0);pointer-events:auto;}
   .pw-swatch-track{display:flex;gap:6px;flex:1;min-width:0;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;}
   .pw-swatch-track::-webkit-scrollbar{display:none;}
   .pw-swatch-arrow{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--surface);border:1px solid var(--border-strong);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;}
