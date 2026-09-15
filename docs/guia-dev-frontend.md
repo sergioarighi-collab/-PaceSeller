@@ -508,6 +508,10 @@ Pedido do usuário: depois de ajustar tamanho/proporção/`border-radius` da min
 
 Levantamento de todo lugar com `<ProductThumb>` numa miniatura pequena (fora do produto principal da Ficha de Decisão, que é grande de propósito, e dos cards de combo do Catálogo, que também são maiores/secundários, não miniaturas de linha): eram **3 tamanhos diferentes** antes desse ajuste — `.si-thumb` (linha do drawer, 34px), `.sg-thumb` (sugestões do drawer, 38px), `.thumbrow .thumb` (preview de carrinho em `MeusCarrinhos.tsx`, 36px) — cada um com seu próprio `border-radius` (3px/4px/4px) também. Todos padronizados pra **44px, `border-radius:2px`**, igual ao `.pw-swatch` do Catálogo. `iconSize`/`padding` do `ProductThumb` interno também padronizados pra `19`/`2` (mesmos valores do swatch) nos 4 lugares (`OrderDrawer.tsx` linhas do carrinho + combos + sugestões, `MeusCarrinhos.tsx` preview por carrinho).
 
+## Remove "Criar novo pedido neste carrinho" do CarrinhoDetail (set/2026)
+
+Pedido do usuário: não precisa desse botão dentro do `CarrinhoDetail.tsx` — o `.newordergroup` ("Criar novo pedido neste carrinho", entre a lista de pedidos e o "Antes de fechar") foi removido. `shopMoreForThisCarrinho()` (a função que ele chamava — seta o carrinho ativo e navega pro Catálogo) continua existindo e em uso por outros dois pontos que **não** foram tocados, por serem conceitualmente diferentes de "criar pedido novo": o link "Continuar comprando" da sidebar e o "+ Adicionar N itens" do checklist "Antes de fechar" (que resolve uma lacuna do mix, não abre um pedido novo). `.newordergroup` removida do `mockup.css` por ter ficado sem nenhum uso.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
