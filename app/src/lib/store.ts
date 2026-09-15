@@ -302,7 +302,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (editing) {
       const carrinhos = s.carrinhos.map((c) => {
         if (c.id !== editing.carrinhoId) return c
-        const nextStatus = c.autoSendOnGradeMinima && c.pedido.status === 'rascunho' && totalItems >= GRADE_MINIMA_PARES ? 'aguardando' : c.pedido.status
+        // Editar um pedido que já foi enviado pra aprovação ("aguardando" sem ser sugestão da
+        // Ana) reabre a aprovação: volta pra rascunho, porque o conteúdo que ela estava avaliando
+        // mudou (ver ConfirmModal em CarrinhoDetail/MeusCarrinhos, que avisa isso antes de deixar
+        // editar). Sugestão da Ana (`suggestedBy === 'representante'`) não entra aqui — hoje não
+        // tem CTA de editar pra esse caso (o lojista revisa/aprova, não edita direto).
+        const baseStatus = c.pedido.status === 'aguardando' && !c.pedido.suggestedBy ? 'rascunho' : c.pedido.status
+        const nextStatus = c.autoSendOnGradeMinima && baseStatus === 'rascunho' && totalItems >= GRADE_MINIMA_PARES ? 'aguardando' : baseStatus
         return {
           ...c,
           updatedAt: 'agora',

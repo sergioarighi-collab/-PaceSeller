@@ -4,6 +4,7 @@ import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { Toast } from '../../components/desktop/Toast'
+import { ConfirmModal } from '../../components/desktop/ConfirmModal'
 import { products, samePeriodLastYearQty } from '../../lib/data'
 import { useAppStore, pedidoActionKind, pedidoPares, pedidoStatusBadge } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
@@ -34,6 +35,14 @@ export function CarrinhoDetail() {
   }
 
   const [savedToast, setSavedToast] = useState(false)
+  // "Editar no drawer" num pedido "Aguardando Ana" reabre a aprovação (ver commitCartToCarrinho em
+  // store.ts) — avisa antes de deixar entrar, em vez de simplesmente voltar o status sem avisar.
+  const [confirmEditAguardando, setConfirmEditAguardando] = useState(false)
+
+  function handleEditarNoDrawer() {
+    if (pedido.status === 'aguardando') setConfirmEditAguardando(true)
+    else startEditPedido(cart.id, pedido.id)
+  }
 
   const pares = pedidoPares(pedido)
   const gradeOk = pares >= GRADE_MINIMA_PARES
@@ -98,7 +107,7 @@ export function CarrinhoDetail() {
                 {pedidoActionKind(pedido) === 'editar' && (
                   <span
                     style={{ fontSize: 11.5, color: 'var(--info)', fontWeight: 500, cursor: 'pointer' }}
-                    onClick={() => startEditPedido(cart.id, pedido.id)}
+                    onClick={handleEditarNoDrawer}
                   >
                     Editar no drawer
                   </span>
@@ -272,6 +281,19 @@ export function CarrinhoDetail() {
 
       {savedToast && (
         <Toast title="Carrinho salvo como rascunho" sub={`${cart.name} continua aberto — volte quando quiser`} onClose={() => setSavedToast(false)} />
+      )}
+
+      {confirmEditAguardando && (
+        <ConfirmModal
+          title="Editar pedido aguardando aprovação"
+          message={`Esse pedido está aguardando aprovação de ${cart.representative}. Editar agora volta ele pra rascunho — você vai precisar enviar de novo depois de ajustar.`}
+          confirmLabel="Editar mesmo assim"
+          onCancel={() => setConfirmEditAguardando(false)}
+          onConfirm={() => {
+            setConfirmEditAguardando(false)
+            startEditPedido(cart.id, pedido.id)
+          }}
+        />
       )}
     </DesktopPage>
   )
