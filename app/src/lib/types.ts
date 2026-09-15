@@ -77,6 +77,15 @@ export const GRADE_MINIMA_PARES = 36
 export type PaymentCondition = '30' | '60' | '90' | 'a-vista'
 export type PaymentMethod = 'pix' | 'cartao' | 'boleto'
 
+// Fatia do valor do pedido alocada numa forma de pagamento — o lojista pode dividir entre PIX,
+// cartão e boleto na mesma compra em vez de escolher uma única forma exclusiva (decisão de
+// set/2026, ver docs/guia-dev-frontend.md: "1 pedido por carrinho + split de pagamento"). A soma
+// de `amount` de todas as entradas precisa bater com `Pedido.total` pra confirmar o pedido.
+export interface PaymentAllocation {
+  method: PaymentMethod
+  amount: number
+}
+
 export interface PedidoItem {
   productId: string
   name: string
@@ -100,7 +109,10 @@ export interface Pedido {
   total: number
   marginPct: number
   paymentCondition?: PaymentCondition
-  paymentMethod?: PaymentMethod
+  /** Divisão do valor total entre formas de pagamento (PIX/cartão/boleto) — ausente enquanto o
+   * lojista não fechou o pagamento (ver Payment.tsx). Substituiu o antigo `paymentMethod` único:
+   * ver nota de decisão em guia-dev-frontend.md sobre split de pagamento. */
+  paymentSplit?: PaymentAllocation[]
   deliveryEstimateDays: number
   // Presente quando o pedido nasceu do lado do representante ("Montar Pedido Sugerido", validado
   // em reunião com o cliente) em vez do lojista — hoje só simulado do lado do lojista, não existe
@@ -117,7 +129,13 @@ export interface Carrinho {
   // (aviso de expiração de rascunho); os dois precisam ser atualizados juntos.
   updatedAt: string
   daysSinceActivity: number
-  pedidos: Pedido[]
+  // Um carrinho = um pedido (decisão de set/2026, ver guia-dev-frontend.md). Antes um carrinho
+  // podia acumular vários Pedidos com prazos/condições diferentes ("Meus Carrinhos 2.0"); isso foi
+  // simplificado porque, na prática, o motivo de existir mais de um pedido no mesmo carrinho era
+  // pagar partes dele de formas diferentes — o que agora é resolvido por `Pedido.paymentSplit`
+  // dentro de um único pedido. Multi-pedido por carrinho pode voltar a ser necessário dependendo de
+  // regra de negócio futura; a implementação antiga fica preservada no histórico do git.
+  pedido: Pedido
   // Toggle de permissão do lojista — simulado: não existe desktop do representante pra aplicar
   // essa permissão de verdade ainda, é só o que aparece do lado do lojista (ver guia-dev-frontend.md).
   repCanEdit: boolean

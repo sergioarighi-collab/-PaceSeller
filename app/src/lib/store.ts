@@ -94,32 +94,28 @@ interface AppState {
    * pra modo auto-close — só "estende" um peek que já estava rolando. */
   peekOrderDrawer: () => void
 
-  /** Carrinhos de verdade (Meus Carrinhos) — cada um com N pedidos. Mutável: cresce quando o
-   * lojista fecha o pedido em montagem no drawer (ver commitCartToCarrinho). */
+  /** Carrinhos de verdade (Meus Carrinhos) — cada um com 1 pedido (ver `Carrinho.pedido`). Mutável:
+   * o pedido cresce quando o lojista fecha o pedido em montagem no drawer (ver commitCartToCarrinho). */
   carrinhos: Carrinho[]
   /**
    * Em qual carrinho o próximo "Adicionar ao carrinho" do drawer entra, sem perguntar — `null`
-   * cria um carrinho novo. Setado por "Criar novo pedido neste carrinho"/"+ Adicionar itens"/
-   * "Continuar comprando" dentro de um carrinho específico (aponta pra ele) e limpo por
-   * "+ Novo carrinho" (força criar um novo). O drawer não interrompe o lojista pra perguntar
-   * isso — se o padrão errar, dá pra mover o pedido depois (`movePedidoToCarrinho`).
+   * cria um carrinho novo. Setado por "+ Adicionar itens"/"Continuar comprando" dentro de um
+   * carrinho específico (aponta pra ele) e limpo por "+ Novo carrinho" (força criar um novo). O
+   * drawer não interrompe o lojista pra perguntar isso — se o padrão errar, ainda dá pra trocar
+   * manualmente no "trocar" do rótulo "Vai para" antes de confirmar.
    */
   activeCarrinhoId: string | null
   setActiveCarrinho: (id: string | null) => void
   /**
-   * Converte o `cartItems` atual (o pedido que o lojista está montando) num `Pedido` de verdade
-   * dentro do carrinho escolhido, e limpa o `cartItems` pra começar o próximo pedido do zero.
-   * `carrinhoId: null` cria um carrinho novo. Retorna o id do carrinho de destino, ou `null` se
-   * não havia nenhum item pra enviar (não faz sentido commitar um pedido vazio).
+   * Converte o `cartItems` atual (o pedido que o lojista está montando) no `Pedido` do carrinho
+   * escolhido, e limpa o `cartItems` pra começar o próximo do zero. `carrinhoId: null` cria um
+   * carrinho novo (com o pedido já dentro). Se o carrinho de destino já tem um pedido em aberto
+   * (`status !== 'pago'`), os itens novos são somados a esse pedido em vez de criar um segundo —
+   * um carrinho só comporta 1 pedido (ver `Carrinho.pedido`). Se o pedido existente já foi pago,
+   * abre um carrinho novo em vez de reabrir um histórico fechado. Retorna o id do carrinho de
+   * destino, ou `null` se não havia nenhum item pra enviar.
    */
   commitCartToCarrinho: (targetCarrinhoId: string | null) => string | null
-  /**
-   * Move um `Pedido` já existente de um carrinho pra outro (ou pra um carrinho novo, se
-   * `targetCarrinhoId` for `null`) — a correção pontual pro caso do pedido ter caído no
-   * carrinho errado. Retorna o id do carrinho de destino, ou `null` se o pedido não existe ou
-   * o destino já é o próprio carrinho de origem (nada a mover).
-   */
-  movePedidoToCarrinho: (fromCarrinhoId: string, pedidoId: string, targetCarrinhoId: string | null) => string | null
 
   /**
    * Pedido em edição (aberto de volta no drawer) — `null` quando o drawer está montando um
@@ -299,34 +295,65 @@ export const useAppStore = create<AppState>((set, get) => ({
       comboLines.reduce((sum, { cp }) => sum + (cp.p1.pricePdv + cp.p2.pricePdv) * COMBO_PARES_PER_PRODUCT, 0)
     const marginPct = pdvTotal > 0 ? Math.round(((pdvTotal - totalValue) / pdvTotal) * 100) : 0
 
-    // Editando um Pedido existente: atualiza os itens/valores dele no lugar, mantendo id/label/
-    // condição de pagamento — não cria um Pedido novo nem mexe no carrinho de destino escolhido
-    // no drawer (edição sempre volta pro carrinho onde o pedido já estava).
+    // Editando o Pedido existente: atualiza os itens/valores dele no lugar, mantendo id/label/
+    // condição de pagamento — não cria um Pedido novo (edição sempre volta pro carrinho onde o
+    // pedido já estava).
     const editing = s.editingPedido
     if (editing) {
       const carrinhos = s.carrinhos.map((c) => {
         if (c.id !== editing.carrinhoId) return c
+        const nextStatus = c.autoSendOnGradeMinima && c.pedido.status === 'rascunho' && totalItems >= GRADE_MINIMA_PARES ? 'aguardando' : c.pedido.status
         return {
           ...c,
           updatedAt: 'agora',
           daysSinceActivity: 0,
-          pedidos: c.pedidos.map((p) => {
-            if (p.id !== editing.pedidoId) return p
-            const nextStatus = c.autoSendOnGradeMinima && p.status === 'rascunho' && totalItems >= GRADE_MINIMA_PARES ? 'aguardando' : p.status
-            return { ...p, items: allItems, subtotal: totalValue, total: totalValue - p.discount, marginPct, status: nextStatus }
-          }),
+          pedido: { ...c.pedido, items: allItems, subtotal: totalValue, total: totalValue - c.pedido.discount, marginPct, status: nextStatus },
         }
       })
       set({ carrinhos, cartItems: {}, cartCombos: {}, cartItemSizes: {}, editingPedido: null })
       return editing.carrinhoId
     }
 
-    const { carrinhos: base, carrinho } = getOrCreateCarrinho(s.carrinhos, targetCarrinhoId)
-    const status = carrinho.autoSendOnGradeMinima && totalItems >= GRADE_MINIMA_PARES ? 'aguardando' : 'rascunho'
-    const pedido: Pedido = {
-      id: `${carrinho.id}-p${carrinho.pedidos.length + 1}`,
-      label: `Pedido ${carrinho.pedidos.length + 1}`,
-      status,
+    const existing = targetCarrinhoId ? s.carrinhos.find((c) => c.id === targetCarrinhoId) : undefined
+
+    // Carrinho de destino já tem um pedido em aberto: soma os itens novos nele em vez de criar um
+    // segundo pedido (um carrinho só comporta 1 — ver Carrinho.pedido). Pedido já pago é histórico
+    // fechado, não recebe itens novos; nesse caso cai pro branch abaixo e abre um carrinho novo.
+    if (existing && existing.pedido.status !== 'pago') {
+      const mergedItems = mergePedidoItems(existing.pedido.items, allItems)
+      const mergedSubtotal = existing.pedido.subtotal + totalValue
+      const mergedMarginPct =
+        mergedSubtotal > 0 ? Math.round((existing.pedido.marginPct * existing.pedido.subtotal + marginPct * totalValue) / mergedSubtotal) : marginPct
+      const mergedPares = mergedItems.reduce((sum, i) => sum + i.qty, 0)
+      const nextStatus =
+        existing.autoSendOnGradeMinima && existing.pedido.status === 'rascunho' && mergedPares >= GRADE_MINIMA_PARES ? 'aguardando' : existing.pedido.status
+      const carrinhos = s.carrinhos.map((c) =>
+        c.id === existing.id
+          ? {
+              ...c,
+              updatedAt: 'agora',
+              daysSinceActivity: 0,
+              pedido: {
+                ...c.pedido,
+                items: mergedItems,
+                subtotal: mergedSubtotal,
+                total: mergedSubtotal - c.pedido.discount,
+                marginPct: mergedMarginPct,
+                status: nextStatus,
+              },
+            }
+          : c,
+      )
+      set({ carrinhos, cartItems: {}, cartCombos: {}, cartItemSizes: {}, activeCarrinhoId: existing.id })
+      return existing.id
+    }
+
+    // Carrinho novo nasce com autoSendOnGradeMinima desligado (só o lojista liga depois, ver
+    // permswitch em CarrinhoDetail), então o pedido sempre começa como rascunho.
+    const novoPedido: Pedido = {
+      id: `pedido-${Date.now()}`,
+      label: 'Pedido',
+      status: 'rascunho',
       items: allItems,
       subtotal: totalValue,
       discount: 0,
@@ -335,20 +362,27 @@ export const useAppStore = create<AppState>((set, get) => ({
       paymentCondition: '30',
       deliveryEstimateDays: 15,
     }
-    const carrinhoId = carrinho.id
-    const carrinhos = base.map((c) =>
-      c.id === carrinhoId ? { ...c, updatedAt: 'agora', daysSinceActivity: 0, pedidos: [...c.pedidos, pedido] } : c,
-    )
+    const novoCarrinho: Carrinho = {
+      id: `carrinho-${Date.now()}`,
+      name: `Carrinho ${s.carrinhos.length + 1}`,
+      representative: 'Ana',
+      updatedAt: 'agora',
+      daysSinceActivity: 0,
+      repCanEdit: true,
+      autoSendOnGradeMinima: false,
+      pedido: novoPedido,
+    }
+    const carrinhos = [...s.carrinhos, novoCarrinho]
 
-    set({ carrinhos, cartItems: {}, cartCombos: {}, cartItemSizes: {}, activeCarrinhoId: carrinhoId })
-    return carrinhoId
+    set({ carrinhos, cartItems: {}, cartCombos: {}, cartItemSizes: {}, activeCarrinhoId: novoCarrinho.id })
+    return novoCarrinho.id
   },
 
   startEditPedido: (carrinhoId, pedidoId) => {
     const s = get()
     const carrinho = s.carrinhos.find((c) => c.id === carrinhoId)
-    const pedido = carrinho?.pedidos.find((p) => p.id === pedidoId)
-    if (!carrinho || !pedido || pedido.status === 'pago') return
+    if (!carrinho || carrinho.pedido.id !== pedidoId || carrinho.pedido.status === 'pago') return
+    const pedido = carrinho.pedido
 
     const cartItems: Record<string, number> = {}
     const cartCombos: Record<string, number> = {}
@@ -377,46 +411,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   sendPedidoToRepresentante: (carrinhoId, pedidoId) =>
     set((s) => ({
       carrinhos: s.carrinhos.map((c) => {
-        if (c.id !== carrinhoId) return c
-        return {
-          ...c,
-          updatedAt: 'agora',
-          daysSinceActivity: 0,
-          pedidos: c.pedidos.map((p) => {
-            if (p.id !== pedidoId || p.status !== 'rascunho') return p
-            const pares = p.items.reduce((sum, i) => sum + i.qty, 0)
-            if (pares < GRADE_MINIMA_PARES) return p
-            return { ...p, status: 'aguardando' }
-          }),
-        }
+        if (c.id !== carrinhoId || c.pedido.id !== pedidoId || c.pedido.status !== 'rascunho') return c
+        const pares = c.pedido.items.reduce((sum, i) => sum + i.qty, 0)
+        if (pares < GRADE_MINIMA_PARES) return c
+        return { ...c, updatedAt: 'agora', daysSinceActivity: 0, pedido: { ...c.pedido, status: 'aguardando' } }
       }),
     })),
-
-  movePedidoToCarrinho: (fromCarrinhoId, pedidoId, targetCarrinhoId) => {
-    const s = get()
-    const fromCarrinho = s.carrinhos.find((c) => c.id === fromCarrinhoId)
-    const pedido = fromCarrinho?.pedidos.find((p) => p.id === pedidoId)
-    if (!fromCarrinho || !pedido || targetCarrinhoId === fromCarrinhoId) return null
-
-    const withoutPedido = s.carrinhos.map((c) =>
-      c.id === fromCarrinhoId ? { ...c, updatedAt: 'agora', daysSinceActivity: 0, pedidos: c.pedidos.filter((p) => p.id !== pedidoId) } : c,
-    )
-    const { carrinhos: base, carrinho: targetCarrinho } = getOrCreateCarrinho(withoutPedido, targetCarrinhoId)
-    // Renomeia id/label pro padrão do carrinho de destino — evita colidir com um pedido que já
-    // exista lá com o mesmo id, e mantém "Pedido 1, 2, 3..." em ordem dentro de cada carrinho.
-    const movedPedido: Pedido = {
-      ...pedido,
-      id: `${targetCarrinho.id}-p${targetCarrinho.pedidos.length + 1}`,
-      label: `Pedido ${targetCarrinho.pedidos.length + 1}`,
-    }
-    const targetId = targetCarrinho.id
-    const carrinhos = base.map((c) =>
-      c.id === targetId ? { ...c, updatedAt: 'agora', daysSinceActivity: 0, pedidos: [...c.pedidos, movedPedido] } : c,
-    )
-
-    set({ carrinhos, activeCarrinhoId: targetId })
-    return targetId
-  },
 
   notifications: initialNotifications,
   notifOpen: false,
@@ -425,23 +425,35 @@ export const useAppStore = create<AppState>((set, get) => ({
   markAllNotificationsRead: () => set((s) => ({ notifications: s.notifications.map((n) => ({ ...n, read: true })) })),
 }))
 
-// Acha o carrinho pelo id, ou cria um novo (nome sequencial "Carrinho N") se `targetId` for
-// `null` ou não bater com nenhum carrinho existente — compartilhado por commitCartToCarrinho e
-// movePedidoToCarrinho, os dois pontos que decidem "em qual carrinho isso entra".
-function getOrCreateCarrinho(carrinhos: Carrinho[], targetId: string | null) {
-  const existing = targetId ? carrinhos.find((c) => c.id === targetId) : undefined
-  if (existing) return { carrinhos, carrinho: existing }
-  const novo: Carrinho = {
-    id: `carrinho-${Date.now()}`,
-    name: `Carrinho ${carrinhos.length + 1}`,
-    representative: 'Ana',
-    updatedAt: 'agora',
-    daysSinceActivity: 0,
-    repCanEdit: true,
-    autoSendOnGradeMinima: false,
-    pedidos: [],
+// Soma um `sizes` (mapa numeração→qtd) da grade em folha em outro — usado quando o mesmo produto
+// já estava no pedido do carrinho e o lojista adiciona mais dele numa sessão nova do drawer.
+function mergeSizeMaps(a: Record<string, number> | undefined, b: Record<string, number> | undefined) {
+  if (!a && !b) return undefined
+  const out: Record<string, number> = { ...(a ?? {}) }
+  for (const [size, qty] of Object.entries(b ?? {})) out[size] = (out[size] ?? 0) + qty
+  return out
+}
+
+// Junta os itens de um pedido já existente no carrinho com os itens do `cartItems` que acabou de
+// ser commitado — mesmo productId soma qty/value (e a grade em folha, se houver dos dois lados);
+// productId novo só entra na lista. Usado quando "Continuar comprando"/"+ Adicionar itens" manda
+// mais coisa pro mesmo carrinho: como um carrinho só tem 1 pedido, isso vira um merge, não um
+// pedido novo (ver comitCartToCarrinho).
+function mergePedidoItems(existing: PedidoItem[], incoming: PedidoItem[]): PedidoItem[] {
+  const merged = existing.map((i) => ({ ...i }))
+  for (const inc of incoming) {
+    const found = merged.find((i) => i.productId === inc.productId)
+    if (!found) {
+      merged.push({ ...inc })
+      continue
+    }
+    const sizes = mergeSizeMaps(found.sizes, inc.sizes)
+    found.qty += inc.qty
+    found.value += inc.value
+    found.sizes = sizes
+    found.grade = sizes ? gradeLabelFromSizes(sizes) : inc.grade
   }
-  return { carrinhos: [...carrinhos, novo], carrinho: novo }
+  return merged
 }
 
 // Em qual carrinho o próximo "Adicionar ao carrinho" do drawer entra, sem perguntar — mesma regra

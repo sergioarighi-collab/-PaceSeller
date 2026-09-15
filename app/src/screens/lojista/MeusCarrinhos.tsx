@@ -12,12 +12,6 @@ import { formatBRL } from '../../lib/format'
 
 const filters = ['Todos', 'Rascunho', 'Aguardando aprovação', 'Confirmados']
 
-function aggregateStatus(pedidos: Carrinho['pedidos']) {
-  if (pedidos.every((p) => p.status === 'pago')) return 'confirmado'
-  if (pedidos.some((p) => p.status === 'aguardando')) return 'aguardando'
-  return 'rascunho'
-}
-
 const statusLabel: Record<Pedido['status'], string> = {
   rascunho: 'Rascunho',
   aguardando: 'Aguardando aprovação',
@@ -42,9 +36,9 @@ export function MeusCarrinhos() {
 
   const rows = carrinhos
     .map((c) => {
-      const status = aggregateStatus(c.pedidos)
-      const totalItems = c.pedidos.reduce((sum, p) => sum + pedidoPares(p), 0)
-      const totalValue = c.pedidos.reduce((sum, p) => sum + p.total, 0)
+      const status = c.pedido.status === 'pago' ? 'confirmado' : c.pedido.status === 'aguardando' ? 'aguardando' : 'rascunho'
+      const totalItems = pedidoPares(c.pedido)
+      const totalValue = c.pedido.total
       return { cart: c, status, totalItems, totalValue }
     })
     .filter((r) => {
@@ -63,19 +57,17 @@ export function MeusCarrinhos() {
   const draftValue = draftItemsValue + draftCombosValue
   const draftTargetId = !editingPedido && draftPares > 0 ? resolveTargetCarrinhoId(carrinhos, activeCarrinhoId) : null
 
-  const pedidosAoTodo = carrinhos.reduce((sum, c) => sum + c.pedidos.length, 0)
-  const prontosParaEnviar = carrinhos.reduce(
-    (sum, c) => sum + c.pedidos.filter((p) => p.status === 'rascunho' && pedidoPares(p) >= GRADE_MINIMA_PARES).length,
-    0,
-  )
-  const emAndamento =
-    carrinhos.reduce((sum, c) => sum + c.pedidos.filter((p) => p.status !== 'pago').reduce((s, p) => s + p.total, 0), 0) + draftValue
+  // Com 1 pedido por carrinho, "pedidos ao todo" equivale ao nº de carrinhos — mantido como KPI
+  // próprio porque o rótulo já é familiar pro lojista (ver guia-dev-frontend.md).
+  const pedidosAoTodo = carrinhos.length
+  const prontosParaEnviar = carrinhos.filter((c) => c.pedido.status === 'rascunho' && pedidoPares(c.pedido) >= GRADE_MINIMA_PARES).length
+  const emAndamento = carrinhos.filter((c) => c.pedido.status !== 'pago').reduce((sum, c) => sum + c.pedido.total, 0) + draftValue
 
   // Pedidos prontos pra enviar (rascunho + grade batida) e pedidos que a Ana montou e ainda
   // esperam revisão — as duas ações em lote que emprestam visibilidade real ao "fechar mais de um
-  // carrinho, com vários pedidos" que motivou esse redesenho.
-  const readyToSend = carrinhos.flatMap((c) => c.pedidos.filter((p) => p.status === 'rascunho' && pedidoPares(p) >= GRADE_MINIMA_PARES).map((p) => ({ c, p })))
-  const awaitingReview = carrinhos.flatMap((c) => c.pedidos.filter((p) => p.status === 'aguardando' && p.suggestedBy === 'representante').map((p) => ({ c, p })))
+  // carrinho de uma vez" que motivou esse redesenho.
+  const readyToSend = carrinhos.filter((c) => c.pedido.status === 'rascunho' && pedidoPares(c.pedido) >= GRADE_MINIMA_PARES).map((c) => ({ c, p: c.pedido }))
+  const awaitingReview = carrinhos.filter((c) => c.pedido.status === 'aguardando' && c.pedido.suggestedBy === 'representante').map((c) => ({ c, p: c.pedido }))
 
   function pedidoAction(cart: Carrinho, pedido: Pedido) {
     switch (pedidoActionKind(pedido)) {
@@ -154,7 +146,7 @@ export function MeusCarrinhos() {
                     {readyToSend.length} pedido{readyToSend.length > 1 ? 's' : ''} já bate
                     {readyToSend.length > 1 ? 'm' : ''} a grade mínima
                   </b>{' '}
-                  e {readyToSend.length > 1 ? 'estão prontos' : 'está pronto'} — {readyToSend[0].c.name}, {readyToSend[0].p.label}
+                  e {readyToSend.length > 1 ? 'estão prontos' : 'está pronto'} — {readyToSend[0].c.name}
                   {readyToSend.length > 1 ? ` e mais ${readyToSend.length - 1}` : ''}
                 </div>
                 <div className="bbtn" onClick={() => readyToSend.forEach(({ c, p }) => sendPedidoToRepresentante(c.id, p.id))}>
@@ -196,8 +188,13 @@ export function MeusCarrinhos() {
 
         <div className="cartlist" style={{ maxWidth: 900 }}>
           {rows.map(({ cart }) => {
-            const thumbIds = Array.from(new Set(cart.pedidos.flatMap((p) => p.items.map((i) => i.productId).filter((id) => products.some((pr) => pr.id === id)))))
+            const pedido = cart.pedido
+            const thumbIds = Array.from(new Set(pedido.items.map((i) => i.productId).filter((id) => products.some((pr) => pr.id === id))))
             const isDraftTarget = draftTargetId === cart.id
+            const pares = pedidoPares(pedido)
+            const gradeOk = pares >= GRADE_MINIMA_PARES
+            const gradePct = Math.min(100, Math.round((pares / GRADE_MINIMA_PARES) * 100))
+            const action = pedidoAction(cart, pedido)
 
             return (
               <div className="cart-card" key={cart.id}>
@@ -232,30 +229,22 @@ export function MeusCarrinhos() {
                   </div>
                 )}
 
-                {cart.pedidos.map((pedido) => {
-                  const pares = pedidoPares(pedido)
-                  const gradeOk = pares >= GRADE_MINIMA_PARES
-                  const gradePct = Math.min(100, Math.round((pares / GRADE_MINIMA_PARES) * 100))
-                  const action = pedidoAction(cart, pedido)
-                  return (
-                    <div className="pedrow" key={pedido.id}>
-                      <span className="plabel">{pedido.label}</span>
-                      <span className={`pstatus ${pedido.status}`}>{statusLabel[pedido.status]}</span>
-                      <div className="pgrade">
-                        <div className={`bar ${gradeOk ? 'ok' : ''}`}>
-                          <div style={{ width: `${gradePct}%` }} />
-                        </div>
-                        <span className="pgradetxt">
-                          {pares}/{GRADE_MINIMA_PARES} pares
-                        </span>
-                      </div>
-                      <span className="pval">{formatBRL(pedido.total)}</span>
-                      <span className={`pact ${action.tone === 'primary' ? 'primary' : ''}`} onClick={action.onClick}>
-                        {action.label}
-                      </span>
+                <div className="pedrow">
+                  <span className="plabel">{pedido.label}</span>
+                  <span className={`pstatus ${pedido.status}`}>{statusLabel[pedido.status]}</span>
+                  <div className="pgrade">
+                    <div className={`bar ${gradeOk ? 'ok' : ''}`}>
+                      <div style={{ width: `${gradePct}%` }} />
                     </div>
-                  )
-                })}
+                    <span className="pgradetxt">
+                      {pares}/{GRADE_MINIMA_PARES} pares
+                    </span>
+                  </div>
+                  <span className="pval">{formatBRL(pedido.total)}</span>
+                  <span className={`pact ${action.tone === 'primary' ? 'primary' : ''}`} onClick={action.onClick}>
+                    {action.label}
+                  </span>
+                </div>
 
                 {isDraftTarget && (
                   <div className="pedrow pending">
@@ -277,12 +266,12 @@ export function MeusCarrinhos() {
                   <span className={`sig ${cart.autoSendOnGradeMinima ? 'pos' : 'neutral'}`}>
                     Envio automático: {cart.autoSendOnGradeMinima ? 'ativado' : 'desativado'}
                   </span>
-                  {cart.daysSinceActivity >= EXPIRA_APOS_DIAS && cart.pedidos.some((p) => p.status !== 'pago') && (
+                  {cart.daysSinceActivity >= EXPIRA_APOS_DIAS && pedido.status !== 'pago' && (
                     <span className="sig risk">Parado há {cart.daysSinceActivity} dias — considere revisar</span>
                   )}
                 </div>
 
-                {(cart.lastComment || cart.pedidos.some((p) => p.suggestedBy === 'representante')) && (
+                {(cart.lastComment || pedido.suggestedBy === 'representante') && (
                   <div className="repbar">
                     <div className="ravatar">AN</div>
                     <div className="rtext">

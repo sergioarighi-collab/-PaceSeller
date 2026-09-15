@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAppStore, cartSummary, comboSummary, resolveTargetCarrinhoId } from '../../lib/store'
+import { useAppStore, cartSummary, comboSummary, resolveTargetCarrinhoId, pedidoPares } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { products } from '../../lib/data'
 import { ProductThumb } from './ProductThumb'
 import { WebModal } from './WebModal'
+import { GradeEditModal } from './GradeEditModal'
 
 const MIX_IDEAL_PCT = 70
 const PEEK_MS = 2200
@@ -43,12 +44,12 @@ export function OrderDrawer() {
   // pedido existente, o destino é sempre o carrinho onde ele já está (sem "trocar").
   const resolvedTargetId = editingPedido ? editingPedido.carrinhoId : resolveTargetCarrinhoId(carrinhos, activeCarrinhoId)
   const resolvedTargetName = resolvedTargetId ? carrinhos.find((c) => c.id === resolvedTargetId)?.name : null
-  const editingPedidoLabel = editingPedido
-    ? carrinhos.find((c) => c.id === editingPedido.carrinhoId)?.pedidos.find((p) => p.id === editingPedido.pedidoId)?.label
-    : null
+  const editingPedidoLabel = editingPedido ? carrinhos.find((c) => c.id === editingPedido.carrinhoId)?.pedido.label : null
 
   const [pickerOpen, setPickerOpen] = useState(false)
   const [picked, setPicked] = useState<string>(resolvedTargetId ?? NEW_CARRINHO)
+  const [editingGradeProductId, setEditingGradeProductId] = useState<string | null>(null)
+  const setCartItemSizes = useAppStore((s) => s.setCartItemSizes)
 
   // "Peek": abre sozinho a cada item adicionado (ver peekOrderDrawer no store) e some depois de
   // ~2s — a menos que o mouse esteja em cima, aí some só ~0,8s depois do mouse sair. Um drawer
@@ -219,7 +220,7 @@ export function OrderDrawer() {
                     <div
                       className="si-meta"
                       style={{ color: 'var(--info)', fontWeight: 600, cursor: 'pointer' }}
-                      onClick={() => navigate(`/catalogo/${product.id}`)}
+                      onClick={() => setEditingGradeProductId(product.id)}
                     >
                       Editar grade
                     </div>
@@ -305,7 +306,7 @@ export function OrderDrawer() {
                 <div>
                   <div className="otitle">{c.name}</div>
                   <div className="osub">
-                    {c.pedidos.length} pedido{c.pedidos.length > 1 ? 's' : ''} · Representante: {c.representative}
+                    {pedidoPares(c.pedido)} pares · Representante: {c.representative}
                   </div>
                 </div>
               </div>
@@ -328,6 +329,23 @@ export function OrderDrawer() {
           </div>
         </WebModal>
       )}
+
+      {editingGradeProductId &&
+        (() => {
+          const product = products.find((p) => p.id === editingGradeProductId)
+          if (!product) return null
+          return (
+            <GradeEditModal
+              product={product}
+              initialSizes={cartItemSizes[product.id] ?? {}}
+              onClose={() => setEditingGradeProductId(null)}
+              onSave={(sizes) => {
+                setCartItemSizes(product.id, sizes)
+                setEditingGradeProductId(null)
+              }}
+            />
+          )
+        })()}
     </>
   )
 }

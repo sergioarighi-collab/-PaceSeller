@@ -8,11 +8,10 @@ import { formatBRL } from '../../lib/format'
 
 export function Tracking() {
   const navigate = useNavigate()
-  const { cartId, pedidoId } = useParams()
+  const { cartId } = useParams()
   const carrinhos = useAppStore((s) => s.carrinhos)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
-  const pedido = cart.pedidos.find((p) => p.id === pedidoId) ?? cart.pedidos[0]
-  const outrosPedidos = cart.pedidos.filter((p) => p.id !== pedido.id)
+  const pedido = cart.pedido
   const conditionLabel = pedido.paymentCondition === 'a-vista' ? 'Boleto à vista −3%' : '30/60/90 dias'
 
   return (
@@ -73,16 +72,11 @@ export function Tracking() {
 
         <div className="web-sidebar">
           <div className="stitle">Carrinho: {cart.name.toLowerCase()}</div>
-          <div className="stotal">
-            {cart.pedidos.filter((p) => p.status === 'pago').length + 1} de {cart.pedidos.length} pedidos
-          </div>
-          <div className="ssub">{outrosPedidos.length > 0 ? `${outrosPedidos[0].label} ainda em ${outrosPedidos[0].status}` : 'Único pedido do carrinho'}</div>
+          <div className="stotal">{pedido.items.length} itens</div>
+          <div className="ssub">Único pedido do carrinho</div>
           <div className="bubble">
             {cart.representative} também está acompanhando este pedido em tempo real
           </div>
-          {outrosPedidos.length > 0 && (
-            <div className="bubble">O outro pedido deste carrinho segue separado — acompanhe pela lista de Meus Carrinhos</div>
-          )}
           <div className="sbtns">
             <div className="btn-secondary" style={{ cursor: 'pointer' }} onClick={() => navigate(`/carrinhos/${cart.id}/${pedido.id}/chat`)}>
               Falar com {cart.representative}

@@ -8,11 +8,10 @@ import { formatBRL } from '../../lib/format'
 
 export function Chat() {
   const navigate = useNavigate()
-  const { cartId, pedidoId } = useParams()
+  const { cartId } = useParams()
   const carrinhos = useAppStore((s) => s.carrinhos)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
-  const pedido = cart.pedidos.find((p) => p.id === pedidoId) ?? cart.pedidos[0]
-  const outroPedido = cart.pedidos.find((p) => p.id !== pedido.id)
+  const pedido = cart.pedido
 
   // Thread é um roteiro fixo (não é chat de verdade, não tem backend) — mensagens novas do lojista
   // só se somam localmente ao final, pra "Enviar" deixar de ser um botão decorativo sem virar um
@@ -75,7 +74,7 @@ export function Chat() {
               <div className="msg-row mine">
                 <div className="msg-avatar">CA</div>
                 <div>
-                  <div className="msg-bubble">Valeu por avisar! E sobre o carrinho da Coleção Inverno, aquele pedido separado da Hertz Rose?</div>
+                  <div className="msg-bubble">Valeu por avisar! E sobre o carrinho da Coleção Inverno, a Hertz Rose que eu queria pagar à vista?</div>
                   <div className="msg-time">09:15</div>
                 </div>
               </div>
@@ -84,29 +83,27 @@ export function Chat() {
                 <div className="msg-avatar">AN</div>
                 <div>
                   <div className="msg-bubble">
-                    Separei ela num pedido à vista pra você aproveitar os 3% de desconto — os outros itens ficam no prazo
-                    normal. Dá uma olhada quando puder.
+                    Dá pra fazer isso direto na hora de pagar — você pode dividir o pagamento do pedido, uma parte à vista
+                    pra Hertz Rose e o resto no prazo normal. Dá uma olhada quando puder.
                   </div>
                   <div className="msg-time">09:16</div>
                 </div>
               </div>
 
-              {outroPedido && (
-                <div className="msg-row">
-                  <div className="msg-avatar">AN</div>
-                  <div
-                    className="msg-context-card"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => navigate(`/carrinhos/${cart.id}`)}
-                  >
-                    <div className="mc-label">Pedido referenciado</div>
-                    <div className="mc-title">
-                      {cart.name} — {outroPedido.label} · {formatBRL(outroPedido.total)}
-                    </div>
+              <div className="msg-row">
+                <div className="msg-avatar">AN</div>
+                <div
+                  className="msg-context-card"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`/carrinhos/${cart.id}`)}
+                >
+                  <div className="mc-label">Pedido referenciado</div>
+                  <div className="mc-title">
+                    {cart.name} — {pedido.label} · {formatBRL(pedido.total)}
                   </div>
-                  <div className="msg-time">09:16</div>
                 </div>
-              )}
+                <div className="msg-time">09:16</div>
+              </div>
 
               <div className="msg-row mine">
                 <div className="msg-avatar">CA</div>
@@ -162,15 +159,6 @@ export function Chat() {
             <div className="btn-secondary" style={{ cursor: 'pointer' }} onClick={() => navigate(`/carrinhos/${cart.id}`)}>
               Ver carrinho {cart.name}
             </div>
-            {outroPedido && (
-              <div
-                className="btn-secondary"
-                style={{ cursor: 'pointer' }}
-                onClick={() => navigate(`/carrinhos/${cart.id}/${outroPedido.id}/acompanhamento`)}
-              >
-                Ver pedido #{outroPedido.id}
-              </div>
-            )}
           </div>
         </div>
       </div>

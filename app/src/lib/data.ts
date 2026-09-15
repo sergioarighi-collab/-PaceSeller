@@ -464,10 +464,11 @@ export const users: User[] = [
   { id: 'u3', name: 'Carla Nunes', initials: 'CA', role: 'auxiliar' },
 ]
 
-// Carrinho → Pedido: um carrinho é compartilhado com o representante fixo da loja (Ana)
-// e pode ter 1+ pedidos, cada um com prazo/condição de pagamento próprios (confirmado em reunião real).
-// Seed inicial do store (useAppStore.carrinhos) — a partir daqui a lista é mutável (novos pedidos
-// entram quando o lojista fecha "Seu pedido" no drawer, ver commitCartToCarrinho em lib/store.ts).
+// Carrinho → Pedido: um carrinho é compartilhado com o representante fixo da loja (Ana) e tem
+// exatamente 1 pedido (decisão de set/2026 — antes um carrinho podia ter vários pedidos com
+// prazo/condição próprios; ver nota de decisão em docs/guia-dev-frontend.md). Seed inicial do
+// store (useAppStore.carrinhos) — a partir daqui a lista é mutável (o pedido do carrinho cresce
+// quando o lojista fecha "Seu pedido" no drawer, ver commitCartToCarrinho em lib/store.ts).
 // Não importar direto de telas — usar sempre useAppStore((s) => s.carrinhos).
 export const initialCarrinhos: Carrinho[] = [
   {
@@ -480,38 +481,29 @@ export const initialCarrinhos: Carrinho[] = [
     autoSendOnGradeMinima: true,
     lastComment: {
       author: 'Ana',
-      text: 'separei a Hertz Rose num pedido à vista pra você aproveitar o desconto — os outros itens ficam no prazo normal, tudo bem?',
+      text: 'separei a Hertz Rose com desconto à vista — as outras formas de pagamento ficam a seu critério na hora de fechar, tudo bem?',
       timeLabel: 'há 40 min',
     },
-    pedidos: [
-      {
-        id: '4821-1',
-        label: 'Pedido 1',
-        status: 'rascunho',
-        items: [
-          { productId: '2101-30', name: 'Tênis Tesla Hertz Black', qty: 24, grade: '37–41', value: 6480 },
-          { productId: '1901-67', name: 'Tênis Tesla Coil Black White', qty: 12, grade: '38–42', value: 3720 },
-        ],
-        subtotal: 10200,
-        discount: 0,
-        total: 10200,
-        marginPct: 40,
-        paymentCondition: '30',
-        deliveryEstimateDays: 15,
-      },
-      {
-        id: '4821-2',
-        label: 'Pedido 2',
-        status: 'rascunho',
-        items: [{ productId: '2101-31', name: 'Tênis Tesla Hertz Rose', qty: 18, grade: '35–39', value: 2610 }],
-        subtotal: 2610,
-        discount: 78,
-        total: 2532,
-        marginPct: 40,
-        paymentCondition: 'a-vista',
-        deliveryEstimateDays: 0,
-      },
-    ],
+    // Antes da simplificação, a Hertz Rose vivia num 2º pedido "à vista −3%" só pra separar a
+    // condição de pagamento das outras duas linhas; com 1 pedido por carrinho isso vira split de
+    // pagamento (ver Payment.tsx), não outro pedido — por isso os 3 itens somam num pedido só,
+    // sem desconto pré-aplicado no subtotal (o desconto à vista é decidido na tela de pagamento).
+    pedido: {
+      id: '4821-1',
+      label: 'Pedido',
+      status: 'rascunho',
+      items: [
+        { productId: '2101-30', name: 'Tênis Tesla Hertz Black', qty: 24, grade: '37–41', value: 6480 },
+        { productId: '1901-67', name: 'Tênis Tesla Coil Black White', qty: 12, grade: '38–42', value: 3720 },
+        { productId: '2101-31', name: 'Tênis Tesla Hertz Rose', qty: 18, grade: '35–39', value: 2610 },
+      ],
+      subtotal: 12810,
+      discount: 0,
+      total: 12810,
+      marginPct: 40,
+      paymentCondition: '30',
+      deliveryEstimateDays: 15,
+    },
   },
   {
     id: 'reposicao-rapida',
@@ -521,21 +513,19 @@ export const initialCarrinhos: Carrinho[] = [
     daysSinceActivity: 1,
     repCanEdit: true,
     autoSendOnGradeMinima: false,
-    pedidos: [
-      {
-        id: '4790-1',
-        label: 'Pedido 1',
-        status: 'pago',
-        items: [{ productId: '2101-30', name: 'Tênis Tesla Hertz Black', qty: 6, grade: '38–40', value: 2140 }],
-        subtotal: 2140,
-        discount: 0,
-        total: 2140,
-        marginPct: 41,
-        paymentCondition: '30',
-        paymentMethod: 'boleto',
-        deliveryEstimateDays: 2,
-      },
-    ],
+    pedido: {
+      id: '4790-1',
+      label: 'Pedido',
+      status: 'pago',
+      items: [{ productId: '2101-30', name: 'Tênis Tesla Hertz Black', qty: 6, grade: '38–40', value: 2140 }],
+      subtotal: 2140,
+      discount: 0,
+      total: 2140,
+      marginPct: 41,
+      paymentCondition: '30',
+      paymentSplit: [{ method: 'boleto', amount: 2140 }],
+      deliveryEstimateDays: 2,
+    },
   },
   // Carrinho montado pela Ana pro lojista revisar — "Montar Pedido Sugerido", validado em reunião
   // com o cliente (representante também monta carrinho, não só o lojista compartilha com ela).
@@ -549,24 +539,22 @@ export const initialCarrinhos: Carrinho[] = [
     daysSinceActivity: 9,
     repCanEdit: true,
     autoSendOnGradeMinima: false,
-    pedidos: [
-      {
-        id: '4855-1',
-        label: 'Pedido 1',
-        status: 'aguardando',
-        suggestedBy: 'representante',
-        items: [
-          { productId: '1901-66', name: 'Tênis Tesla Coil Denim', qty: 22, grade: '36–40', value: 6160 },
-          { productId: '1901-67', name: 'Tênis Tesla Coil Black White', qty: 18, grade: '37–41', value: 5580 },
-        ],
-        subtotal: 11740,
-        discount: 0,
-        total: 11740,
-        marginPct: 39,
-        paymentCondition: '30',
-        deliveryEstimateDays: 15,
-      },
-    ],
+    pedido: {
+      id: '4855-1',
+      label: 'Pedido',
+      status: 'aguardando',
+      suggestedBy: 'representante',
+      items: [
+        { productId: '1901-66', name: 'Tênis Tesla Coil Denim', qty: 22, grade: '36–40', value: 6160 },
+        { productId: '1901-67', name: 'Tênis Tesla Coil Black White', qty: 18, grade: '37–41', value: 5580 },
+      ],
+      subtotal: 11740,
+      discount: 0,
+      total: 11740,
+      marginPct: 39,
+      paymentCondition: '30',
+      deliveryEstimateDays: 15,
+    },
   },
 ]
 

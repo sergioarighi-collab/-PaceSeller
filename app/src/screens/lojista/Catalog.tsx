@@ -5,15 +5,11 @@ import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { ProductThumb } from '../../components/desktop/ProductThumb'
 import { ProductLineCard } from '../../components/desktop/ProductLineCard'
+import { GradeEditor } from '../../components/desktop/GradeEditor'
 import { useAppStore } from '../../lib/store'
 import { products, collectionTitle, combos } from '../../lib/data'
 import { formatBRL } from '../../lib/format'
 import { buildProductLines, comboPrice } from '../../lib/productLines'
-
-// Quantidade default de um "Preencher sugestão" na grade em folha — mesmo valor usado há tempos
-// pelo "Adicionar ao carrinho" rápido do card do Catálogo (addToCart(id, 12)), só que agora
-// distribuído pelas numerações sugeridas do produto em vez de ir tudo pra uma linha só.
-const GRADE_AUTOFILL_PARES = 12
 
 const categoryFilters = ['Alto giro', 'Boa margem', 'Lançamentos', 'Oportunidade perdida']
 // Texto do tooltip (atributo title, mesmo padrão já usado no resto do app — ver WebTopNav,
@@ -163,14 +159,8 @@ export function Catalog() {
   // sempre que o produto muda (troca de rota /catalogo/:id), pré-preenchendo com o que já estiver
   // no carrinho pra esse produto (cartItemSizes) em vez de sempre começar zerado.
   const [sizeQty, setSizeQtyState] = useState<Record<string, number>>({})
-  // Campo "quantidade geral" — atalho pra distribuir um total escolhido pelo lojista pelas
-  // numerações sugeridas de uma vez, sem substituir a grade (que continua a única fonte de
-  // verdade do total; ver distributeGrade). Puramente de preenchimento, não persiste em lugar
-  // nenhum — reseta junto com sizeQty ao trocar de produto.
-  const [generalQty, setGeneralQtyState] = useState('')
   useEffect(() => {
     setSizeQtyState(id ? (cartItemSizes[id] ?? {}) : {})
-    setGeneralQtyState('')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
@@ -181,33 +171,6 @@ export function Catalog() {
     const inCart = Boolean(cartItems[p.id])
     const margin = Math.round(((p.pricePdv - p.priceFactory) / p.pricePdv) * 100)
     const totalPares = Object.values(sizeQty).reduce((sum, n) => sum + n, 0)
-
-    function setSize(size: string, value: number) {
-      const qty = Math.max(0, Math.min(999, value))
-      setSizeQtyState((cur) => ({ ...cur, [size]: qty }))
-    }
-
-    // Distribui `total` igualmente pelas numerações sugeridas do produto — usado tanto pelo
-    // "Preencher sugestão" (total fixo, GRADE_AUTOFILL_PARES) quanto pela "Quantidade geral"
-    // (total escolhido pelo lojista). Substitui a grade inteira, não soma com o que já tinha.
-    function distributeGrade(total: number) {
-      const suggested = p.suggestedSizes.filter((s) => s.suggested)
-      const perSize = Math.ceil(total / suggested.length)
-      const next: Record<string, number> = {}
-      suggested.forEach((s) => {
-        next[s.size] = perSize
-      })
-      setSizeQtyState(next)
-    }
-
-    function autofillGrade() {
-      distributeGrade(GRADE_AUTOFILL_PARES)
-    }
-
-    function distributeGeneralQty() {
-      const n = parseInt(generalQty || '0', 10)
-      if (n > 0) distributeGrade(n)
-    }
 
     function handleAddToCart() {
       if (totalPares === 0) return
@@ -300,47 +263,8 @@ export function Catalog() {
                 Reposição recomendada em {p.restockDays} dias
               </div>
 
-              <div className="gradebox" style={{ margin: '24px 0 0', maxWidth: 520 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 10, gap: 12, flexWrap: 'wrap' }}>
-                  <div className="title" style={{ marginBottom: 0 }}>
-                    Grade por numeração
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input
-                      type="number"
-                      min={0}
-                      inputMode="numeric"
-                      placeholder="Qtd. geral"
-                      value={generalQty}
-                      onChange={(e) => setGeneralQtyState(e.target.value)}
-                      className="generalqty-input"
-                    />
-                    <div className="gradefill" style={{ cursor: 'pointer' }} onClick={distributeGeneralQty}>
-                      Distribuir
-                    </div>
-                    <div className="gradefill" style={{ cursor: 'pointer' }} onClick={autofillGrade}>
-                      Preencher sugestão
-                    </div>
-                  </div>
-                </div>
-                <div className="sheet">
-                  {p.suggestedSizes.map((s) => (
-                    <div className={`sheetcol ${s.suggested ? 'suggested' : ''}`} key={s.size}>
-                      <div className="sz">{s.size}</div>
-                      <input
-                        type="number"
-                        min={0}
-                        inputMode="numeric"
-                        value={sizeQty[s.size] || ''}
-                        placeholder="0"
-                        onChange={(e) => setSize(s.size, parseInt(e.target.value || '0', 10))}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div className="gradetotal">
-                  <span className="n">{totalPares}</span> {totalPares === 1 ? 'par selecionado' : 'pares selecionados'}
-                </div>
+              <div style={{ margin: '24px 0 0', maxWidth: 520 }}>
+                <GradeEditor product={p} value={sizeQty} onChange={setSizeQtyState} />
               </div>
 
               <div style={{ marginTop: 32, paddingTop: 24, borderTop: '1px solid var(--border)', maxWidth: 520 }}>

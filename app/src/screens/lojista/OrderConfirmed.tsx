@@ -6,11 +6,10 @@ import { formatBRL } from '../../lib/format'
 
 export function OrderConfirmed() {
   const navigate = useNavigate()
-  const { cartId, pedidoId } = useParams()
+  const { cartId } = useParams()
   const carrinhos = useAppStore((s) => s.carrinhos)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
-  const pedido = cart.pedidos.find((p) => p.id === pedidoId) ?? cart.pedidos[0]
-  const otherOpen = cart.pedidos.filter((p) => p.id !== pedido.id && p.status !== 'pago').length
+  const pedido = cart.pedido
 
   return (
     <DesktopPage>
@@ -38,10 +37,7 @@ export function OrderConfirmed() {
             {pedido.label} confirmado
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 10, lineHeight: 1.6 }}>
-            Esse pedido foi enviado para produção.{' '}
-            {otherOpen > 0
-              ? `O carrinho "${cart.name}" ainda tem ${otherOpen} pedido${otherOpen > 1 ? 's' : ''} em aberto — ${cart.representative} também foi avisada e vai acompanhar com você.`
-              : `${cart.representative} também foi avisada e vai acompanhar com você.`}
+            Esse pedido foi enviado para produção. {cart.representative} também foi avisada e vai acompanhar com você.
           </p>
 
           <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 6, padding: 20, marginTop: 26, textAlign: 'left' }}>
