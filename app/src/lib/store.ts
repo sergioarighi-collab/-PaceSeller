@@ -480,6 +480,28 @@ export function pedidoActionKind(pedido: Pedido): PedidoActionKind {
   return 'editar'
 }
 
+export interface PedidoStatusBadge {
+  label: string
+  tone: 'neutral' | 'info' | 'positive'
+}
+
+// Rótulo/tom do badge de status pensado em "de quem é a vez agora" — os dois casos de
+// `status === 'aguardando'` mostravam o mesmo texto genérico ("Aguardando aprovação"), mas são
+// exatamente opostos: o lojista mandou o pedido e está esperando a Ana aprovar (bola com ela,
+// nada pro lojista fazer agora — tom neutro/quieto) vs. a Ana sugeriu/editou um pedido e está
+// esperando o lojista revisar (bola com o lojista — tom de atenção, mesmo azul já usado no
+// bulkrow.review de MeusCarrinhos pra "Ana sugeriu X pedido(s)"). `representativeName` (normalmente
+// `cart.representative`) entra no rótulo pra ficar concreto ("Aguardando Ana") em vez de genérico.
+export function pedidoStatusBadge(pedido: Pedido, representativeName: string): PedidoStatusBadge {
+  if (pedido.status === 'pago') return { label: 'Confirmado', tone: 'positive' }
+  if (pedido.status === 'aguardando') {
+    if (pedido.suggestedBy === 'representante') return { label: 'Aguardando você — revisar', tone: 'info' }
+    return { label: `Aguardando ${representativeName}`, tone: 'neutral' }
+  }
+  if (pedido.status === 'rascunho' && pedidoPares(pedido) >= GRADE_MINIMA_PARES) return { label: 'Pronto pra enviar', tone: 'positive' }
+  return { label: 'Rascunho', tone: 'neutral' }
+}
+
 // Faixa de grade sugerida pro pedido gerado a partir do cartItems — deriva do miolo de
 // `suggestedSizes` (as numerações centrais marcadas como sugeridas), mesma lógica visual do
 // "Grade sugerida" na Ficha de Decisão do Catálogo.

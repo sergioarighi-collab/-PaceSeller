@@ -5,7 +5,7 @@ import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { Toast } from '../../components/desktop/Toast'
 import { products, samePeriodLastYearQty } from '../../lib/data'
-import { useAppStore, pedidoActionKind, pedidoPares } from '../../lib/store'
+import { useAppStore, pedidoActionKind, pedidoPares, pedidoStatusBadge } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { deltaInfo } from '../../lib/productLines'
 import { formatBRL } from '../../lib/format'
@@ -37,6 +37,7 @@ export function CarrinhoDetail() {
 
   const pares = pedidoPares(pedido)
   const gradeOk = pares >= GRADE_MINIMA_PARES
+  const statusBadge = pedidoStatusBadge(pedido, cart.representative)
 
   // Compara os itens deste carrinho com o que a loja comprou no mesmo período do ano passado —
   // só entram os SKUs com dado histórico (ver samePeriodLastYearQty em lib/data.ts), e só se o
@@ -110,9 +111,7 @@ export function CarrinhoDetail() {
                     Enviar pro representante
                   </span>
                 )}
-                <span className={`badge ${pedido.status === 'pago' ? 'pos' : 'neutral'}`}>
-                  {pedido.status === 'pago' ? 'Confirmado' : pedido.status === 'aguardando' ? 'Aguardando aprovação' : 'Rascunho'}
-                </span>
+                <span className={`badge ${statusBadge.tone === 'positive' ? 'pos' : statusBadge.tone}`}>{statusBadge.label}</span>
               </div>
             </div>
             <div className="og-body">

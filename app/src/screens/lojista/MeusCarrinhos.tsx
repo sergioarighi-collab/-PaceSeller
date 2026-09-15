@@ -4,19 +4,22 @@ import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { ProductThumb } from '../../components/desktop/ProductThumb'
-import { useAppStore, cartSummary, comboSummary, resolveTargetCarrinhoId, pedidoPares, pedidoActionKind } from '../../lib/store'
+import { useAppStore, cartSummary, comboSummary, resolveTargetCarrinhoId, pedidoPares, pedidoActionKind, pedidoStatusBadge } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import type { Carrinho, Pedido } from '../../lib/types'
 import { products } from '../../lib/data'
 import { formatBRL } from '../../lib/format'
 
-const filters = ['Todos', 'Rascunho', 'Aguardando aprovação', 'Confirmados']
-
-const statusLabel: Record<Pedido['status'], string> = {
-  rascunho: 'Rascunho',
-  aguardando: 'Aguardando aprovação',
-  aprovado: 'Aprovado',
-  pago: 'Confirmado',
+// "Aguardando aprovação" virou 2 abas (set/2026, pedido do usuário: "está confuso") — misturava os
+// dois lados opostos de quem está esperando por quem (ver pedidoStatusBadge em store.ts). Cada aba
+// já carrega no próprio nome o motivo de estar ali, sem precisar abrir o carrinho pra descobrir.
+const filters = ['Todos', 'Rascunho', 'Aguardando Ana', 'Aguardando você', 'Confirmados'] as const
+const filterHint: Record<(typeof filters)[number], string> = {
+  Todos: 'Todos os carrinhos, qualquer status',
+  Rascunho: 'Você ainda está montando — falta adicionar itens ou enviar pro representante',
+  'Aguardando Ana': 'Você já enviou — agora é a vez da Ana aprovar, nada pra fazer por enquanto',
+  'Aguardando você': 'A Ana sugeriu ou editou um pedido — é a sua vez de revisar e decidir',
+  Confirmados: 'Pedido já aprovado e pago — só acompanhar a entrega',
 }
 
 const EXPIRA_APOS_DIAS = 7
@@ -32,11 +35,18 @@ export function MeusCarrinhos() {
   const cartCombos = useAppStore((s) => s.cartCombos)
   const activeCarrinhoId = useAppStore((s) => s.activeCarrinhoId)
   const editingPedido = useAppStore((s) => s.editingPedido)
-  const [filter, setFilter] = useState(filters[0])
+  const [filter, setFilter] = useState<(typeof filters)[number]>(filters[0])
 
   const rows = carrinhos
     .map((c) => {
-      const status = c.pedido.status === 'pago' ? 'confirmado' : c.pedido.status === 'aguardando' ? 'aguardando' : 'rascunho'
+      const status =
+        c.pedido.status === 'pago'
+          ? 'confirmado'
+          : c.pedido.status === 'aguardando'
+            ? c.pedido.suggestedBy === 'representante'
+              ? 'aguardando-voce'
+              : 'aguardando-ana'
+            : 'rascunho'
       const totalItems = pedidoPares(c.pedido)
       const totalValue = c.pedido.total
       return { cart: c, status, totalItems, totalValue }
@@ -44,7 +54,8 @@ export function MeusCarrinhos() {
     .filter((r) => {
       if (filter === 'Todos') return true
       if (filter === 'Rascunho') return r.status === 'rascunho'
-      if (filter === 'Aguardando aprovação') return r.status === 'aguardando'
+      if (filter === 'Aguardando Ana') return r.status === 'aguardando-ana'
+      if (filter === 'Aguardando você') return r.status === 'aguardando-voce'
       return r.status === 'confirmado'
     })
 
@@ -180,7 +191,7 @@ export function MeusCarrinhos() {
 
         <div className="filterbar" style={{ marginTop: 20 }}>
           {filters.map((f) => (
-            <div key={f} className={`chip ${filter === f ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setFilter(f)}>
+            <div key={f} className={`chip ${filter === f ? 'selected' : ''}`} style={{ cursor: 'pointer' }} title={filterHint[f]} onClick={() => setFilter(f)}>
               {f}
             </div>
           ))}
@@ -195,6 +206,7 @@ export function MeusCarrinhos() {
             const gradeOk = pares >= GRADE_MINIMA_PARES
             const gradePct = Math.min(100, Math.round((pares / GRADE_MINIMA_PARES) * 100))
             const action = pedidoAction(cart, pedido)
+            const statusBadge = pedidoStatusBadge(pedido, cart.representative)
 
             return (
               <div className="cart-card" key={cart.id}>
@@ -231,7 +243,7 @@ export function MeusCarrinhos() {
 
                 <div className="pedrow">
                   <span className="plabel">{pedido.label}</span>
-                  <span className={`pstatus ${pedido.status}`}>{statusLabel[pedido.status]}</span>
+                  <span className={`pstatus tone-${statusBadge.tone}`}>{statusBadge.label}</span>
                   <div className="pgrade">
                     <div className={`bar ${gradeOk ? 'ok' : ''}`}>
                       <div style={{ width: `${gradePct}%` }} />

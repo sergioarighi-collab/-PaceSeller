@@ -296,10 +296,13 @@
   .pedrow{display:flex;align-items:center;gap:14px;background:var(--surface-2);border:1px solid var(--border-soft);border-radius:5px;padding:10px 13px;margin-top:8px;}
   .pedrow.pending{background:var(--info-dim);border:1px dashed var(--info);}
   .pedrow .plabel{font-size:12.5px;font-weight:600;color:var(--text-primary);min-width:76px;}
+  /* Tom por "de quem é a vez" (ver pedidoStatusBadge em store.ts), não mais por status bruto do
+     Pedido — os dois estados "aguardando" (esperando a Ana vs. esperando o lojista revisar) usam
+     tons diferentes (neutral/info) mesmo os dois vindo do mesmo status interno. */
   .pedrow .pstatus{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;padding:3px 7px;border-radius:3px;letter-spacing:.02em;}
-  .pedrow .pstatus.rascunho{background:var(--surface-3);color:var(--text-secondary);}
-  .pedrow .pstatus.aguardando{background:var(--info-dim);color:var(--info);}
-  .pedrow .pstatus.pago{background:var(--positive-dim);color:var(--positive);}
+  .pedrow .pstatus.tone-neutral{background:var(--surface-3);color:var(--text-secondary);}
+  .pedrow .pstatus.tone-info{background:var(--info-dim);color:var(--info);}
+  .pedrow .pstatus.tone-positive{background:var(--positive-dim);color:var(--positive);}
   .pedrow .pstatus.pending{background:var(--surface);color:var(--info);}
   .pedrow .pgrade{flex:1;display:flex;align-items:center;gap:8px;min-width:0;}
   .pedrow .pgrade .bar{flex:1;height:5px;background:var(--surface-3);border-radius:3px;overflow:hidden;min-width:24px;}

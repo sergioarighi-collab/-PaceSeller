@@ -540,6 +540,27 @@ Pedido do usuário: o link "Editar grade" (aparece no drawer/carrinho quando um 
 - **`OrderDrawer.tsx`**: "Editar grade" agora abre esse modal (`editingGradeProductId` local) pré-preenchido com `cartItemSizes[productId]`, e "Salvar grade" chama `setCartItemSizes` direto — sem navegar, sem fechar o drawer. Testado via Playwright: a URL não muda ao abrir/salvar o modal, e o total/estoque no drawer atualiza na hora.
 - A Ficha de Decisão (`Catalog.tsx`) continua existindo do jeito de sempre pra adicionar um produto novo ao pedido (ela precisa do contexto completo do produto — preço, why-box, reposição — que não cabe num modal); o modal é só pro caso de **editar** um item que já está no pedido em montagem.
 
+## Sinalização "de quem é a vez" entre lojista e representante (set/2026)
+
+Pedido do usuário: o status "Aguardando aprovação" (badge do pedido e aba de filtro em Meus Carrinhos) juntava dois casos **opostos** sob o mesmo rótulo — dava pra saber que algo estava "aguardando", mas não pra quem. O usuário achou isso confuso tanto no badge quanto no filtro.
+
+Os dois casos, hoje ambos representados por `Pedido.status === 'aguardando'`:
+1. O **lojista enviou** o pedido pra representante aprovar (`sendPedidoToRepresentante`) — bola com a Ana, nada pro lojista fazer agora.
+2. A **Ana sugeriu/montou** um pedido (`Pedido.suggestedBy === 'representante'`, fluxo "Montar Pedido Sugerido") — bola com o lojista, que precisa revisar e decidir.
+
+**`pedidoStatusBadge(pedido, representativeName)`** (novo helper em `store.ts`, ao lado de `pedidoActionKind` que já existia pra decidir a ação/CTA): retorna `{label, tone}` distinguindo os dois casos —
+- `pago` → `"Confirmado"`, tom `positive`.
+- `aguardando` + `suggestedBy === 'representante'` → `"Aguardando você — revisar"`, tom `info` (mesmo azul já usado no `bulkrow.review` de MeusCarrinhos pra "Ana sugeriu X pedido(s)" — consistência de cor com um padrão que já existia).
+- `aguardando` sem `suggestedBy` → `"Aguardando {representativeName}"` (ex: "Aguardando Ana") — tom `neutral`, deliberadamente "quieto" porque não é a vez do lojista.
+- `rascunho` com grade mínima batida → `"Pronto pra enviar"`, tom `positive` (mesmo verde do `bulkrow` de "prontos pra enviar").
+- `rascunho` sem grade batida → `"Rascunho"`, tom `neutral`.
+
+Usado em `CarrinhoDetail.tsx` (badge do `og-head`) e `MeusCarrinhos.tsx` (`.pstatus` de cada `.pedrow`). CSS trocou de classes por status bruto (`.pstatus.rascunho`/`.aguardando`/`.pago`) pra classes por tom (`.pstatus.tone-neutral`/`.tone-info`/`.tone-positive`) — os dois casos de "aguardando" agora podem ter tons diferentes vindos do mesmo status interno.
+
+**Filtro de Meus Carrinhos**: a aba "Aguardando aprovação" tinha o mesmo problema (misturava os dois casos) — virou duas abas, **"Aguardando Ana"** e **"Aguardando você"**, cada uma já nomeada com quem precisa agir. Cada chip do filtro ganhou `title` (tooltip nativo, mesmo padrão de `categoryFilterTooltips` no Catálogo) explicando o critério — pedido explícito do usuário ("acho que precisamos explicar isso pro usuário, pois está confuso").
+
+**Fora do escopo desta rodada** (mencionado pelo usuário, não implementado ainda): o CTA "Editar no drawer" que aparece pra um pedido `aguardando` já enviado pra Ana (o lojista ainda pode editar um pedido que está esperando aprovação — não há trava disso em `startEditPedido`, só bloqueia pedido `pago`) não foi revisado nesta rodada; pode valer a pena, no futuro, decidir se isso deveria continuar permitido silenciosamente ou avisar que editar reabre a aprovação.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
