@@ -37,6 +37,25 @@ export function comboPrice(combo: Combo, products: Product[]) {
   return { p1, p2, sumFactory, finalPrice, savings: sumFactory - finalPrice }
 }
 
+// Distribui `total` pares pelas numerações sugeridas do produto SEM alterar a soma — cada
+// numeração recebe `Math.floor(total / n)`, e o resto (`total % n`) vai +1 pra cada uma das
+// primeiras numerações, então a soma bate exatamente com `total` (diferente do `distributeGrade`
+// de GradeEditor.tsx, que arredonda pra cima de propósito nos botões "Preencher sugestão"/
+// "Quantidade geral" — ali é um atalho de preenchimento, aqui é pra pré-popular a grade de um item
+// que já tem uma quantidade fechada, então mudar o total seria um bug, não um atalho).
+export function distributeSizesExact(product: Product, total: number): Record<string, number> {
+  const suggested = product.suggestedSizes.filter((s) => s.suggested)
+  const pool = suggested.length > 0 ? suggested : product.suggestedSizes
+  const next: Record<string, number> = {}
+  if (pool.length === 0 || total <= 0) return next
+  const base = Math.floor(total / pool.length)
+  const remainder = total % pool.length
+  pool.forEach((s, i) => {
+    next[s.size] = base + (i < remainder ? 1 : 0)
+  })
+  return next
+}
+
 export type DeltaTone = 'up' | 'down' | 'flat' | 'new'
 
 // Compara uma quantidade "agora" com uma quantidade "antes" (ex: mesmo período do ano passado).

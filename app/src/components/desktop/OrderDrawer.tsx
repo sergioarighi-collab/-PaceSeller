@@ -4,6 +4,7 @@ import { useAppStore, cartSummary, comboSummary, resolveTargetCarrinhoId, pedido
 import { formatBRL } from '../../lib/format'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { products } from '../../lib/data'
+import { distributeSizesExact } from '../../lib/productLines'
 import { ProductThumb } from './ProductThumb'
 import { WebModal } from './WebModal'
 import { GradeEditModal } from './GradeEditModal'
@@ -48,7 +49,9 @@ export function OrderDrawer() {
 
   const [pickerOpen, setPickerOpen] = useState(false)
   const [picked, setPicked] = useState<string>(resolvedTargetId ?? NEW_CARRINHO)
-  const [editingGradeProductId, setEditingGradeProductId] = useState<string | null>(null)
+  // Guarda a qty atual junto com o productId — precisa dela pra pré-popular a grade quando o item
+  // ainda não passou pela Ficha de Decisão (sem cartItemSizes ainda, ver distributeSizesExact).
+  const [editingGrade, setEditingGrade] = useState<{ productId: string; qty: number } | null>(null)
   const setCartItemSizes = useAppStore((s) => s.setCartItemSizes)
 
   // "Peek": abre sozinho a cada item adicionado (ver peekOrderDrawer no store) e some depois de
@@ -216,15 +219,13 @@ export function OrderDrawer() {
                       Só restam {product.stockPares} pares em estoque
                     </div>
                   )}
-                  {cartItemSizes[product.id] && (
-                    <div
-                      className="si-meta"
-                      style={{ color: 'var(--info)', fontWeight: 600, cursor: 'pointer' }}
-                      onClick={() => setEditingGradeProductId(product.id)}
-                    >
-                      Editar grade
-                    </div>
-                  )}
+                  <div
+                    className="si-meta"
+                    style={{ color: 'var(--info)', fontWeight: 600, cursor: 'pointer' }}
+                    onClick={() => setEditingGrade({ productId: product.id, qty })}
+                  >
+                    {cartItemSizes[product.id] ? 'Editar grade' : 'Definir grade por numeração'}
+                  </div>
                 </div>
                 <div className="stepper" style={{ flexShrink: 0 }}>
                   <div className="stepbtn" onClick={() => setCartQty(product.id, qty - 1)}>
@@ -330,18 +331,22 @@ export function OrderDrawer() {
         </WebModal>
       )}
 
-      {editingGradeProductId &&
+      {editingGrade &&
         (() => {
-          const product = products.find((p) => p.id === editingGradeProductId)
+          const product = products.find((p) => p.id === editingGrade.productId)
           if (!product) return null
+          // Item que nunca passou pela Ficha de Decisão (quick-add do card do Catálogo, sem
+          // cartItemSizes) começa com a qty atual distribuída pelas numerações sugeridas — mesma
+          // soma de pares que já estava no pedido, só organizada por numeração.
+          const initialSizes = cartItemSizes[product.id] ?? distributeSizesExact(product, editingGrade.qty)
           return (
             <GradeEditModal
               product={product}
-              initialSizes={cartItemSizes[product.id] ?? {}}
-              onClose={() => setEditingGradeProductId(null)}
+              initialSizes={initialSizes}
+              onClose={() => setEditingGrade(null)}
               onSave={(sizes) => {
                 setCartItemSizes(product.id, sizes)
-                setEditingGradeProductId(null)
+                setEditingGrade(null)
               }}
             />
           )
