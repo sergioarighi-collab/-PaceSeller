@@ -37,7 +37,7 @@ export function OrderConfirmed() {
             {pedido.label} confirmado
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 10, lineHeight: 1.6 }}>
-            Esse pedido foi enviado para produção. {cart.representative} também foi avisada e vai acompanhar com você.
+            Esse pedido está com a Tesla agora — já saiu da sua mão e da {cart.representative}. Assim que passar pela análise e entrar em produção, você acompanha tudo por aqui.
           </p>
 
           <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 6, padding: 20, marginTop: 26, textAlign: 'left' }}>

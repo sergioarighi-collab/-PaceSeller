@@ -14,13 +14,13 @@ import { formatBRL } from '../../lib/format'
 // "Aguardando aprovação" virou 2 abas (set/2026, pedido do usuário: "está confuso") — misturava os
 // dois lados opostos de quem está esperando por quem (ver pedidoStatusBadge em store.ts). Cada aba
 // já carrega no próprio nome o motivo de estar ali, sem precisar abrir o carrinho pra descobrir.
-const filters = ['Todos', 'Rascunho', 'Aguardando Ana', 'Aguardando você', 'Confirmados'] as const
+const filters = ['Todos', 'Rascunho', 'Aguardando Ana', 'Aguardando você', 'Com a Tesla'] as const
 const filterHint: Record<(typeof filters)[number], string> = {
   Todos: 'Todos os carrinhos, qualquer status',
   Rascunho: 'Você ainda está montando — falta adicionar itens ou enviar pro representante',
   'Aguardando Ana': 'Você já enviou — agora é a vez da Ana aprovar, nada pra fazer por enquanto',
   'Aguardando você': 'A Ana sugeriu ou editou um pedido — é a sua vez de revisar e decidir',
-  Confirmados: 'Pedido já aprovado e pago — só acompanhar a entrega',
+  'Com a Tesla': 'Pedido pago — já saiu da sua mão e da Ana, agora é acompanhar a produção e entrega',
 }
 
 const EXPIRA_APOS_DIAS = 7

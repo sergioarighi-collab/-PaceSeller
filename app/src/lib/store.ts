@@ -507,7 +507,13 @@ export interface PedidoStatusBadge {
 // bulkrow.review de MeusCarrinhos pra "Ana sugeriu X pedido(s)"). `representativeName` (normalmente
 // `cart.representative`) entra no rótulo pra ficar concreto ("Aguardando Ana") em vez de genérico.
 export function pedidoStatusBadge(pedido: Pedido, representativeName: string): PedidoStatusBadge {
-  if (pedido.status === 'pago') return { label: 'Confirmado', tone: 'positive' }
+  // "Com a Tesla" (não "Confirmado" nem "Enviado") — pago já saiu da mão do lojista e da
+  // representante, mas ainda tem processo interno de fábrica antes de virar produção de verdade
+  // (ver trackingSteps em data.ts: confirmado → em produção → enviado → entregue). "Confirmado"
+  // soava igual ao botão "Confirmar pedido" do pagamento; "Enviado" colidiria com a etapa de
+  // tracking que já significa "saiu da fábrica pra loja" — daí um rótulo neutro sobre posse, não
+  // sobre etapa de produção.
+  if (pedido.status === 'pago') return { label: 'Com a Tesla', tone: 'positive' }
   if (pedido.status === 'aguardando') {
     if (pedido.suggestedBy === 'representante') return { label: 'Aguardando você — revisar', tone: 'info' }
     return { label: `Aguardando ${representativeName}`, tone: 'neutral' }

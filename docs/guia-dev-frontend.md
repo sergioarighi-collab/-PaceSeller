@@ -582,7 +582,7 @@ Os dois casos, hoje ambos representados por `Pedido.status === 'aguardando'`:
 2. A **Ana sugeriu/montou** um pedido (`Pedido.suggestedBy === 'representante'`, fluxo "Montar Pedido Sugerido") — bola com o lojista, que precisa revisar e decidir.
 
 **`pedidoStatusBadge(pedido, representativeName)`** (novo helper em `store.ts`, ao lado de `pedidoActionKind` que já existia pra decidir a ação/CTA): retorna `{label, tone}` distinguindo os dois casos —
-- `pago` → `"Confirmado"`, tom `positive`.
+- `pago` → `"Com a Tesla"`, tom `positive` (rótulo renomeado depois — ver "Rótulo do status `pago`" logo abaixo).
 - `aguardando` + `suggestedBy === 'representante'` → `"Aguardando você — revisar"`, tom `info` (mesmo azul já usado no `bulkrow.review` de MeusCarrinhos pra "Ana sugeriu X pedido(s)" — consistência de cor com um padrão que já existia).
 - `aguardando` sem `suggestedBy` → `"Aguardando {representativeName}"` (ex: "Aguardando Ana") — tom `neutral`, deliberadamente "quieto" porque não é a vez do lojista.
 - `rascunho` com grade mínima batida → `"Pronto pra enviar"`, tom `positive` (mesmo verde do `bulkrow` de "prontos pra enviar").
@@ -597,6 +597,24 @@ Usado em `CarrinhoDetail.tsx` (badge do `og-head`) e `MeusCarrinhos.tsx` (`.psta
 - **`CarrinhoDetail.tsx`/`MeusCarrinhos.tsx`**: o clique em "Editar no drawer" só chama `startEditPedido` direto quando o pedido não está `aguardando`; se estiver, abre o `ConfirmModal` primeiro ("Esse pedido está aguardando aprovação de {representante}. Editar agora volta ele pra rascunho — você vai precisar enviar de novo depois de ajustar.") e só chama `startEditPedido` se o lojista confirmar ("Editar mesmo assim"). Em `MeusCarrinhos.tsx` (lista com N carrinhos) o estado guarda o `Carrinho` inteiro pendente de confirmação, não um bool solto, porque qualquer linha pode disparar a mesma confirmação.
 - **`store.ts` (`commitCartToCarrinho`, branch de edição)**: passa a de fato **reverter o status pra `rascunho`** quando o pedido editado estava `aguardando` sem `suggestedBy` — antes disso o texto do aviso seria mentira (o status continuava `aguardando` mesmo depois de editado). O `rascunho` recém-restaurado ainda passa pelo mesmo cálculo de `autoSendOnGradeMinima` de sempre: se o carrinho tem envio automático ligado e a grade continua batida, ele volta pra `aguardando` na hora (mesmo comportamento de qualquer outro rascunho que bate a grade mínima) — não é um caso especial, só a consequência normal da regra já existente. Sugestão da Ana (`suggestedBy === 'representante'`) não passa por essa lógica porque hoje não existe CTA de "editar" pra esse caso (a ação é "Revisar e aprovar", que só navega pro carrinho).
 - Testado via Playwright em dois cenários: carrinho com `autoSendOnGradeMinima: true` (volta pra `aguardando` na hora — visualmente parece "nada mudou", mas o `status` internamente passou por `rascunho`) e carrinho novo com `autoSendOnGradeMinima: false` (fica em `rascunho`/"Pronto pra enviar" até o lojista mandar de novo) — o segundo caso é o que comprova visualmente que a reversão é real, não só o texto do aviso.
+
+### Rótulo do status `pago`: de "Confirmado" pra "Com a Tesla" (set/2026)
+
+O rótulo original do badge `pago` era `"Confirmado"`. Usuário achou que podia confundir ("no carrinho acho que a nomenclatura confirmado pode confundir"). Chegar no rótulo final passou por duas colisões descobertas ao cruzar com outros textos já existentes no app antes de implementar cada tentativa:
+
+1. **"Confirmado" colide com o botão "Confirmar pedido"** (`Payment.tsx`) — o mesmo pedido passa de "rascunho"/"aguardando" pra `pago` justamente ao clicar nesse botão, então o badge repetir a mesma palavra do botão que acabou de ser clicado é redundante/confuso.
+2. **"Enviado" (e variantes como "Enviado pra fábrica"/"Enviado para Tesla") colide com um step diferente que já existe em `trackingSteps`** (`data.ts`): o step `t3` já se chama literalmente `"Enviado"`, mas significa "saiu da fábrica rumo à loja" — uma etapa bem mais tardia do que "acabou de pagar". Usar "Enviado" no badge logo após o pagamento sugeriria (errado) que o pedido já tinha passado por produção inteira.
+
+Também surgiu uma nuance de negócio relevante: o pagamento **não** significa "foi direto pra produção" — existe uma etapa interna de análise na fábrica antes de virar produção de fato (esclarecido pelo usuário: "tem outros processos dentro da fábrica antes do enviado para produção, o pedido ainda fica em análise"). Isso descartou de vez qualquer rótulo que prometesse uma etapa de fábrica específica.
+
+Rótulo final, escolhido pelo usuário: **`"Com a Tesla"`** — não descreve uma etapa de produção (que o app ainda não modela em detalhe), só comunica posse/responsabilidade: o pedido já saiu da mão do lojista e da representante, agora é acompanhar. Evita as duas colisões acima porque não usa nem "confirmado" nem "enviado".
+
+Alterado em três lugares:
+- `store.ts` → `pedidoStatusBadge`, caso `pago`.
+- `MeusCarrinhos.tsx` → aba de filtro `"Confirmados"` virou `"Com a Tesla"` (mesmo rótulo do badge, pra bater com o texto que o lojista já viu no card). A chave interna do filtro (`status === 'confirmado'`, usada só internamente pro `.filter()`, nunca exibida) não precisou mudar.
+- `OrderConfirmed.tsx` → o parágrafo dizia "Esse pedido foi enviado para produção", que também caía na promessa que a etapa de análise contradiz; reescrito pra "Esse pedido está com a Tesla agora [...] Assim que passar pela análise e entrar em produção, você acompanha tudo por aqui" — já deixa a etapa de análise explícita em vez de pular direto pra "produção". O `<h1>` ("{pedido} confirmado") não mudou: ali é a confirmação da ação que o lojista acabou de fazer (mesmo padrão do step `t1` "Pedido confirmado" em `trackingSteps`), não o status contínuo do pedido — o problema era só o badge/rótulo de status permanente, não esse texto pontual de "acabou de acontecer".
+
+Modelar a etapa "em análise" como um status novo e separado (em vez de só renomear o rótulo do `pago`) ficou em aberto — não foi pedido pelo usuário nesta rodada.
 
 ## Regras de negócio confirmadas (não são chute)
 
