@@ -39,10 +39,9 @@ export function comboPrice(combo: Combo, products: Product[]) {
 
 // Distribui `total` pares pelas numerações sugeridas do produto SEM alterar a soma — cada
 // numeração recebe `Math.floor(total / n)`, e o resto (`total % n`) vai +1 pra cada uma das
-// primeiras numerações, então a soma bate exatamente com `total` (diferente do `distributeGrade`
-// de GradeEditor.tsx, que arredonda pra cima de propósito nos botões "Preencher sugestão"/
-// "Quantidade geral" — ali é um atalho de preenchimento, aqui é pra pré-popular a grade de um item
-// que já tem uma quantidade fechada, então mudar o total seria um bug, não um atalho).
+// primeiras numerações, então a soma bate exatamente com `total`. Usada tanto pelo `GradeEditor`
+// (Distribuir/Preencher sugestão, ambos respeitando o número exato) quanto pra pré-popular a
+// grade de um item que já tem uma quantidade fechada no drawer (aí mudar o total seria um bug).
 export function distributeSizesExact(product: Product, total: number): Record<string, number> {
   const suggested = product.suggestedSizes.filter((s) => s.suggested)
   const pool = suggested.length > 0 ? suggested : product.suggestedSizes
@@ -54,6 +53,32 @@ export function distributeSizesExact(product: Product, total: number): Record<st
     next[s.size] = base + (i < remainder ? 1 : 0)
   })
   return next
+}
+
+// Grade fechada é a unidade de fábrica (12 pares); quantas grades sugerir pro "Preencher
+// sugestão" depende de quão rápido o produto gira — mesmo corte de "Alto giro" já usado no filtro
+// do Catálogo (`restockDays <= 32`), pra não inventar um segundo limiar pra mesma ideia. Reaproveita
+// o `restockDays` que já aparece pro lojista bem acima da grade, na Ficha de Decisão ("Reposição
+// recomendada em N dias") — a sugestão de quantidade é uma continuação direta desse dado, não um
+// número novo sem explicação.
+const GRADE_FECHADA_PARES = 12
+export function suggestedGradeQty(product: Product): { qty: number; reason: string } {
+  if (product.restockDays <= 32) {
+    return {
+      qty: GRADE_FECHADA_PARES * 3,
+      reason: `Alto giro — repõe a cada ${product.restockDays} dias, por isso sugerimos 3 grades fechadas (${GRADE_FECHADA_PARES * 3} pares)`,
+    }
+  }
+  if (product.restockDays <= 42) {
+    return {
+      qty: GRADE_FECHADA_PARES * 2,
+      reason: `Giro médio — repõe a cada ${product.restockDays} dias, por isso sugerimos 2 grades fechadas (${GRADE_FECHADA_PARES * 2} pares)`,
+    }
+  }
+  return {
+    qty: GRADE_FECHADA_PARES,
+    reason: `Giro mais lento — repõe a cada ${product.restockDays} dias, por isso sugerimos 1 grade fechada (${GRADE_FECHADA_PARES} pares)`,
+  }
 }
 
 export type DeltaTone = 'up' | 'down' | 'flat' | 'new'

@@ -1,13 +1,6 @@
 import { useState } from 'react'
 import type { Product } from '../../lib/types'
-import { distributeSizesExact } from '../../lib/productLines'
-
-// Quantidade geral default — mesmo valor histórico do "Adicionar ao carrinho" rápido do card do
-// Catálogo (addToCart(id, 12), uma grade fechada de fábrica) e do antigo "Preencher sugestão",
-// que foi removido daqui: eram dois botões fazendo quase a mesma coisa (distribuir pelas
-// numerações sugeridas), um com total fixo e outro variável — pré-preencher o campo com 12 dá o
-// mesmo resultado de um clique só, sem precisar de um segundo botão.
-const GRADE_PADRAO_PARES = 12
+import { distributeSizesExact, suggestedGradeQty } from '../../lib/productLines'
 
 interface GradeEditorProps {
   product: Product
@@ -19,12 +12,18 @@ interface GradeEditorProps {
 // (Catalog.tsx) e no modal de "Editar grade" aberto direto do carrinho/drawer (GradeEditModal.tsx),
 // extraída pra cá pra não duplicar os dois lugares.
 export function GradeEditor({ product: p, value, onChange }: GradeEditorProps) {
+  // Sugestão baseada em dado real do produto (giro/restockDays — ver suggestedGradeQty), não um
+  // número fixo igual pra todo mundo. Recalculada a cada produto (não guardada em state), já que
+  // não é algo que o lojista edita — é só o ponto de partida do campo e o texto de "Preencher
+  // sugestão".
+  const suggestion = suggestedGradeQty(p)
+
   // Campo "quantidade geral" — atalho pra distribuir um total escolhido pelo lojista pelas
   // numerações sugeridas de uma vez, sem substituir a grade (que continua a única fonte de
-  // verdade do total; ver distributeGeneralQty). Pré-preenchido com a grade padrão (12) pra
-  // "Distribuir" sem mexer em nada já dar o resultado mais comum. Puramente de preenchimento, não
-  // persiste em lugar nenhum, por isso fica local ao editor (não em `value`).
-  const [generalQty, setGeneralQty] = useState(String(GRADE_PADRAO_PARES))
+  // verdade do total; ver distributeGeneralQty). Começa com a sugestão de dados já preenchida.
+  // Puramente de preenchimento, não persiste em lugar nenhum, por isso fica local ao editor (não
+  // em `value`).
+  const [generalQty, setGeneralQty] = useState(String(suggestion.qty))
   const totalPares = Object.values(value).reduce((sum, n) => sum + n, 0)
 
   function setSize(size: string, v: number) {
@@ -40,6 +39,14 @@ export function GradeEditor({ product: p, value, onChange }: GradeEditorProps) {
   function distributeGeneralQty() {
     const n = parseInt(generalQty || '0', 10)
     if (n > 0) onChange(distributeSizesExact(p, n))
+  }
+
+  // "Preencher sugestão" sempre volta pro número calculado a partir do giro do produto, não
+  // importa o que estiver digitado no campo no momento — diferente de "Distribuir", que nunca
+  // deveria decidir por conta própria um número diferente do que o lojista escreveu.
+  function fillSuggestion() {
+    setGeneralQty(String(suggestion.qty))
+    onChange(distributeSizesExact(p, suggestion.qty))
   }
 
   return (
@@ -61,10 +68,13 @@ export function GradeEditor({ product: p, value, onChange }: GradeEditorProps) {
           <div className="gradefill" style={{ cursor: 'pointer' }} onClick={distributeGeneralQty}>
             Distribuir
           </div>
+          <div className="gradefill" style={{ cursor: 'pointer' }} onClick={fillSuggestion}>
+            Preencher sugestão
+          </div>
         </div>
       </div>
       <div className="gradehint">
-        Distribui o total ao lado igualmente pelas numerações sugeridas (destacadas), substituindo a grade atual — ajuste os campos abaixo se quiser algo diferente.
+        {suggestion.reason} — "Preencher sugestão" aplica esse número, ou digite outro total ao lado e clique "Distribuir".
       </div>
       <div className="sheet">
         {p.suggestedSizes.map((s) => (
