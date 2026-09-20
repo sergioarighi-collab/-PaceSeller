@@ -1,10 +1,17 @@
 import { useState } from 'react'
 import type { Product } from '../../lib/types'
+import { distributeSizesExact } from '../../lib/productLines'
 
 // Quantidade default de um "Preencher sugestão" na grade em folha — mesmo valor usado há tempos
 // pelo "Adicionar ao carrinho" rápido do card do Catálogo (addToCart(id, 12)), só que agora
 // distribuído pelas numerações sugeridas do produto em vez de ir tudo pra uma linha só.
 const GRADE_AUTOFILL_PARES = 12
+
+// Fábrica fecha em grades de 12 pares (mesma unidade já usada na grade mínima do pedido, 36 = 3
+// grades) — os atalhos de preenchimento sempre arredondam pra cima pro múltiplo de 12 mais
+// próximo antes de distribuir, pra fechar a grade "redonda" sem travar a digitação manual campo a
+// campo (quem quiser um total quebrado, ex: repor só 8 pares, ainda digita direto na grade).
+const GRADE_FECHADA = 12
 
 interface GradeEditorProps {
   product: Product
@@ -28,17 +35,14 @@ export function GradeEditor({ product: p, value, onChange }: GradeEditorProps) {
     onChange({ ...value, [size]: qty })
   }
 
-  // Distribui `total` igualmente pelas numerações sugeridas do produto — usado tanto pelo
-  // "Preencher sugestão" (total fixo, GRADE_AUTOFILL_PARES) quanto pela "Quantidade geral"
-  // (total escolhido pelo lojista). Substitui a grade inteira, não soma com o que já tinha.
+  // Distribui `total` pelas numerações sugeridas do produto — usado tanto pelo "Preencher
+  // sugestão" (total fixo, GRADE_AUTOFILL_PARES) quanto pela "Quantidade geral" (total escolhido
+  // pelo lojista). Substitui a grade inteira, não soma com o que já tinha. Arredonda `total` pra
+  // cima pro múltiplo de 12 mais próximo antes de distribuir (ver GRADE_FECHADA) — a soma final
+  // sempre fecha uma grade redonda, mesmo que o número digitado não seja múltiplo de 12.
   function distributeGrade(total: number) {
-    const suggested = p.suggestedSizes.filter((s) => s.suggested)
-    const perSize = Math.ceil(total / suggested.length)
-    const next: Record<string, number> = {}
-    suggested.forEach((s) => {
-      next[s.size] = perSize
-    })
-    onChange(next)
+    const closedTotal = Math.ceil(total / GRADE_FECHADA) * GRADE_FECHADA
+    onChange(distributeSizesExact(p, closedTotal))
   }
 
   function autofillGrade() {
@@ -66,10 +70,10 @@ export function GradeEditor({ product: p, value, onChange }: GradeEditorProps) {
             onChange={(e) => setGeneralQty(e.target.value)}
             className="generalqty-input"
           />
-          <div className="gradefill" style={{ cursor: 'pointer' }} onClick={distributeGeneralQty}>
+          <div className="gradefill" style={{ cursor: 'pointer' }} title="Fecha a grade no múltiplo de 12 mais próximo" onClick={distributeGeneralQty}>
             Distribuir
           </div>
-          <div className="gradefill" style={{ cursor: 'pointer' }} onClick={autofillGrade}>
+          <div className="gradefill" style={{ cursor: 'pointer' }} title="Fecha a grade no múltiplo de 12 mais próximo" onClick={autofillGrade}>
             Preencher sugestão
           </div>
         </div>
