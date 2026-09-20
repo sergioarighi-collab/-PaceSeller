@@ -2,16 +2,12 @@ import { useState } from 'react'
 import type { Product } from '../../lib/types'
 import { distributeSizesExact } from '../../lib/productLines'
 
-// Quantidade default de um "Preencher sugestão" na grade em folha — mesmo valor usado há tempos
-// pelo "Adicionar ao carrinho" rápido do card do Catálogo (addToCart(id, 12)), só que agora
-// distribuído pelas numerações sugeridas do produto em vez de ir tudo pra uma linha só.
-const GRADE_AUTOFILL_PARES = 12
-
-// Fábrica fecha em grades de 12 pares (mesma unidade já usada na grade mínima do pedido, 36 = 3
-// grades) — os atalhos de preenchimento sempre arredondam pra cima pro múltiplo de 12 mais
-// próximo antes de distribuir, pra fechar a grade "redonda" sem travar a digitação manual campo a
-// campo (quem quiser um total quebrado, ex: repor só 8 pares, ainda digita direto na grade).
-const GRADE_FECHADA = 12
+// Quantidade geral default — mesmo valor histórico do "Adicionar ao carrinho" rápido do card do
+// Catálogo (addToCart(id, 12), uma grade fechada de fábrica) e do antigo "Preencher sugestão",
+// que foi removido daqui: eram dois botões fazendo quase a mesma coisa (distribuir pelas
+// numerações sugeridas), um com total fixo e outro variável — pré-preencher o campo com 12 dá o
+// mesmo resultado de um clique só, sem precisar de um segundo botão.
+const GRADE_PADRAO_PARES = 12
 
 interface GradeEditorProps {
   product: Product
@@ -25,9 +21,10 @@ interface GradeEditorProps {
 export function GradeEditor({ product: p, value, onChange }: GradeEditorProps) {
   // Campo "quantidade geral" — atalho pra distribuir um total escolhido pelo lojista pelas
   // numerações sugeridas de uma vez, sem substituir a grade (que continua a única fonte de
-  // verdade do total; ver distributeGrade). Puramente de preenchimento, não persiste em lugar
-  // nenhum, por isso fica local ao editor (não em `value`).
-  const [generalQty, setGeneralQty] = useState('')
+  // verdade do total; ver distributeGeneralQty). Pré-preenchido com a grade padrão (12) pra
+  // "Distribuir" sem mexer em nada já dar o resultado mais comum. Puramente de preenchimento, não
+  // persiste em lugar nenhum, por isso fica local ao editor (não em `value`).
+  const [generalQty, setGeneralQty] = useState(String(GRADE_PADRAO_PARES))
   const totalPares = Object.values(value).reduce((sum, n) => sum + n, 0)
 
   function setSize(size: string, v: number) {
@@ -35,23 +32,14 @@ export function GradeEditor({ product: p, value, onChange }: GradeEditorProps) {
     onChange({ ...value, [size]: qty })
   }
 
-  // Distribui `total` pelas numerações sugeridas do produto — usado tanto pelo "Preencher
-  // sugestão" (total fixo, GRADE_AUTOFILL_PARES) quanto pela "Quantidade geral" (total escolhido
-  // pelo lojista). Substitui a grade inteira, não soma com o que já tinha. Arredonda `total` pra
-  // cima pro múltiplo de 12 mais próximo antes de distribuir (ver GRADE_FECHADA) — a soma final
-  // sempre fecha uma grade redonda, mesmo que o número digitado não seja múltiplo de 12.
-  function distributeGrade(total: number) {
-    const closedTotal = Math.ceil(total / GRADE_FECHADA) * GRADE_FECHADA
-    onChange(distributeSizesExact(p, closedTotal))
-  }
-
-  function autofillGrade() {
-    distributeGrade(GRADE_AUTOFILL_PARES)
-  }
-
+  // Distribui exatamente o número digitado pelas numerações sugeridas do produto — substitui a
+  // grade inteira, não soma com o que já tinha. Sem arredondar pra nenhum múltiplo: uma tentativa
+  // anterior de sempre fechar em dúzias (arredondando pra cima) foi abandonada porque o número que
+  // o lojista digitava não era respeitado (digitar 9 virava 12 sem aviso nenhum) — "Distribuir" só
+  // faz sentido se confirma o que está escrito no campo.
   function distributeGeneralQty() {
     const n = parseInt(generalQty || '0', 10)
-    if (n > 0) distributeGrade(n)
+    if (n > 0) onChange(distributeSizesExact(p, n))
   }
 
   return (
@@ -73,13 +61,10 @@ export function GradeEditor({ product: p, value, onChange }: GradeEditorProps) {
           <div className="gradefill" style={{ cursor: 'pointer' }} onClick={distributeGeneralQty}>
             Distribuir
           </div>
-          <div className="gradefill" style={{ cursor: 'pointer' }} onClick={autofillGrade}>
-            Preencher sugestão
-          </div>
         </div>
       </div>
       <div className="gradehint">
-        "Distribuir" e "Preencher sugestão" sempre fecham a grade em múltiplos de 12 pares (arredondando pra cima) — pra um total quebrado, digite direto nos campos abaixo.
+        Distribui o total ao lado igualmente pelas numerações sugeridas (destacadas), substituindo a grade atual — ajuste os campos abaixo se quiser algo diferente.
       </div>
       <div className="sheet">
         {p.suggestedSizes.map((s) => (
