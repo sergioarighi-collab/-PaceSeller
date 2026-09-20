@@ -70,13 +70,16 @@ export function GradeEditor({ product: p, value, onChange }: GradeEditorProps) {
             onChange={(e) => setGeneralQty(e.target.value)}
             className="generalqty-input"
           />
-          <div className="gradefill" style={{ cursor: 'pointer' }} title="Fecha a grade no múltiplo de 12 mais próximo" onClick={distributeGeneralQty}>
+          <div className="gradefill" style={{ cursor: 'pointer' }} onClick={distributeGeneralQty}>
             Distribuir
           </div>
-          <div className="gradefill" style={{ cursor: 'pointer' }} title="Fecha a grade no múltiplo de 12 mais próximo" onClick={autofillGrade}>
+          <div className="gradefill" style={{ cursor: 'pointer' }} onClick={autofillGrade}>
             Preencher sugestão
           </div>
         </div>
+      </div>
+      <div className="gradehint">
+        "Distribuir" e "Preencher sugestão" sempre fecham a grade em múltiplos de 12 pares (arredondando pra cima) — pra um total quebrado, digite direto nos campos abaixo.
       </div>
       <div className="sheet">
         {p.suggestedSizes.map((s) => (

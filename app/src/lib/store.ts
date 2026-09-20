@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { Persona, User, Carrinho, Pedido, PedidoItem, NotificationItem } from './types'
 import { GRADE_MINIMA_PARES } from './types'
 import { users, products, initialCarrinhos, initialNotifications, combos } from './data'
-import { comboPrice } from './productLines'
+import { comboPrice, distributeSizesExact } from './productLines'
 
 interface AppState {
   persona: Persona | null
@@ -49,12 +49,12 @@ interface AppState {
   setCartQty: (productId: string, qty: number) => void
 
   /**
-   * Quantidade por numeração (34–44) do pedido em montagem, só pros produtos que passaram pela
-   * "grade em folha" da Ficha de Decisão — mapa esparso, nem todo `productId` de `cartItems` tem
-   * entrada aqui (o "Adicionar ao carrinho" rápido do card do Catálogo não define numeração).
-   * `setCartQty` (stepper genérico do drawer) apaga a entrada do produto ao mudar o total: uma vez
-   * que o total é alterado sem dizer em qual numeração, a distribuição registrada deixa de ser
-   * verdade, então o rótulo de grade volta a cair pro miolo sugerido do produto.
+   * Quantidade por numeração (34–44) do pedido em montagem — mapa esparso, nem todo `productId` de
+   * `cartItems` tem entrada aqui (um item sem grade definida ainda não passou pelo "Definir grade
+   * por numeração"/Ficha de Decisão). `setCartQty` (stepper genérico do drawer) **recalcula** essa
+   * entrada pra nova quantidade em vez de apagar, sempre que ela já existir (ver
+   * `distributeSizesExact`) — o lojista não perde uma grade já definida só por ajustar o total no
+   * +/-.
    */
   cartItemSizes: Record<string, Record<string, number>>
   /** Define a quantidade por numeração de um produto — soma vira `cartItems[productId]`. Zerar
@@ -195,9 +195,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     else s.addToCart(productId, 12)
   },
   // Ajuste de quantidade de um item já no pedido em montagem (stepper do drawer) — diferente de
-  // addToCart, não dispara peekOrderDrawer: o drawer já está aberto (é onde o stepper vive). Apaga
-  // a numeração registrada do produto (ver cartItemSizes) — o stepper genérico não sabe em qual
-  // numeração o ajuste entra, então a distribuição anterior deixa de ser verdade.
+  // addToCart, não dispara peekOrderDrawer: o drawer já está aberto (é onde o stepper vive). Se o
+  // produto já tinha uma grade definida (cartItemSizes), o stepper não apaga mais essa grade — ela
+  // é recalculada pra nova quantidade (mesma distribuição por numeração de sempre, ver
+  // distributeSizesExact), então o link continua "Editar grade" e o lojista sempre pode refinar a
+  // distribuição de novo. Sem isso, um simples "+1" no stepper resetava a grade que o lojista tinha
+  // acabado de montar, obrigando a redefinir do zero — friccão real reportada pelo usuário.
   setCartQty: (productId, qty) => {
     if (qty <= 0) {
       get().removeFromCart(productId)
@@ -205,7 +208,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     set((s) => {
       const nextSizes = { ...s.cartItemSizes }
-      delete nextSizes[productId]
+      const product = products.find((p) => p.id === productId)
+      if (nextSizes[productId] && product) {
+        nextSizes[productId] = distributeSizesExact(product, qty)
+      } else {
+        delete nextSizes[productId]
+      }
       return { cartItems: { ...s.cartItems, [productId]: qty }, cartItemSizes: nextSizes }
     })
   },
