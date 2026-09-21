@@ -620,9 +620,12 @@
      bordas esquerda/direita quase sem margem (ver guia-dev-frontend.md), então um canto muito
      arredondado corta visualmente a ponta/calcanhar do tênis. 2px praticamente elimina essa área
      de corte sem precisar aumentar padding nem mudar a proporção do box (44x44 continua igual). */
-  .pw-swatch{width:44px;height:44px;border-radius:2px;border:1.5px solid var(--border);background:var(--surface);padding:2px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;transition:border-color .12s ease;}
-  .pw-swatch:hover{border-color:var(--border-strong);}
-  .pw-swatch.active{border-color:var(--black);border-width:2px;padding:1.5px;}
+  /* Sem stroke — a foto sozinha já basta, borda em volta de cada miniatura só empilhava contorno
+     em cima de contorno (card + swatch). Seleção passa a ser por opacidade em vez de borda: as
+     miniaturas não-ativas ficam apagadas, a ativa fica em opacidade cheia. */
+  .pw-swatch{width:44px;height:44px;border-radius:2px;background:var(--surface);padding:2px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;opacity:.5;transition:opacity .12s ease;}
+  .pw-swatch:hover{opacity:.8;}
+  .pw-swatch.active{opacity:1;}
   .pw-swatch img{width:100%;height:100%;object-fit:contain;}
   .pw-swatch-star{position:absolute;top:-4px;right:-4px;width:13px;height:13px;border-radius:50%;background:var(--black);color:#fff;display:flex;align-items:center;justify-content:center;}
   .pw-addbtn{width:100%;text-align:center;padding:9px;border-radius:4px;font-size:12.5px;font-weight:600;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary);}

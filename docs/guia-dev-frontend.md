@@ -502,6 +502,12 @@ Problema prático: nenhuma linha do catálogo mock overflowava o suficiente pra 
 
 **Segundo corte real, corrigido sem padding**: usuário reportou continuar vendo corte mesmo depois do fix de auto-scroll — dessa vez nos **cantos** de cada swatch. Causa: `.pw-swatch` é um quadrado (44×44) e a foto é bem mais larga que alta (~1,73:1); `object-fit:contain` encaixa pela largura, preenchendo os 44px horizontais **de ponta a ponta, sem margem nenhuma** — como o box tem `border-radius` + `overflow:hidden`, a curva do canto arredondado corta visualmente a ponta/calcanhar do tênis que chega exatamente na borda. Primeira tentativa de correção foi aumentar padding + deixar o box mais alto (44×52) — resolvia o corte, mas o usuário achou que "não ficou bom" (revertido, ver histórico do commit). **Fix que ficou**: `border-radius` de `5px` pra `2px` — ataca a mesma causa (a curva do canto é o que corta) sem precisar de mais padding nem mudar a proporção/tamanho do box. 44×44 continua igual, o conteúdo visível do swatch não encolhe.
 
+## `.pw-swatch` sem stroke — seleção por opacidade (set/2026)
+
+Pedido do usuário: tirar o stroke (borda) das miniaturas de cor do card de produto do Catálogo. Antes, `.pw-swatch` tinha `border:1.5px solid var(--border)` sempre visível, engrossando pra `2px` preto no swatch ativo (`.active`) — duas bordas empilhadas (card + swatch) deixavam a faixa de cores com contorno demais.
+
+Removida a borda por completo (default, hover e active). A seleção — que precisa continuar visível, já que clicar num swatch troca a foto/nome/preço/badges do card inteiro (`ProductLineCard.tsx`, `selectedIdx`) — passou a ser sinalizada por **opacidade** em vez de borda: swatches inativos ficam em `opacity:.5`, hover sobe pra `.8`, o ativo fica em `1`. Sem mudança nenhuma na lógica de seleção (`selectedIdx`/`onClick`) nem no tamanho/`border-radius` do swatch (continuam 44px/2px, ver seções acima) — só o CSS de estado visual.
+
 ## Miniatura de produto unificada em 44px no app inteiro (set/2026)
 
 Pedido do usuário: depois de ajustar tamanho/proporção/`border-radius` da miniatura do swatch de cor no Catálogo (`.pw-swatch`, ver seções acima), aplicar a mesma miniatura (mesmo tamanho, mesmo `border-radius`) em todo o resto do app onde uma foto pequena de produto aparece — evita cada tela ter seu próprio tamanho "quase igual, mas não igual".
