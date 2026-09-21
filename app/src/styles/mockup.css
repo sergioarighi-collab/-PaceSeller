@@ -628,14 +628,21 @@
      quando aquela cor não é a selecionada no momento (é um dado sobre a cor, não sobre o estado
      de seleção do card). */
   .pw-swatch{width:44px;height:44px;border-radius:2px;background:var(--surface);padding:2px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;}
-  .pw-swatch img,.pw-swatch svg{width:100%;height:100%;object-fit:contain;opacity:.5;transition:opacity .12s ease;}
-  .pw-swatch:hover img,.pw-swatch:hover svg{opacity:.8;}
-  .pw-swatch.active img,.pw-swatch.active svg{opacity:1;}
+  /* `>` (filho direto) e não descendente qualquer: a foto (`<img>`/`<svg>` de fallback, ambos
+     filhos diretos vindos do `ProductThumb`) precisa dessa opacidade, mas o `<svg>` da estrela de
+     "mais vendida" NÃO — ele mora dentro de `.pw-swatch-star` (um nível a mais), e usar o
+     seletor genérico `.pw-swatch svg` pegava ele também, apagando a estrela igual a um bug já
+     corrigido antes (ver seção "`.pw-swatch` sem stroke" no guia). */
+  .pw-swatch > img,.pw-swatch > svg{width:100%;height:100%;object-fit:contain;opacity:.5;transition:opacity .12s ease;}
+  .pw-swatch:hover > img,.pw-swatch:hover > svg{opacity:.8;}
+  .pw-swatch.active > img,.pw-swatch.active > svg{opacity:1;}
   /* Fica DENTRO da caixa do swatch (não em offset negativo) — a versão anterior (top:-4px;
      right:-4px) ficava cortada pela metade, porque os containers pais (`.pw-thumb`, `.pcard-web`)
-     têm overflow:hidden. O anel branco (box-shadow) garante contraste tanto sobre foto clara
-     quanto escura, já que agora ela fica em cima da própria foto, não do fundo branco do card. */
-  .pw-swatch-star{position:absolute;top:2px;right:2px;width:14px;height:14px;border-radius:50%;background:var(--black);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 1.5px var(--surface);}
+     têm overflow:hidden. Embaixo da foto, sem círculo (só o ícone) — pedido do usuário depois de
+     achar o badge com fundo preto redondo pesado demais. Sem fundo, o contraste contra fotos
+     escuras vem de um halo branco via `drop-shadow` duplicado (0 de offset, só blur) em vez de
+     `box-shadow` (que não segue o contorno recortado do ícone, só a caixa retangular do `<span>`). */
+  .pw-swatch-star{position:absolute;bottom:1px;left:50%;transform:translateX(-50%);color:var(--black);display:flex;filter:drop-shadow(0 0 1.5px var(--surface)) drop-shadow(0 0 1.5px var(--surface));}
   .pw-addbtn{width:100%;text-align:center;padding:9px;border-radius:4px;font-size:12.5px;font-weight:600;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary);}
   .pw-addbtn.in-cart{background:var(--black);border-color:var(--black);color:var(--on-black);display:flex;align-items:center;justify-content:center;gap:6px;}
 

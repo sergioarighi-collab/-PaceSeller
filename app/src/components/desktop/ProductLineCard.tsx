@@ -111,7 +111,7 @@ export function ProductLineCard({
                   <ProductThumb src={c.image} alt={c.colorway} iconSize={19} padding={2} />
                   {c.id === bestSellerId && (
                     <span className="pw-swatch-star">
-                      <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2l2.9 6.9 7.4.6-5.6 4.9 1.7 7.3L12 17.9 5.6 21.7l1.7-7.3-5.6-4.9 7.4-.6L12 2z" />
                       </svg>
                     </span>
