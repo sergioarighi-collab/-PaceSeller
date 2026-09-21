@@ -630,6 +630,14 @@ Alterado em três lugares:
 
 Modelar a etapa "em análise" como um status novo e separado (em vez de só renomear o rótulo do `pago`) ficou em aberto — não foi pedido pelo usuário nesta rodada.
 
+## Toast no envio em lote pro representante (set/2026)
+
+Pergunta do usuário: "acha que no carrinho precisamos criar toast quando executo as ações referentes a enviar carrinho para o rep?". As três ações que chamam `sendPedidoToRepresentante` (`store.ts`) até então não davam nenhum feedback explícito — só o CTA sumia e o badge mudava pra "Aguardando Ana" (via `pedidoStatusBadge`).
+
+Avaliação: no `CarrinhoDetail.tsx` (envio individual, "Enviar pro representante" dentro do próprio pedido) e no CTA por linha do `MeusCarrinhos.tsx` ("Enviar"), o feedback implícito já é suficiente — CTA e badge mudam na mesma tela que o usuário acabou de clicar, bem visível. Já o **banner em lote** do topo de `MeusCarrinhos.tsx` ("X pedidos já batem a grade mínima" → um botão único manda todos de uma vez) tinha o problema mais sério: o único sinal de sucesso era o banner inteiro sumir, fácil de não perceber principalmente quando são vários pedidos de uma vez. Decisão do usuário: toast só nesse caso.
+
+Implementado reaproveitando o componente `Toast` já existente no app (mesmo usado no Radar pra "Reposição adicionada ao carrinho", `components/desktop/Toast.tsx`, fecha sozinho em 5s ou no X). `MeusCarrinhos.tsx` ganhou state `sendToast`; o `onClick` do botão `.bbtn` do banner, além de mandar todos os pedidos de `readyToSend`, monta `{title, sub}` a partir do próprio array capturado antes do envio (`readyToSend.length`/`readyToSend[0].c.representative`) — precisa ser antes porque, assim que os pedidos saem de `rascunho`, `readyToSend` recalcula vazio no próximo render e o banner some. Título pluraliza ("Pedido enviado" vs. "N pedidos enviados"); subtítulo nomeia a representante ("Ana vai revisar e aprovar").
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

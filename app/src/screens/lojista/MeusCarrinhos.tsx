@@ -5,6 +5,7 @@ import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { ProductThumb } from '../../components/desktop/ProductThumb'
 import { ConfirmModal } from '../../components/desktop/ConfirmModal'
+import { Toast } from '../../components/desktop/Toast'
 import { useAppStore, cartSummary, comboSummary, resolveTargetCarrinhoId, pedidoPares, pedidoActionKind, pedidoStatusBadge } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import type { Carrinho, Pedido } from '../../lib/types'
@@ -41,6 +42,13 @@ export function MeusCarrinhos() {
   // store.ts) — avisa antes de deixar entrar. Guarda o carrinho pendente de confirmação (não um
   // bool solto) porque a lista tem N linhas e cada uma pode disparar essa mesma confirmação.
   const [confirmEditCart, setConfirmEditCart] = useState<Carrinho | null>(null)
+  // Feedback do envio em lote (banner "X pedidos já batem a grade mínima" → botão único manda
+  // vários pedidos de uma vez): sem toast, o único sinal de que aconteceu algo era o banner
+  // sumir e os badges mudarem — fácil de não notar quando é mais de um pedido de uma vez só.
+  // Envio individual (dentro do próprio CarrinhoDetail) não ganhou o mesmo toast de propósito —
+  // ali o CTA que some e o badge que muda já estão bem visíveis na mesma tela que o usuário
+  // acabou de clicar, então um toast a mais seria redundante.
+  const [sendToast, setSendToast] = useState<{ title: string; sub: string } | null>(null)
 
   const rows = carrinhos
     .map((c) => {
@@ -168,7 +176,16 @@ export function MeusCarrinhos() {
                   e {readyToSend.length > 1 ? 'estão prontos' : 'está pronto'} — {readyToSend[0].c.name}
                   {readyToSend.length > 1 ? ` e mais ${readyToSend.length - 1}` : ''}
                 </div>
-                <div className="bbtn" onClick={() => readyToSend.forEach(({ c, p }) => sendPedidoToRepresentante(c.id, p.id))}>
+                <div
+                  className="bbtn"
+                  onClick={() => {
+                    readyToSend.forEach(({ c, p }) => sendPedidoToRepresentante(c.id, p.id))
+                    setSendToast({
+                      title: readyToSend.length > 1 ? `${readyToSend.length} pedidos enviados` : 'Pedido enviado',
+                      sub: `${readyToSend[0].c.representative} vai revisar e aprovar`,
+                    })
+                  }}
+                >
                   Enviar pro representante
                 </div>
               </div>
@@ -315,6 +332,8 @@ export function MeusCarrinhos() {
           )}
         </div>
       </div>
+
+      {sendToast && <Toast title={sendToast.title} sub={sendToast.sub} onClose={() => setSendToast(null)} />}
 
       {confirmEditCart && (
         <ConfirmModal
