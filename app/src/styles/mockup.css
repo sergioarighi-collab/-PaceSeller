@@ -604,47 +604,57 @@
   .pw-priceblock .pw-pdvlabel{font-family:var(--mono);font-size:11px;color:var(--text-secondary);}
   .pw-priceblock .pw-margintag{font-family:var(--mono);font-size:10.5px;font-weight:700;color:var(--positive);background:var(--positive-dim);padding:2px 7px;border-radius:4px;white-space:nowrap;}
   .pcard-web .pw-badgerow{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;}
-  /* Faixa de cores em overlay (set/2026) — sobreposta à foto (position:absolute, ancorada em
-     .pw-thumb que já é position:relative), não no fluxo do .pw-body. Some por padrão, só aparece
-     no hover do card (.pcard-web:hover) — assim o card nunca muda de altura entre os dois estados,
-     o que evitaria puxar a fileira inteira do grid junto (CSS Grid estica a fileira pro maior
-     item). Nunca quebra linha: scroll horizontal nativo por baixo (sem lib de carrossel nova),
-     com setas só quando a linha tem cores demais pra caber (SWATCH_CAROUSEL_THRESHOLD). */
-  .pw-swatch-overlay{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;gap:5px;padding:8px;background:var(--surface);border-top:1px solid var(--border);opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity .15s ease,transform .15s ease;}
-  .pcard-web:hover .pw-swatch-overlay{opacity:1;transform:translateY(0);pointer-events:auto;}
-  .pw-swatch-track{display:flex;gap:6px;flex:1;min-width:0;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;}
-  .pw-swatch-track::-webkit-scrollbar{display:none;}
-  .pw-swatch-arrow{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--surface);border:1px solid var(--border-strong);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;}
-  .pw-swatch-arrow:hover{background:var(--surface-2);color:var(--text-primary);}
-  /* border-radius baixo de propósito (era 5px) — a foto é bem mais larga que alta e encosta nas
-     bordas esquerda/direita quase sem margem (ver guia-dev-frontend.md), então um canto muito
-     arredondado corta visualmente a ponta/calcanhar do tênis. 2px praticamente elimina essa área
-     de corte sem precisar aumentar padding nem mudar a proporção do box (44x44 continua igual). */
-  /* Sem stroke — a foto sozinha já basta, borda em volta de cada miniatura só empilhava contorno
-     em cima de contorno (card + swatch). Seleção passa a ser por opacidade em vez de borda: as
-     miniaturas não-ativas ficam apagadas, a ativa fica em opacidade cheia. Opacidade vai na
-     <img>/<svg>, não no `.pw-swatch` em si — `opacity` no container apagaria também a estrelinha
-     de "mais vendida" (`.pw-swatch-star`, filha dele), que precisa continuar 100% visível mesmo
-     quando aquela cor não é a selecionada no momento (é um dado sobre a cor, não sobre o estado
-     de seleção do card). */
-  .pw-swatch{width:44px;height:44px;border-radius:2px;background:var(--surface);padding:2px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;}
-  /* `>` (filho direto) e não descendente qualquer: a foto (`<img>`/`<svg>` de fallback, ambos
-     filhos diretos vindos do `ProductThumb`) precisa dessa opacidade, mas o `<svg>` da estrela de
-     "mais vendida" NÃO — ele mora dentro de `.pw-swatch-star` (um nível a mais), e usar o
-     seletor genérico `.pw-swatch svg` pegava ele também, apagando a estrela igual a um bug já
-     corrigido antes (ver seção "`.pw-swatch` sem stroke" no guia). */
-  .pw-swatch > img,.pw-swatch > svg{width:100%;height:100%;object-fit:contain;opacity:.5;transition:opacity .12s ease;}
-  .pw-swatch:hover > img,.pw-swatch:hover > svg{opacity:.8;}
-  .pw-swatch.active > img,.pw-swatch.active > svg{opacity:1;}
-  /* Fica DENTRO da caixa do swatch (não em offset negativo) — a versão anterior (top:-4px;
-     right:-4px) ficava cortada pela metade, porque os containers pais (`.pw-thumb`, `.pcard-web`)
-     têm overflow:hidden. Embaixo da foto, sem círculo (só o ícone) — pedido do usuário depois de
-     achar o badge com fundo preto redondo pesado demais. Sem fundo, o contraste contra fotos
-     escuras vem de um halo branco via `drop-shadow` duplicado (0 de offset, só blur) em vez de
-     `box-shadow` (que não segue o contorno recortado do ícone, só a caixa retangular do `<span>`). */
-  .pw-swatch-star{position:absolute;bottom:1px;left:50%;transform:translateX(-50%);color:var(--black);display:flex;filter:drop-shadow(0 0 1.5px var(--surface)) drop-shadow(0 0 1.5px var(--surface));}
   .pw-addbtn{width:100%;text-align:center;padding:9px;border-radius:4px;font-size:12.5px;font-weight:600;background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary);}
   .pw-addbtn.in-cart{background:var(--black);border-color:var(--black);color:var(--on-black);display:flex;align-items:center;justify-content:center;gap:6px;}
+
+  /* Card de linha de produto — vertical/minimalista (set/2026). Substitui o antigo card
+     horizontal (.pcard-web usado via ProductLineCard, agora só usado pelo caminho de produto
+     avulso do Catálogo — filtro por contexto). Testado antes como protótipo (Artifact "Vitrine do
+     Catálogo": foto grande, texto mínimo, 1 selo só em vez de 2-3 empilhados, "giro/estoque" some
+     do card mas continua na Ficha de Decisão) e aprovado pelo usuário com dois ajustes: botão de
+     adicionar sempre preto com a cruz branca (não só um contorno que escurece no hover) e
+     miniaturas de cor 25% maiores que a versão testada (24px → 30px). Sem background próprio —
+     fica direto no fundo cinza do `.catgrid-web`, igual ao protótipo aprovado. */
+  /* min-width:0 é necessário aqui (não só na faixa de miniaturas lá dentro) — item de grid tem
+     min-width:auto por padrão, então sem isso o conteúdo da faixa de miniaturas (que só encolhe
+     de verdade com min-width:0 + overflow-x:auto) empurrava o card inteiro pra ficar mais largo
+     em vez de rolar, e o carrossel de overflow nunca ativava (bug real, achado testando a linha
+     COIL com 16 cores de teste). */
+  .pline-card{display:flex;flex-direction:column;min-width:0;}
+  .pline-thumb{position:relative;aspect-ratio:3/4;background:var(--surface);display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:2px;}
+  .pline-thumb img{width:100%;height:100%;object-fit:contain;}
+  .pline-tag{position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;padding:4px 9px;border-radius:3px;background:var(--black);color:#fff;}
+  .pline-tag.risk{background:var(--risk);}
+  .pline-tag.info{background:var(--info);}
+  /* Mesmo carrossel (scroll nativo + setas só quando não cabe tudo) do card antigo, só que as
+     miniaturas ficam sempre visíveis embaixo da foto, não escondidas atrás de hover — hover não
+     existe em telas touch, e esconder a troca de cor atrás dele deixaria a ação invisível ali. */
+  .pline-dots-row{display:flex;align-items:center;gap:6px;margin-top:12px;}
+  .pline-dots{display:flex;gap:6px;flex:1;min-width:0;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;}
+  .pline-dots::-webkit-scrollbar{display:none;}
+  .pline-dots-arrow{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--surface);border:1px solid var(--border-strong);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .pline-dots-arrow:hover{background:var(--surface-2);color:var(--text-primary);}
+  /* 30px = 24px testado no protótipo + 25%, pedido do usuário ao aprovar. */
+  .pline-dot{width:30px;height:30px;border-radius:2px;background:var(--surface);padding:2px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;}
+  .pline-dot > img,.pline-dot > svg{width:100%;height:100%;object-fit:contain;opacity:.5;transition:opacity .12s ease;}
+  .pline-dot:hover > img,.pline-dot:hover > svg{opacity:.8;}
+  .pline-dot.active > img,.pline-dot.active > svg{opacity:1;}
+  .pline-dot-star{position:absolute;bottom:0;left:50%;transform:translateX(-50%) scale(.85);color:var(--black);display:flex;filter:drop-shadow(0 0 1px var(--surface)) drop-shadow(0 0 1px var(--surface));}
+  .pline-info{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:14px;}
+  .pline-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-tertiary);}
+  .pline-name{font-family:var(--display);font-size:15.5px;font-weight:700;color:var(--text-primary);margin-top:3px;}
+  .pline-colorway{font-size:12px;color:var(--text-secondary);margin-top:1px;}
+  /* Preto com a cruz branca sempre — não só no hover. Pedido explícito do usuário ao aprovar o
+     protótipo (lá o botão era um contorno que só escurecia no hover, igual ao antigo .pw-addbtn). */
+  .pline-addbtn{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--black);color:var(--on-black);display:flex;align-items:center;justify-content:center;margin-top:2px;transition:background .12s ease;}
+  .pline-addbtn:hover{background:var(--black-hover);}
+  .pline-priceline{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:12px;font-family:var(--mono);}
+  .pline-pricemain{font-size:14.5px;font-weight:700;color:var(--text-primary);}
+  .pline-pdv{font-size:11px;color:var(--text-secondary);}
+  .pline-badge{display:inline-flex;margin-top:8px;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;background:var(--surface-2);color:var(--text-secondary);width:fit-content;}
+  .pline-badge.pos{background:var(--positive-dim);color:var(--positive);}
+  .pline-badge.risk{background:var(--risk-dim);color:var(--risk);}
+  .pline-badge.info{background:var(--info-dim);color:var(--info);}
 
   /* Combos sugeridos (Catálogo) — card com dois produtos + preço combinado */
   .combogrid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;}
