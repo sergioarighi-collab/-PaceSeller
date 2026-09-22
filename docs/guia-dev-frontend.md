@@ -676,6 +676,12 @@ Pedido do usuário, testado antes via `addStyleTag` no Playwright (`opacity:1 !i
 
 `opacity`/`transition` e as regras `:hover`/`.active` saíram de `.pline-dot > img,.pline-dot > svg` — a classe `active` continua sendo aplicada no elemento via JSX (não removida, é barata e pode servir pra outra coisa no futuro), só não tem mais nenhum efeito visual hoje. Avisado ao usuário antes de implementar: sem esse efeito, nenhuma miniatura se destaca das outras à primeira vista — só a estrelinha de "mais vendida" (que é um dado diferente, não indica seleção) continua marcando alguma delas. Usuário confirmou que é essa a intenção.
 
+## Mais dois ajustes de tamanho: estrela +15%, miniatura +20% (set/2026)
+
+Pedido direto do usuário, sem teste prévio (ajuste fino, não mudança de comportamento):
+- **`.pline-dot`**: 38px → **46px** (mais um +20% na sequência de incrementos — ver histórico de arredondamentos na própria regra CSS). `DOT_SCROLL_STEP` (132→156) e o `iconSize` do fallback do `ProductThumb` dentro do dot (17→21) acompanharam, mesmo padrão de todo incremento anterior.
+- **`.pline-dot-star`**: o `transform: scale(.85)` (que reduz o ícone de 8px pra caber proporcionalmente no dot) virou `scale(.98)` — 0,85 × 1,15 ≈ 0,9775, arredondado. Como a estrela já era controlada por um fator de escala (não por `width`/`height` direto no SVG), ajustar esse número foi mais direto do que mudar as dimensões do ícone.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

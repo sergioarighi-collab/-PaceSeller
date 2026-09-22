@@ -634,9 +634,9 @@
   .pline-dots::-webkit-scrollbar{display:none;}
   .pline-dots-arrow{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--surface);border:1px solid var(--border-strong);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;}
   .pline-dots-arrow:hover{background:var(--surface-2);color:var(--text-primary);}
-  /* 38px = 24px testado no protótipo, +25% ao aprovar (30px) e +25% de novo pedido em seguida
-     (37,5px, arredondado pra 38px). */
-  .pline-dot{width:38px;height:38px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;}
+  /* 46px = 24px testado no protótipo, +25% ao aprovar (30px), +25% (37,5→38px) e +20% (45,6→46px)
+     em duas rodadas seguintes. */
+  .pline-dot{width:46px;height:46px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;}
   /* Sem quadro (set/2026, testado antes via injeção no Playwright, lado a lado com a versão com
      quadro, pra comparar antes de decidir) — as fotos já vêm com fundo branco "assado" no JPG
      (não são PNG com transparência), então não dá pra só tirar `background`/`padding` do
@@ -649,7 +649,8 @@
      indicador de qual cor está selecionada; nenhuma miniatura se destaca das outras (só a
      estrelinha de "mais vendida", que é outro dado, não tem relação com seleção). */
   .pline-dot > img,.pline-dot > svg{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;}
-  .pline-dot-star{position:absolute;bottom:0;left:50%;transform:translateX(-50%) scale(.85);color:var(--black);display:flex;filter:drop-shadow(0 0 1px var(--surface)) drop-shadow(0 0 1px var(--surface));}
+  /* scale(.98) = .85 + 15%, pedido do usuário. */
+  .pline-dot-star{position:absolute;bottom:0;left:50%;transform:translateX(-50%) scale(.98);color:var(--black);display:flex;filter:drop-shadow(0 0 1px var(--surface)) drop-shadow(0 0 1px var(--surface));}
   /* Hierarquia revista (set/2026) — a primeira versão espalhava eyebrow/nome/cor/botão num só
      flex-row com gaps genéricos (10/12/8px sem critério), sem comunicar o que pertencia a que
      grupo. Reorganizado em 2 blocos com ritmo de espaçamento diferente: "identidade" (eyebrow →
