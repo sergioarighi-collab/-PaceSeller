@@ -634,8 +634,9 @@
   .pline-dots::-webkit-scrollbar{display:none;}
   .pline-dots-arrow{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--surface);border:1px solid var(--border-strong);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;}
   .pline-dots-arrow:hover{background:var(--surface-2);color:var(--text-primary);}
-  /* 30px = 24px testado no protótipo + 25%, pedido do usuário ao aprovar. */
-  .pline-dot{width:30px;height:30px;border-radius:2px;background:var(--surface);padding:2px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;}
+  /* 38px = 24px testado no protótipo, +25% ao aprovar (30px) e +25% de novo pedido em seguida
+     (37,5px, arredondado pra 38px). */
+  .pline-dot{width:38px;height:38px;border-radius:2px;background:var(--surface);padding:2px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;}
   .pline-dot > img,.pline-dot > svg{width:100%;height:100%;object-fit:contain;opacity:.5;transition:opacity .12s ease;}
   .pline-dot:hover > img,.pline-dot:hover > svg{opacity:.8;}
   .pline-dot.active > img,.pline-dot.active > svg{opacity:1;}

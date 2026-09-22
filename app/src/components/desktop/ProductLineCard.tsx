@@ -5,7 +5,7 @@ import { useAppStore } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
 import { ProductThumb } from './ProductThumb'
 
-const DOT_SCROLL_STEP = 108 // ~3 miniaturas (30px + 6px de gap cada)
+const DOT_SCROLL_STEP = 132 // ~3 miniaturas (38px + 6px de gap cada)
 
 const badgeToneClass: Record<Severity, string> = {
   positive: 'pos',
@@ -100,7 +100,7 @@ export function ProductLineCard({
                 title={c.id === bestSellerId ? `${c.colorway} — mais vendida da linha` : c.colorway}
                 onClick={() => setSelectedIdx(i)}
               >
-                <ProductThumb src={c.image} alt={c.colorway} iconSize={13} padding={2} />
+                <ProductThumb src={c.image} alt={c.colorway} iconSize={17} padding={2} />
                 {c.id === bestSellerId && (
                   <span className="pline-dot-star">
                     <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
