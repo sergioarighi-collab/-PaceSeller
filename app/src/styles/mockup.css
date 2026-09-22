@@ -643,9 +643,12 @@
      `.pline-dot`: sobraria um retângulo branco do tamanho da foto, só sem a moldura visível.
      `mix-blend-mode:multiply` funde esse branco com o que está atrás (o cinza do `.catgrid-web`)
      — branco × qualquer cor = a própria cor, então o fundo da foto "some" e só sobra o tênis. */
-  .pline-dot > img,.pline-dot > svg{width:100%;height:100%;object-fit:contain;opacity:.5;transition:opacity .12s ease;mix-blend-mode:multiply;}
-  .pline-dot:hover > img,.pline-dot:hover > svg{opacity:.8;}
-  .pline-dot.active > img,.pline-dot.active > svg{opacity:1;}
+  /* Sem opacidade pra sinalizar seleção (set/2026, testado antes via addStyleTag no Playwright) —
+     todas as miniaturas ficam em opacidade cheia sempre, o clique só troca a foto grande/nome/
+     preço do card (ver `selectedIdx` em `ProductLineCard.tsx`). A foto grande passa a ser o único
+     indicador de qual cor está selecionada; nenhuma miniatura se destaca das outras (só a
+     estrelinha de "mais vendida", que é outro dado, não tem relação com seleção). */
+  .pline-dot > img,.pline-dot > svg{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;}
   .pline-dot-star{position:absolute;bottom:0;left:50%;transform:translateX(-50%) scale(.85);color:var(--black);display:flex;filter:drop-shadow(0 0 1px var(--surface)) drop-shadow(0 0 1px var(--surface));}
   /* Hierarquia revista (set/2026) — a primeira versão espalhava eyebrow/nome/cor/botão num só
      flex-row com gaps genéricos (10/12/8px sem critério), sem comunicar o que pertencia a que
