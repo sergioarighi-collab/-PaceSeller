@@ -636,8 +636,14 @@
   .pline-dots-arrow:hover{background:var(--surface-2);color:var(--text-primary);}
   /* 38px = 24px testado no protótipo, +25% ao aprovar (30px) e +25% de novo pedido em seguida
      (37,5px, arredondado pra 38px). */
-  .pline-dot{width:38px;height:38px;border-radius:2px;background:var(--surface);padding:2px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;}
-  .pline-dot > img,.pline-dot > svg{width:100%;height:100%;object-fit:contain;opacity:.5;transition:opacity .12s ease;}
+  .pline-dot{width:38px;height:38px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;}
+  /* Sem quadro (set/2026, testado antes via injeção no Playwright, lado a lado com a versão com
+     quadro, pra comparar antes de decidir) — as fotos já vêm com fundo branco "assado" no JPG
+     (não são PNG com transparência), então não dá pra só tirar `background`/`padding` do
+     `.pline-dot`: sobraria um retângulo branco do tamanho da foto, só sem a moldura visível.
+     `mix-blend-mode:multiply` funde esse branco com o que está atrás (o cinza do `.catgrid-web`)
+     — branco × qualquer cor = a própria cor, então o fundo da foto "some" e só sobra o tênis. */
+  .pline-dot > img,.pline-dot > svg{width:100%;height:100%;object-fit:contain;opacity:.5;transition:opacity .12s ease;mix-blend-mode:multiply;}
   .pline-dot:hover > img,.pline-dot:hover > svg{opacity:.8;}
   .pline-dot.active > img,.pline-dot.active > svg{opacity:1;}
   .pline-dot-star{position:absolute;bottom:0;left:50%;transform:translateX(-50%) scale(.85);color:var(--black);display:flex;filter:drop-shadow(0 0 1px var(--surface)) drop-shadow(0 0 1px var(--surface));}

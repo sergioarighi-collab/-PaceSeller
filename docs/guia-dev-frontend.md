@@ -662,6 +662,14 @@ Pedido do usuário: repensar o card de produto do Catálogo — maior, vertical,
 
 Testado visualmente e clique do botão de adicionar (agora dentro do `.pline-toprow`) continua funcionando igual.
 
+## Miniaturas de cor sem quadro — `mix-blend-mode:multiply` (set/2026)
+
+Pedido do usuário: tirar o quadro/fundo branco das miniaturas de cor, deixando só o produto, sem contorno. Testado antes via injeção de DOM no Playwright (duas versões da faixa de miniaturas lado a lado no mesmo card real, sem mexer em código — só pra comparar visualmente antes de decidir) e aprovado.
+
+Problema de partida: as fotos são JPG com fundo branco "assado" na própria imagem (não PNG com transparência), então só tirar `background`/`padding` do `.pline-dot` deixaria um retângulo branco do tamanho da foto — sem moldura visível, mas ainda um "quadro" de fato. Resolvido com `mix-blend-mode:multiply` na `<img>`: multiplicar branco por qualquer cor resulta na própria cor (branco = elemento neutro da multiplicação), então o fundo branco da foto se funde com o que está atrás dela (o cinza do `.catgrid-web`) e só sobra o tênis. `.pline-dot` perdeu `background`/`padding`/`border-radius` (não fazem mais sentido sem quadro); manteve `width`/`height`/`overflow:hidden`/`position:relative` (a estrelinha de "mais vendida" ainda precisa de um container posicionado). O esquema de opacidade pra sinalizar seleção (inativo `.5`, hover `.8`, ativo `1` — ver seção "sem stroke" mais acima) continua igual, combinando normalmente com o blend mode.
+
+Efeito depende do fundo atrás ser sólido e claro (funciona bem contra o cinza `--surface-2` do `.catgrid-web`, que é onde esse card sempre aparece); não é um recorte de verdade (a "sombra"/textura da foto original, se tiver, ainda aparece) — mas as fotos do catálogo mock são estúdio limpo sobre fundo branco liso, então na prática o resultado é bem próximo de um recorte.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
