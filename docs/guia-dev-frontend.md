@@ -656,6 +656,12 @@ Pedido do usuário: repensar o card de produto do Catálogo — maior, vertical,
 
 **Pergunta em aberto do protótipo, respondida pelo usuário**: "Giro/estoque (oportunidade perdida, estoque parado) some do card — vai só pra ficha do produto, ou precisa continuar visível na grade?" → **precisa continuar visível**, e a Ficha de Decisão do produto continua a mesma (não foi tocada). Já estava coberto pela prioridade de selo implementada (`riskBadge ?? premiumBadge ?? growthBadge` — risco sempre ganha de lançamento/crescimento) — confirmado testando os dois textos reais do catálogo mock: "Oportunidade perdida" (COIL Off White Furta Cor) e "Estoque parado" (Flow XL Black) aparecem em vermelho (`pline-tag risk`) no lugar do selo padrão preto.
 
+**Hierarquia das infos revista (set/2026)**: usuário achou o bloco de texto abaixo da foto "largado, sem equilíbrio na hierarquia". Duas mudanças:
+- **JSX reestruturado**: o botão de adicionar saiu de dentro de um flex-row com o bloco inteiro (eyebrow + nome + cor, 3 linhas de altura variável — o botão ficava com `margin-top` no chute tentando alinhar com o nome) e passou a dividir uma linha só com o nome (`.pline-toprow`, `align-items:center`) — alinhamento exato contra o texto que ele representa, não mais uma estimativa.
+- **Ritmo de espaçamento com critério**: antes cada elemento tinha sua própria margem solta (3px/1px/12px/8px, sem padrão). Agora 2 blocos nitidamente separados — "identidade" (eyebrow → nome+botão → cor, 2-3px entre si, bem colados) e "preço" (fábrica → PDV → margem, 6-8px entre si, também colados) — com um respiro maior (14px) só na transição entre os dois blocos. Preço fábrica subiu de 14,5px pra 15px (mais peso, é o número que importa pra decisão); PDV sugerido foi de `--text-secondary` pra `--text-tertiary` (mais discreto, é informação de apoio).
+
+Testado visualmente e clique do botão de adicionar (agora dentro do `.pline-toprow`) continua funcionando igual.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

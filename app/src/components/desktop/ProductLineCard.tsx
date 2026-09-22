@@ -122,29 +122,29 @@ export function ProductLineCard({
       )}
 
       <div className="pline-info">
-        <div>
-          <div className="pline-eyebrow">{p.collection}</div>
+        <div className="pline-eyebrow">{p.collection}</div>
+        <div className="pline-toprow">
           <div className="pline-name" style={{ cursor: 'pointer' }} onClick={() => navigate(`/catalogo/${p.id}`)}>
             {lineName}
           </div>
-          <div className="pline-colorway">{p.colorway}</div>
+          <div
+            className={`pline-addbtn ${inCart ? 'in-cart' : ''}`}
+            style={{ cursor: 'pointer' }}
+            title={inCart ? 'No carrinho' : 'Adicionar ao carrinho'}
+            onClick={() => toggleCart(p.id)}
+          >
+            {inCart ? (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            )}
+          </div>
         </div>
-        <div
-          className={`pline-addbtn ${inCart ? 'in-cart' : ''}`}
-          style={{ cursor: 'pointer' }}
-          title={inCart ? 'No carrinho' : 'Adicionar ao carrinho'}
-          onClick={() => toggleCart(p.id)}
-        >
-          {inCart ? (
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-              <path d="M5 13l4 4L19 7" />
-            </svg>
-          ) : (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          )}
-        </div>
+        <div className="pline-colorway">{p.colorway}</div>
       </div>
 
       <div className="pline-priceline">

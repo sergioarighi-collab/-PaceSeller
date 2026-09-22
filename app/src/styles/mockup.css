@@ -641,18 +641,28 @@
   .pline-dot:hover > img,.pline-dot:hover > svg{opacity:.8;}
   .pline-dot.active > img,.pline-dot.active > svg{opacity:1;}
   .pline-dot-star{position:absolute;bottom:0;left:50%;transform:translateX(-50%) scale(.85);color:var(--black);display:flex;filter:drop-shadow(0 0 1px var(--surface)) drop-shadow(0 0 1px var(--surface));}
-  .pline-info{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-top:14px;}
-  .pline-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-tertiary);}
-  .pline-name{font-family:var(--display);font-size:15.5px;font-weight:700;color:var(--text-primary);margin-top:3px;}
-  .pline-colorway{font-size:12px;color:var(--text-secondary);margin-top:1px;}
+  /* Hierarquia revista (set/2026) — a primeira versão espalhava eyebrow/nome/cor/botão num só
+     flex-row com gaps genéricos (10/12/8px sem critério), sem comunicar o que pertencia a que
+     grupo. Reorganizado em 2 blocos com ritmo de espaçamento diferente: "identidade" (eyebrow →
+     nome+botão → cor, bem próximos, 2-3px entre si) separado por um respiro maior (14px) do bloco
+     de "preço" (fábrica → PDV → margem, também próximos entre si, 4-6px). O botão de adicionar
+     saiu do eixo do bloco inteiro (`.pline-info`, 3 linhas de altura variável — ficava com
+     margin-top no chute) e passou a dividir linha só com o nome (`.pline-toprow`), centralizado de
+     verdade contra o texto que ele está associado (`align-items:center`), não mais "flutuando"
+     perto do topo do card. */
+  .pline-info{margin-top:14px;}
+  .pline-eyebrow{font-family:var(--mono);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-tertiary);}
+  .pline-toprow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:3px;}
+  .pline-name{font-family:var(--display);font-size:16px;font-weight:700;color:var(--text-primary);line-height:1.2;}
+  .pline-colorway{font-size:12px;color:var(--text-secondary);margin-top:2px;}
   /* Preto com a cruz branca sempre — não só no hover. Pedido explícito do usuário ao aprovar o
      protótipo (lá o botão era um contorno que só escurecia no hover, igual ao antigo .pw-addbtn). */
-  .pline-addbtn{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--black);color:var(--on-black);display:flex;align-items:center;justify-content:center;margin-top:2px;transition:background .12s ease;}
+  .pline-addbtn{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--black);color:var(--on-black);display:flex;align-items:center;justify-content:center;transition:background .12s ease;}
   .pline-addbtn:hover{background:var(--black-hover);}
-  .pline-priceline{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:12px;font-family:var(--mono);}
-  .pline-pricemain{font-size:14.5px;font-weight:700;color:var(--text-primary);}
-  .pline-pdv{font-size:11px;color:var(--text-secondary);}
-  .pline-badge{display:inline-flex;margin-top:8px;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;background:var(--surface-2);color:var(--text-secondary);width:fit-content;}
+  .pline-priceline{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:14px;font-family:var(--mono);}
+  .pline-pricemain{font-size:15px;font-weight:700;color:var(--text-primary);}
+  .pline-pdv{font-size:11px;color:var(--text-tertiary);}
+  .pline-badge{display:inline-flex;margin-top:6px;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;background:var(--surface-2);color:var(--text-secondary);width:fit-content;}
   .pline-badge.pos{background:var(--positive-dim);color:var(--positive);}
   .pline-badge.risk{background:var(--risk-dim);color:var(--risk);}
   .pline-badge.info{background:var(--info-dim);color:var(--info);}
