@@ -672,10 +672,15 @@
   .pline-toprow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:3px;}
   .pline-name{font-family:var(--display);font-size:16px;font-weight:700;color:var(--text-primary);line-height:1.2;}
   .pline-colorway{font-size:12px;color:var(--text-secondary);margin-top:2px;}
-  /* Preto com a cruz branca sempre — não só no hover. Pedido explícito do usuário ao aprovar o
-     protótipo (lá o botão era um contorno que só escurecia no hover, igual ao antigo .pw-addbtn). */
-  .pline-addbtn{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:var(--black);color:var(--on-black);display:flex;align-items:center;justify-content:center;transition:background .12s ease;}
-  .pline-addbtn:hover{background:var(--black-hover);}
+  /* Círculo só de contorno, sem preenchimento (set/2026, testado antes via addStyleTag no
+     Playwright em 2 variantes: sem círculo nenhum — só o traço do "+" — e essa aqui). Usuário
+     achou o preto sólido (versão anterior) certo, mas quis testar algo mais leve; a versão sem
+     nenhum círculo ele achou que "chamava pouco atenção" (é a única ação de verdade do card, não
+     dá pra competir em peso visual com o resto do texto mudo) — esse meio-termo mantém uma área
+     clicável bem definida sem o peso do preenchimento sólido. Hover preenche de leve
+     (`--surface-2`) só pra dar feedback, não pra "escurecer" como no antigo `.pw-addbtn`. */
+  .pline-addbtn{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:transparent;border:1.5px solid var(--text-primary);box-sizing:border-box;color:var(--text-primary);display:flex;align-items:center;justify-content:center;transition:background .12s ease;}
+  .pline-addbtn:hover{background:var(--surface-2);}
   .pline-priceline{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:14px;font-family:var(--mono);}
   .pline-pricemain{font-size:15px;font-weight:700;color:var(--text-primary);}
   .pline-pdv{font-size:11px;color:var(--text-tertiary);}

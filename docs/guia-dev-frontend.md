@@ -694,6 +694,14 @@ Implementado em dois lugares:
 
 `.catgrid-web` é compartilhado com o caminho de produto avulso do Catálogo (`context` truthy em `Catalog.tsx`, cards `.pcard-web` — ver seção "Fora de escopo, deliberado" mais acima), que **não** foi redesenhado nessa rodada. Testado que ele continua normal em 4 colunas: como esses cards têm `.pw-thumb` com `height:240px` fixo (não `aspect-ratio`), simplesmente ficam um pouco mais estreitos quando há 4+ produtos, e quando há menos (como no filtro "Benchmark: lojas parecidas", 3 produtos) só ocupam menos que a fileira inteira, sem esticar nem quebrar layout.
 
+## Botão de adicionar: círculo só de contorno (set/2026)
+
+Usuário quis testar tirar o preenchimento preto do botão de adicionar, deixando só o traço do ícone. Testado via `addStyleTag` no Playwright em **duas variantes**, ambas mostradas antes de decidir:
+1. **Sem círculo nenhum** — só o "+"/check soltos, do tamanho do ícone. Descartado: o próprio usuário levantou a dúvida ("meu receio é que chame pouco atenção") — esse botão é a única ação de verdade do card (as outras áreas só navegam pra Ficha de Decisão), não dá pra ele perder pra apagado no meio do preço/margem, que são só leitura.
+2. **Círculo com contorno, sem preenchimento** (`border` em vez de `background`) — mantém uma área clicável bem definida e reconhecível como botão, só mais leve que o preto sólido. Escolhida.
+
+`.pline-addbtn` trocou `background:var(--black)` por `background:transparent;border:1.5px solid var(--text-primary)` (com `box-sizing:border-box` pra a borda não estourar os 26px declarados) e `color:var(--on-black)` por `color:var(--text-primary)` (ícone preto em vez de branco, já que não tem mais fundo escuro atrás). Hover deixou de escurecer (`--black-hover`, não fazia mais sentido sem preenchimento) e passou a preencher de leve com `--surface-2`, só pra dar feedback de interação. Mesmo estilo pros dois estados (`+` e check de "no carrinho") — não precisou de tratamento visual diferente pro `.in-cart`.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
