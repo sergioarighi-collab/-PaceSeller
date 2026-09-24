@@ -582,7 +582,12 @@
 
   .filterbar{display:flex;gap:12px;align-items:center;margin-top:18px;}
   .filterbar .searchbox{flex:1;max-width:340px;}
-  .catgrid-web{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:20px;background:var(--surface-2);padding:20px;border-radius:8px;}
+  /* 4 colunas (era 3) — pedido do usuário depois de mandar uma referência (card da Converse) com
+     foto bem menos vertical (~4:5, não 3:4) do que a nossa: com essa proporção mais "quadrada", dá
+     pra encaixar 4 por linha sem a foto perder o protagonismo que motivou o redesenho todo (testado
+     antes via addStyleTag no Playwright, comparado lado a lado com a versão de 3 colunas/foto 3:4 —
+     ver `.pline-thumb` mais abaixo pro ajuste de proporção que acompanha essa mudança). */
+  .catgrid-web{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:20px;background:var(--surface-2);padding:20px;border-radius:8px;}
   .pcard-web{background:var(--surface);border:none;border-radius:6px;overflow:hidden;position:relative;display:flex;flex-direction:column;transition:transform .15s ease,box-shadow .15s ease;}
   .pcard-web:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(20,20,22,0.1);}
   /* 240px (era 180px, set/2026) — as fotos reais são ~900x520 (proporção ~1,73:1), mas a 180px
@@ -621,7 +626,9 @@
      em vez de rolar, e o carrossel de overflow nunca ativava (bug real, achado testando a linha
      COIL com 16 cores de teste). */
   .pline-card{display:flex;flex-direction:column;min-width:0;}
-  .pline-thumb{position:relative;aspect-ratio:3/4;background:var(--surface);display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:2px;}
+  /* 4/5 (era 3/4) — foto menos vertical, acompanha a ida pra 4 colunas (ver `.catgrid-web` acima):
+     coluna mais estreita + foto tão vertical quanto antes deixaria o card alto e fino demais. */
+  .pline-thumb{position:relative;aspect-ratio:4/5;background:var(--surface);display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:2px;}
   .pline-thumb img{width:100%;height:100%;object-fit:contain;}
   .pline-tag{position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;padding:4px 9px;border-radius:3px;background:var(--black);color:#fff;}
   .pline-tag.risk{background:var(--risk);}

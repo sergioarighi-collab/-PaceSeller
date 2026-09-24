@@ -682,6 +682,18 @@ Pedido direto do usuário, sem teste prévio (ajuste fino, não mudança de comp
 - **`.pline-dot`**: 38px → **46px** (mais um +20% na sequência de incrementos — ver histórico de arredondamentos na própria regra CSS). `DOT_SCROLL_STEP` (132→156) e o `iconSize` do fallback do `ProductThumb` dentro do dot (17→21) acompanharam, mesmo padrão de todo incremento anterior.
 - **`.pline-dot-star`**: o `transform: scale(.85)` (que reduz o ícone de 8px pra caber proporcionalmente no dot) virou `scale(.98)` — 0,85 × 1,15 ≈ 0,9775, arredondado. Como a estrela já era controlada por um fator de escala (não por `width`/`height` direto no SVG), ajustar esse número foi mais direto do que mudar as dimensões do ícone.
 
+## Catálogo vai de 3 pra 4 colunas — foto 3:4 → 4:5 (set/2026)
+
+Usuário mandou uma referência visual (card da Converse) com a foto **bem menos vertical** que a nossa — mais perto de 4:5 do que do 3:4 usado até então — e sugeriu que, com essa proporção mais "quadrada", dava pra caber 4 produtos por linha sem perder o protagonismo da foto que motivou o redesenho todo (ver seção "Card de linha de produto vertical/minimalista" mais acima, onde 3 colunas tinha sido a recomendação justamente pra não perder esse protagonismo em 4).
+
+**Testado antes de decidir** (mesmo padrão desta rodada inteira): comparei visualmente 3 alternativas via `addStyleTag` no Playwright, sem tocar em código — (1) 3 colunas/3:4 atual, (2) 4 colunas mantendo 3:4 (já tinha testado antes, foto ficava pequena demais, motivo da recomendação original de 3 colunas), (3) 4 colunas com a foto ajustada pra 4:5. A opção 3 resolveu o problema: a coluna mais estreita (4 em vez de 3) combinada com uma foto proporcionalmente menos alta manteve o tamanho da foto e a legibilidade das miniaturas de cor (46px) em nível aceitável. Usuário aprovou essa combinação.
+
+Implementado em dois lugares:
+- `.catgrid-web`: `grid-template-columns:repeat(3,1fr)` → `repeat(4,1fr)`.
+- `.pline-thumb`: `aspect-ratio:3/4` → `aspect-ratio:4/5`.
+
+`.catgrid-web` é compartilhado com o caminho de produto avulso do Catálogo (`context` truthy em `Catalog.tsx`, cards `.pcard-web` — ver seção "Fora de escopo, deliberado" mais acima), que **não** foi redesenhado nessa rodada. Testado que ele continua normal em 4 colunas: como esses cards têm `.pw-thumb` com `height:240px` fixo (não `aspect-ratio`), simplesmente ficam um pouco mais estreitos quando há 4+ produtos, e quando há menos (como no filtro "Benchmark: lojas parecidas", 3 produtos) só ocupam menos que a fileira inteira, sem esticar nem quebrar layout.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
