@@ -711,6 +711,10 @@ Usuário achou o bloco de texto abaixo da foto "muito espaçado" (dentro do pró
 - **Gap entre cards**: `.catgrid-web` 22px → **32px** — foi a mudança que resolveu a sensação de aperto entre um card e o próximo, mais notável desde a ida pra 4 colunas.
 - **Giro de volta ao card**: nova linha `.pline-restock` ("Repõe a cada N dias", `p.restockDays`), discreta (`--text-tertiary`, 10px) logo abaixo da margem. Diferente do selo de risco (que já cobre o caso do giro virar problema — "Estoque parado"/"Oportunidade perdida"), essa linha mostra o dado bruto sempre, não só quando é um problema. Contagem de cores (`colors.length`, testada como alternativa) ficou de fora — usuário decidiu só pelo giro.
 
+## Miniaturas de cor -10% (set/2026)
+
+Pedido direto, sem teste prévio (ajuste fino de tamanho, não mudança de comportamento — mesmo padrão dos incrementos anteriores). `.pline-dot`: 46px → **41px** (45,6px exato, arredondado). `DOT_SCROLL_STEP` (156→141) e o `iconSize` do fallback do `ProductThumb` dentro do dot (21→19) acompanharam, mesma lógica de todo ajuste de tamanho anterior nessa miniatura.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
