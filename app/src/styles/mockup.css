@@ -673,7 +673,7 @@
      perto do topo do card. */
   /* Ritmo mais compacto (set/2026) — 14px entre identidade e preço achou "muito espaçado" pelo
      usuário, sobretudo depois da ida pra 4 colunas (card mais estreito, cada px de espaço vazio
-     pesa mais). 14→10, mesma lógica pro `.pline-priceline`/`.pline-badge` logo abaixo. */
+     pesa mais). 14→10, mesma lógica pro `.pline-priceline` logo abaixo. */
   .pline-info{margin-top:10px;}
   .pline-eyebrow{font-family:var(--mono);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-tertiary);}
   .pline-toprow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:3px;}
@@ -691,18 +691,21 @@
   .pline-priceline{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:8px;font-family:var(--mono);}
   .pline-pricemain{font-size:15px;font-weight:700;color:var(--text-primary);}
   .pline-pdv{font-size:11px;color:var(--text-tertiary);}
-  /* Margem e giro alinhados na mesma linha (pedido do usuário — antes o giro ficava embaixo,
-     desalinhado do selo de margem). */
-  .pline-metarow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;}
-  .pline-badge{display:inline-flex;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;background:var(--surface-2);color:var(--text-secondary);width:fit-content;}
+  /* Margem e giro dentro do quadro da foto (set/2026) — testado antes via injeção no Playwright
+     em 3 passos: (1) barra cinza no rodapé da foto, (2) levantada com respiro branco embaixo em
+     vez de colada na borda, (3) sem fundo nenhum, só texto flutuando. Aprovado nesse formato
+     final. `position:absolute` ancorada no `.pline-thumb` (que já é `position:relative`);
+     `white-space:nowrap`+`overflow:hidden` porque numa coluna estreita (4 por linha) os dois
+     textos juntos não cabem sempre — corta com reticências em vez de quebrar linha ou vazar da
+     foto. `.pline-badge` perdeu o fundo cinza que tinha antes (pedido do usuário nessa mesma
+     rodada) — vira texto puro, igual ao `.pline-restock` ao lado. */
+  .pline-metarow{position:absolute;left:10px;right:10px;bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;}
+  .pline-badge{font-family:var(--mono);font-size:10px;color:var(--text-secondary);flex-shrink:0;}
   /* Giro (set/2026) — dado bruto que antes só aparecia indiretamente via selo de risco ("estoque
      parado"); usuário pediu de volta como informação sempre visível, não só quando vira problema.
      Discreto de propósito (menor e mais claro que a margem) — é contexto de apoio, não um número
      que pede decisão imediata como preço/margem. */
-  .pline-restock{font-family:var(--mono);font-size:10px;color:var(--text-tertiary);}
-  .pline-badge.pos{background:var(--positive-dim);color:var(--positive);}
-  .pline-badge.risk{background:var(--risk-dim);color:var(--risk);}
-  .pline-badge.info{background:var(--info-dim);color:var(--info);}
+  .pline-restock{font-family:var(--mono);font-size:10px;color:var(--text-tertiary);overflow:hidden;text-overflow:ellipsis;}
 
   /* Combos sugeridos (Catálogo) — card com dois produtos + preço combinado */
   .combogrid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;}

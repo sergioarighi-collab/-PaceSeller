@@ -728,6 +728,17 @@ Usuário estranhou o rótulo `Envio automático: ativado/desativado` (`.signalro
 
 **Decisão do usuário**: tirar o rótulo (em vez de construir o toggle que faltava). `MeusCarrinhos.tsx` perdeu o `<span className="sig ...">Envio automático...</span>`; o `.signalrow` que o continha virou condicional só ao badge "Parado há N dias" (que continua existindo) — antes ele sempre renderizava (mesmo vazio de "Parado"), com um `margin-top:12px` que deixaria um respiro indevido quando não sobrasse nenhum selo dentro. `autoSendOnGradeMinima` continua existindo e funcionando no store (o *comportamento* de auto-envio não mudou, só sumiu o rótulo que não levava a nada) — fica como uma característica interna do carrinho, sem exposição na UI, até que (se um dia fizer sentido) alguém construa o controle de verdade.
 
+## Margem e giro migram pra dentro do quadro da foto (set/2026)
+
+Continuação da seção anterior ("Margem e giro na mesma linha") — usuário quis testar mover esse par (que morava logo abaixo do preço, no bloco de texto) pra **dentro do quadro branco da foto**, como se fosse uma legenda da própria imagem, no mesmo espírito do selo "Lançamento"/risco que já fica sobreposto à foto.
+
+**Testado em 3 passos antes de decidir**, cada um só via injeção de DOM no Playwright (mover o `.pline-metarow` real pra dentro do `.pline-thumb`, sem tocar em código, incluindo teste no card com selo de risco — "Estoque parado" — pra confirmar que os dois selos sobrepostos não colidiam):
+1. Barra cinza clara (`rgba(244,244,245,.92)`) colada na borda inferior da foto, largura cheia.
+2. Usuário achou que devia "subir pra dentro do card branco" — a barra foi levantada (`bottom` deixou de ser `0`) com respiro branco visível embaixo dela. Nessa tentativa também ganhou `border-radius` e margem lateral, o que quebrou o texto em 2 linhas (regressão notada e reportada antes de prosseguir).
+3. Usuário pediu uma linha só e sem o fundo cinza — resultado final: texto puro flutuando, sem nenhuma caixa/fundo, ainda deslocado da borda inferior.
+
+**Implementado**: `.pline-metarow` saiu de depois do `.pline-priceline` (no fluxo normal do documento) e entrou como filho de `.pline-thumb` (`position:absolute;left:10px;right:10px;bottom:12px`, ancorado no `position:relative` que a foto já tinha). `white-space:nowrap;overflow:hidden` no lugar de `flex-wrap:wrap` — como a coluna é estreita (4 por linha) os dois textos junto nem sempre cabem; corta com reticências (`.pline-restock` ganhou `text-overflow:ellipsis`) em vez de quebrar linha ou vazar pra fora da foto. `.pline-badge` perdeu de vez o fundo cinza (`background:var(--surface-2)`) que tinha desde a criação do card — vira texto puro, mesmo tratamento do `.pline-restock` ao lado; os modificadores de tom (`.pos`/`.risk`/`.info`, nunca usados de fato — `marginBadge.tone` sempre foi `'neutral'` nos dados) saíram junto por não fazerem mais sentido sem fundo pra colorir.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

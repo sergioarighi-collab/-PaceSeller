@@ -80,6 +80,10 @@ export function ProductLineCard({
       <div className="pline-thumb" style={{ cursor: 'pointer' }} onClick={() => navigate(`/catalogo/${p.id}`)}>
         {topTag && <span className={`pline-tag ${badgeToneClass[topTag.tone]}`}>{topTag.label}</span>}
         <ProductThumb src={p.image} alt={p.name} padding={22} />
+        <div className="pline-metarow">
+          {marginBadge && <span className="pline-badge">{marginBadge.label}</span>}
+          <span className="pline-restock">Repõe a cada {p.restockDays} dias</span>
+        </div>
       </div>
 
       {colors.length > 1 && (
@@ -150,10 +154,6 @@ export function ProductLineCard({
       <div className="pline-priceline">
         <span className="pline-pricemain">{formatBRL(p.priceFactory)}</span>
         <span className="pline-pdv">PDV sugerido {formatBRL(p.pricePdv)}</span>
-      </div>
-      <div className="pline-metarow">
-        {marginBadge && <span className={`pline-badge ${badgeToneClass[marginBadge.tone]}`}>{marginBadge.label}</span>}
-        <span className="pline-restock">Repõe a cada {p.restockDays} dias</span>
       </div>
     </div>
   )
