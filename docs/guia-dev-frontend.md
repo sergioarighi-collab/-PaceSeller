@@ -715,6 +715,10 @@ Usuário achou o bloco de texto abaixo da foto "muito espaçado" (dentro do pró
 
 Pedido direto, sem teste prévio (ajuste fino de tamanho, não mudança de comportamento — mesmo padrão dos incrementos anteriores). `.pline-dot`: 46px → **41px** (45,6px exato, arredondado). `DOT_SCROLL_STEP` (156→141) e o `iconSize` do fallback do `ProductThumb` dentro do dot (21→19) acompanharam, mesma lógica de todo ajuste de tamanho anterior nessa miniatura.
 
+## Margem e giro na mesma linha (set/2026)
+
+Pedido direto: o selo de margem e a linha de giro (ver seção anterior "Diagramação das infos") estavam empilhados verticalmente, cada um com seu próprio `margin-top` — usuário pediu pra alinhar os dois na mesma linha. Os dois agora ficam dentro de um `.pline-metarow` (`display:flex;align-items:center;gap:8px`), que herda o único `margin-top:4px` que separa esse par do preço acima; `.pline-badge` e `.pline-restock` individualmente perderam seus `margin-top` próprios (não fazem mais sentido como filhos de um flex row).
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

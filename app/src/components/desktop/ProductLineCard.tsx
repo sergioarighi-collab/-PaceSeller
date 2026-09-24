@@ -151,8 +151,10 @@ export function ProductLineCard({
         <span className="pline-pricemain">{formatBRL(p.priceFactory)}</span>
         <span className="pline-pdv">PDV sugerido {formatBRL(p.pricePdv)}</span>
       </div>
-      {marginBadge && <span className={`pline-badge ${badgeToneClass[marginBadge.tone]}`}>{marginBadge.label}</span>}
-      <div className="pline-restock">Repõe a cada {p.restockDays} dias</div>
+      <div className="pline-metarow">
+        {marginBadge && <span className={`pline-badge ${badgeToneClass[marginBadge.tone]}`}>{marginBadge.label}</span>}
+        <span className="pline-restock">Repõe a cada {p.restockDays} dias</span>
+      </div>
     </div>
   )
 }

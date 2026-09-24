@@ -691,12 +691,15 @@
   .pline-priceline{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:8px;font-family:var(--mono);}
   .pline-pricemain{font-size:15px;font-weight:700;color:var(--text-primary);}
   .pline-pdv{font-size:11px;color:var(--text-tertiary);}
-  .pline-badge{display:inline-flex;margin-top:4px;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;background:var(--surface-2);color:var(--text-secondary);width:fit-content;}
+  /* Margem e giro alinhados na mesma linha (pedido do usuário — antes o giro ficava embaixo,
+     desalinhado do selo de margem). */
+  .pline-metarow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;}
+  .pline-badge{display:inline-flex;font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;background:var(--surface-2);color:var(--text-secondary);width:fit-content;}
   /* Giro (set/2026) — dado bruto que antes só aparecia indiretamente via selo de risco ("estoque
      parado"); usuário pediu de volta como informação sempre visível, não só quando vira problema.
      Discreto de propósito (menor e mais claro que a margem) — é contexto de apoio, não um número
      que pede decisão imediata como preço/margem. */
-  .pline-restock{font-family:var(--mono);font-size:10px;color:var(--text-tertiary);margin-top:6px;}
+  .pline-restock{font-family:var(--mono);font-size:10px;color:var(--text-tertiary);}
   .pline-badge.pos{background:var(--positive-dim);color:var(--positive);}
   .pline-badge.risk{background:var(--risk-dim);color:var(--risk);}
   .pline-badge.info{background:var(--info-dim);color:var(--info);}
