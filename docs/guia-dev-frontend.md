@@ -702,6 +702,15 @@ Usuário quis testar tirar o preenchimento preto do botão de adicionar, deixand
 
 `.pline-addbtn` trocou `background:var(--black)` por `background:transparent;border:1.5px solid var(--text-primary)` (com `box-sizing:border-box` pra a borda não estourar os 26px declarados) e `color:var(--on-black)` por `color:var(--text-primary)` (ícone preto em vez de branco, já que não tem mais fundo escuro atrás). Hover deixou de escurecer (`--black-hover`, não fazia mais sentido sem preenchimento) e passou a preencher de leve com `--surface-2`, só pra dar feedback de interação. Mesmo estilo pros dois estados (`+` e check de "no carrinho") — não precisou de tratamento visual diferente pro `.in-cart`.
 
+## Diagramação das infos: ritmo compacto, gap maior, giro de volta (set/2026)
+
+Usuário achou o bloco de texto abaixo da foto "muito espaçado" (dentro do próprio card) e ao mesmo tempo "muito perto do outro card" (entre cards) — duas queixas em eixos diferentes, tratadas juntas. Aproveitei pra perguntar o que era "Margem estimada" (resposta: rentabilidade esperada da loja com aquele produto, não o markup fábrica→PDV — ver comentário em `data.ts` linha ~365) e sugerir outros dados que poderiam entrar no card.
+
+**Testado antes de decidir**, como o resto desta rodada inteira — 3 variantes de ritmo (`addStyleTag` no Playwright, clonando o bloco de infos de cards reais) mais uma comparação de gap entre cards, todas aprovadas com a ressalva de trazer só o giro, não a contagem de cores:
+- **Ritmo vertical**: `.pline-info`/`.pline-priceline` (14px cada) → **10px/8px**; `.pline-badge` (6px) → **4px**. Itens dentro de cada bloco (eyebrow→nome, nome→cor, preço→margem) já eram bem colados e não mudaram — só o espaço *entre* blocos, que era o que estava "solto".
+- **Gap entre cards**: `.catgrid-web` 22px → **32px** — foi a mudança que resolveu a sensação de aperto entre um card e o próximo, mais notável desde a ida pra 4 colunas.
+- **Giro de volta ao card**: nova linha `.pline-restock` ("Repõe a cada N dias", `p.restockDays`), discreta (`--text-tertiary`, 10px) logo abaixo da margem. Diferente do selo de risco (que já cobre o caso do giro virar problema — "Estoque parado"/"Oportunidade perdida"), essa linha mostra o dado bruto sempre, não só quando é um problema. Contagem de cores (`colors.length`, testada como alternativa) ficou de fora — usuário decidiu só pelo giro.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
