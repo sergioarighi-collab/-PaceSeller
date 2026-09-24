@@ -719,6 +719,15 @@ Pedido direto, sem teste prévio (ajuste fino de tamanho, não mudança de compo
 
 Pedido direto: o selo de margem e a linha de giro (ver seção anterior "Diagramação das infos") estavam empilhados verticalmente, cada um com seu próprio `margin-top` — usuário pediu pra alinhar os dois na mesma linha. Os dois agora ficam dentro de um `.pline-metarow` (`display:flex;align-items:center;gap:8px`), que herda o único `margin-top:4px` que separa esse par do preço acima; `.pline-badge` e `.pline-restock` individualmente perderam seus `margin-top` próprios (não fazem mais sentido como filhos de um flex row).
 
+## Bug real encontrado e corrigido: "Envio automático" em Meus Carrinhos não levava a lugar nenhum (set/2026)
+
+Usuário estranhou o rótulo `Envio automático: ativado/desativado` (`.signalrow` em `MeusCarrinhos.tsx`) — achou que só atrapalhava, sem saber pra que servia. Investigado antes de mexer:
+
+- **O que o campo faz de verdade**: `Carrinho.autoSendOnGradeMinima` (booleano por carrinho) controla se o pedido pula de `rascunho` pra `aguardando` **sozinho** assim que bate a grade mínima (36 pares — ver `commitCartToCarrinho`/`setCartQty` em `store.ts`), em vez de exigir o clique manual em "Enviar pro representante".
+- **O bug**: não existe, em lugar nenhum do app, uma forma do lojista ligar/desligar isso. Um comentário no código (`store.ts`, perto de onde um carrinho novo nasce com o campo desligado) dizia "só o lojista liga depois, ver permswitch em CarrinhoDetail" — **mentira desatualizada**: esse switch (`.permswitch`, `setRepCanEdit`) controla outra coisa completamente diferente (se a representante pode editar o pedido, `Carrinho.repCanEdit`). Não existe `setAutoSendOnGradeMinima` em lugar nenhum do store. O valor só vem fixo do dado mock (`data.ts`), então o rótulo em Meus Carrinhos era 100% somente leitura — parecia uma configuração, mas não tinha nenhuma ação possível a partir dele.
+
+**Decisão do usuário**: tirar o rótulo (em vez de construir o toggle que faltava). `MeusCarrinhos.tsx` perdeu o `<span className="sig ...">Envio automático...</span>`; o `.signalrow` que o continha virou condicional só ao badge "Parado há N dias" (que continua existindo) — antes ele sempre renderizava (mesmo vazio de "Parado"), com um `margin-top:12px` que deixaria um respiro indevido quando não sobrasse nenhum selo dentro. `autoSendOnGradeMinima` continua existindo e funcionando no store (o *comportamento* de auto-envio não mudou, só sumiu o rótulo que não levava a nada) — fica como uma característica interna do carrinho, sem exposição na UI, até que (se um dia fizer sentido) alguém construa o controle de verdade.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

@@ -362,8 +362,10 @@ export const useAppStore = create<AppState>((set, get) => ({
       return existing.id
     }
 
-    // Carrinho novo nasce com autoSendOnGradeMinima desligado (só o lojista liga depois, ver
-    // permswitch em CarrinhoDetail), então o pedido sempre começa como rascunho.
+    // Carrinho novo nasce com autoSendOnGradeMinima desligado, então o pedido sempre começa como
+    // rascunho. Não existe hoje nenhum jeito do lojista ligar/desligar isso pela UI (o rótulo que
+    // exibia esse estado em MeusCarrinhos.tsx foi removido em set/2026 por não levar a nenhuma
+    // ação — ver guia-dev-frontend.md) — o campo só varia hoje via dado mock em data.ts.
     const novoPedido: Pedido = {
       id: `pedido-${Date.now()}`,
       label: 'Pedido',

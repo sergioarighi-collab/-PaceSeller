@@ -299,14 +299,11 @@ export function MeusCarrinhos() {
                   </div>
                 )}
 
-                <div className="signalrow">
-                  <span className={`sig ${cart.autoSendOnGradeMinima ? 'pos' : 'neutral'}`}>
-                    Envio automático: {cart.autoSendOnGradeMinima ? 'ativado' : 'desativado'}
-                  </span>
-                  {cart.daysSinceActivity >= EXPIRA_APOS_DIAS && pedido.status !== 'pago' && (
+                {cart.daysSinceActivity >= EXPIRA_APOS_DIAS && pedido.status !== 'pago' && (
+                  <div className="signalrow">
                     <span className="sig risk">Parado há {cart.daysSinceActivity} dias — considere revisar</span>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {(cart.lastComment || pedido.suggestedBy === 'representante') && (
                   <div className="repbar">
