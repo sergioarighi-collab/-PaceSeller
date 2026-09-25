@@ -767,6 +767,14 @@ Ressalva levantada antes de testar: diferente do botão de adicionar e da estrel
 
 `.pline-tag`: `background:var(--black);color:#fff` → `background:transparent;border:1.5px solid var(--text-primary);color:var(--text-primary)`. Modificadores `.risk`/`.info` idem — trocam `background` por `border-color`+`color` na cor do tom.
 
+## Abas "Produtos"/"Combos sugeridos" no Catálogo (set/2026)
+
+Usuário notou que "Combos sugeridos" ficava sempre depois da grade de produtos inteira — com os cards maiores/verticais do redesenho (7 linhas em 2 fileiras de 4 colunas), isso passou a exigir bastante rolagem, fácil de nunca notar que existiam. Perguntei minha opinião antes de propor solução: avaliei 3 caminhos (página separada, filtro/chip, aba na própria página) e recomendei a aba — página separada é over-engineering pra 2 combos no mock, e um chip/filtro trocaria o *tipo* de conteúdo da grade (produto → par de produtos), fugindo do que os outros chips fazem (só filtram a mesma lista).
+
+**Testado antes de implementar** (mesmo padrão desta rodada inteira): tab bar improvisada via injeção de DOM no Playwright, alternando `display` de blocos reais da página (sem tocar em código) — usuário viu as duas visões e aprovou.
+
+**Implementado**: `Catalog.tsx` ganhou state `catalogTab: 'produtos' | 'combos'` (default `'produtos'`) e uma barra de abas (`.cattabs`/`.cattab`, sublinhado — não o estilo pill de `.cartswitcher .tab` usado em Meus Carrinhos, que é outro conceito: filtro de estado, não navegação entre 2 visões). Só aparece quando `!context` (o caminho de produto avulso — deep-links do Radar — não tem combos, continua igual, sem abas). Quando a aba é "Combos", os filtros (`.filterbar`, `Coleção`, `Numeração`) e a grade de produtos desmontam (`catalogTab === 'produtos' &&`) e a seção de combos passa a exigir `catalogTab === 'combos'` além de `!context`; a busca (`.filterbar`) usa `style={{display:'none'}}` em vez de desmontar pra não perder o texto digitado ao trocar de aba (as duas gradebox de filtro não têm esse cuidado porque o estado delas já mora em `useState` do componente, não se perde ao desmontar). Rótulo da aba mostra a contagem (`Combos sugeridos (${combos.length})`).
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

@@ -148,6 +148,12 @@ export function Catalog() {
   const [sizeFilter, setSizeFilter] = useState<string | null>(null)
   const [collectionFilter, setCollectionFilter] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  // Aba "Combos sugeridos" (set/2026) — testado antes via injeção no Playwright (tab bar
+  // improvisada trocando display de blocos reais) e aprovado. Antes os combos ficavam sempre
+  // depois da grade de produtos inteira; com os cards maiores/verticais do redesenho, isso passou
+  // a exigir bastante rolagem — fácil de nunca ver que existiam. Só existe quando `!context`
+  // (o caminho de produto avulso do Catálogo não tem combos).
+  const [catalogTab, setCatalogTab] = useState<'produtos' | 'combos'>('produtos')
   const toggleCart = useAppStore((s) => s.toggleCart)
   const cartItems = useAppStore((s) => s.cartItems)
   const cartCombos = useAppStore((s) => s.cartCombos)
@@ -336,7 +342,18 @@ export function Catalog() {
             </div>
           </div>
 
-          <div className="filterbar">
+          {!context && (
+            <div className="cattabs">
+              <div className={`cattab ${catalogTab === 'produtos' ? 'active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setCatalogTab('produtos')}>
+                Produtos
+              </div>
+              <div className={`cattab ${catalogTab === 'combos' ? 'active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setCatalogTab('combos')}>
+                Combos sugeridos ({combos.length})
+              </div>
+            </div>
+          )}
+
+          <div className="filterbar" style={!context && catalogTab !== 'produtos' ? { display: 'none' } : undefined}>
             <div className="searchbox">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <circle cx="11" cy="11" r="7" />
@@ -397,7 +414,7 @@ export function Catalog() {
             {context && <div className="chip">Boa margem</div>}
           </div>
 
-          {!context && (
+          {!context && catalogTab === 'produtos' && (
             <div className="gradebox" style={{ margin: '14px 0 0' }}>
               <div className="title">Coleção</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -415,7 +432,7 @@ export function Catalog() {
             </div>
           )}
 
-          {!context && (
+          {!context && catalogTab === 'produtos' && (
             <div className="gradebox" style={{ margin: '14px 0 0' }}>
               <div className="title">Numeração</div>
               <div className="sizerow">
@@ -433,6 +450,7 @@ export function Catalog() {
             </div>
           )}
 
+          {(context || catalogTab === 'produtos') && (
           <div className="catgrid-web">
             {context
               ? filteredProducts.map((p) => {
@@ -505,11 +523,12 @@ export function Catalog() {
                   <ProductLineCard key={line.collection} colors={line.colors} bestSellerId={line.bestSellerId} defaultId={line.defaultId} />
                 ))}
           </div>
-          {(context ? filteredProducts.length === 0 : productLines.length === 0) && (
+          )}
+          {(context || catalogTab === 'produtos') && (context ? filteredProducts.length === 0 : productLines.length === 0) && (
             <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-secondary)', padding: '64px 0' }}>Nenhum produto encontrado</div>
           )}
 
-          {!context && (
+          {!context && catalogTab === 'combos' && (
             <>
               <div className="web-section-title">Combos sugeridos</div>
               <div className="combogrid">

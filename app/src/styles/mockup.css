@@ -580,6 +580,16 @@
   .order-drawer .sg-add{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border-strong);display:flex;align-items:center;justify-content:center;color:var(--text-primary);flex-shrink:0;}
   .order-drawer .sg-add:hover{border-color:var(--black);}
 
+  /* Abas "Produtos"/"Combos sugeridos" do Catálogo (set/2026) — testado antes via injeção de DOM
+     no Playwright (tab bar improvisada trocando display de blocos reais) e aprovado. Antes os
+     combos ficavam sempre depois da grade de produtos inteira; com os cards maiores/verticais do
+     redesenho (ver "Card de linha de produto vertical/minimalista"), isso passou a exigir bastante
+     rolagem — fácil de nunca notar que existiam. Sublinhado em vez do estilo pill de
+     `.cartswitcher .tab` (usado em Meus Carrinhos/drawer) — são conceitos diferentes: aqui é
+     navegação entre 2 visões da mesma página, não um filtro de estado. */
+  .cattabs{display:flex;gap:24px;margin-top:20px;border-bottom:1px solid var(--border);}
+  .cattab{font-family:var(--mono);font-size:12px;letter-spacing:.03em;text-transform:uppercase;padding:0 0 10px;color:var(--text-secondary);border-bottom:2px solid transparent;}
+  .cattab.active{color:var(--text-primary);border-bottom-color:var(--text-primary);font-weight:600;}
   .filterbar{display:flex;gap:12px;align-items:center;margin-top:18px;}
   .filterbar .searchbox{flex:1;max-width:340px;}
   /* 4 colunas (era 3) — pedido do usuário depois de mandar uma referência (card da Converse) com
