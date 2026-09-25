@@ -757,6 +757,16 @@ Usuário perguntou se fazia sentido transformar margem/giro numa tag no topo do 
 
 Pedido direto: `.pline-metarow` estava alinhado à esquerda dentro do quadro da foto — ganhou `justify-content:center` pra centralizar em relação à imagem.
 
+## Tags do topo (Lançamento/risco/crescimento) sem preenchimento (set/2026)
+
+Usuário perguntou se as tags `.pline-tag` (mesmo lugar/conceito da antiga "Mais vendida", hoje: risco > lançamento > crescimento forte) podiam ficar só de contorno, sem cor chapada — mesma direção do botão de adicionar (ver seção "Botão de adicionar: círculo só de contorno") e das miniaturas sem quadro.
+
+Ressalva levantada antes de testar: diferente do botão de adicionar e da estrela (que ficam sobre fundo previsível, branco/cinza claro), essas tags ficam **sobre a própria foto do produto**, que varia de tênis branco a preto a colorido — sem preenchimento sólido, um contorno fino podia sumir de legibilidade dependendo da cor por baixo.
+
+**Testado antes de decidir** (`addStyleTag` no Playwright, incluindo o tênis mais escuro do catálogo — Hertz Art Black Purple, quase todo preto — e o card com selo de risco, Flow XL Black "Estoque parado"): a ressalva não se confirmou na prática. As fotos do catálogo são todas em perfil, com boa margem branca ao redor do produto (`ProductThumb` já usa `padding` generoso) — o canto onde a tag fica (topo-esquerda) nunca ficou coberto pelo tênis em nenhum caso testado, sempre sobre fundo branco. Usuário aprovou depois de ver o teste.
+
+`.pline-tag`: `background:var(--black);color:#fff` → `background:transparent;border:1.5px solid var(--text-primary);color:var(--text-primary)`. Modificadores `.risk`/`.info` idem — trocam `background` por `border-color`+`color` na cor do tom.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

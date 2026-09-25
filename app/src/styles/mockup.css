@@ -634,9 +634,15 @@
      coluna mais estreita + foto tão vertical quanto antes deixaria o card alto e fino demais. */
   .pline-thumb{position:relative;aspect-ratio:4/5;background:var(--surface);display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:2px;}
   .pline-thumb img{width:100%;height:100%;object-fit:contain;}
-  .pline-tag{position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;padding:4px 9px;border-radius:3px;background:var(--black);color:#fff;}
-  .pline-tag.risk{background:var(--risk);}
-  .pline-tag.info{background:var(--info);}
+  /* Sem preenchimento (set/2026, testado antes via addStyleTag no Playwright, incluindo sobre
+     fotos de tênis preto e o selo de risco) — pedido do usuário achando as cores chapadas pesadas
+     demais. Risco de legibilidade contra fotos escuras avaliado e descartado na prática: as fotos
+     do catálogo são sempre em perfil com boa margem branca ao redor, e o canto onde a tag fica
+     (topo-esquerda) não é coberto pelo produto em nenhum caso testado — sempre sobre fundo
+     branco, então o contorno lê bem em qualquer cor de tênis. */
+  .pline-tag{position:absolute;top:14px;left:14px;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;padding:4px 9px;border-radius:3px;background:transparent;border:1.5px solid var(--text-primary);color:var(--text-primary);}
+  .pline-tag.risk{border-color:var(--risk);color:var(--risk);}
+  .pline-tag.info{border-color:var(--info);color:var(--info);}
   /* Mesmo carrossel (scroll nativo + setas só quando não cabe tudo) do card antigo, só que as
      miniaturas ficam sempre visíveis embaixo da foto, não escondidas atrás de hover — hover não
      existe em telas touch, e esconder a troca de cor atrás dele deixaria a ação invisível ali. */
