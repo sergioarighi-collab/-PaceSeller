@@ -749,6 +749,14 @@ Resultado real: no repouso, os cards ficam bem mais curtos (sem a faixa de cores
 
 Mais um -10% pedido direto (sem teste prévio — ajuste fino de tamanho). `.pline-dot`: 41px → **37px** (36,9px exato, arredondado). `DOT_SCROLL_STEP` (141→129) e o `iconSize` do fallback do `ProductThumb` dentro do dot (19→17) acompanharam, mesma lógica de todo ajuste de tamanho anterior nessa miniatura — ver histórico completo de incrementos/decrementos na própria regra CSS.
 
+## Descartado: margem/giro virarem tag no topo do card (set/2026)
+
+Usuário perguntou se fazia sentido transformar margem/giro numa tag no topo do card, no mesmo lugar/estilo do selo de risco/lançamento (`.pline-tag`). Avaliação (sem chegar a testar): faria margem/giro — dado de apoio, deliberadamente discreto (ver seção "Margem e giro migram pra dentro do quadro da foto") — competir em peso visual com o selo que realmente pede atenção imediata (risco/lançamento), e apertaria o topo da foto com até 3 selos ao mesmo tempo num produto que seja risco + lançamento + tivesse esse novo selo. Usuário concordou em manter como estava.
+
+## Texto de margem/giro centralizado (set/2026)
+
+Pedido direto: `.pline-metarow` estava alinhado à esquerda dentro do quadro da foto — ganhou `justify-content:center` pra centralizar em relação à imagem.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

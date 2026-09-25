@@ -699,7 +699,7 @@
      textos juntos não cabem sempre — corta com reticências em vez de quebrar linha ou vazar da
      foto. `.pline-badge` perdeu o fundo cinza que tinha antes (pedido do usuário nessa mesma
      rodada) — vira texto puro, igual ao `.pline-restock` ao lado. */
-  .pline-metarow{position:absolute;left:10px;right:10px;bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;}
+  .pline-metarow{position:absolute;left:10px;right:10px;bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;}
   .pline-badge{font-family:var(--mono);font-size:10px;color:var(--text-secondary);flex-shrink:0;}
   /* Giro (set/2026) — dado bruto que antes só aparecia indiretamente via selo de risco ("estoque
      parado"); usuário pediu de volta como informação sempre visível, não só quando vira problema.
