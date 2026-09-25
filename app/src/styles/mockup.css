@@ -645,9 +645,9 @@
   .pline-dots::-webkit-scrollbar{display:none;}
   .pline-dots-arrow{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--surface);border:1px solid var(--border-strong);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;}
   .pline-dots-arrow:hover{background:var(--surface-2);color:var(--text-primary);}
-  /* 41px = 24px testado no protótipo, +25%/+25%/+20% em três rodadas (24→30→38→46px) e -10%
-     (45,6→41,4px, arredondado) nesta. */
-  .pline-dot{width:41px;height:41px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;}
+  /* 37px = 24px testado no protótipo, +25%/+25%/+20% em três rodadas (24→30→38→46px) e -10%/-10%
+     em duas rodadas seguintes (46→41,4→37,3px, arredondado). */
+  .pline-dot{width:37px;height:37px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;}
   /* Sem quadro (set/2026, testado antes via injeção no Playwright, lado a lado com a versão com
      quadro, pra comparar antes de decidir) — as fotos já vêm com fundo branco "assado" no JPG
      (não são PNG com transparência), então não dá pra só tirar `background`/`padding` do

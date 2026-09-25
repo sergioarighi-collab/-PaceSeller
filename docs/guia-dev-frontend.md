@@ -739,6 +739,16 @@ Continuação da seção anterior ("Margem e giro na mesma linha") — usuário 
 
 **Implementado**: `.pline-metarow` saiu de depois do `.pline-priceline` (no fluxo normal do documento) e entrou como filho de `.pline-thumb` (`position:absolute;left:10px;right:10px;bottom:12px`, ancorado no `position:relative` que a foto já tinha). `white-space:nowrap;overflow:hidden` no lugar de `flex-wrap:wrap` — como a coluna é estreita (4 por linha) os dois textos junto nem sempre cabem; corta com reticências (`.pline-restock` ganhou `text-overflow:ellipsis`) em vez de quebrar linha ou vazar pra fora da foto. `.pline-badge` perdeu de vez o fundo cinza (`background:var(--surface-2)`) que tinha desde a criação do card — vira texto puro, mesmo tratamento do `.pline-restock` ao lado; os modificadores de tom (`.pos`/`.risk`/`.info`, nunca usados de fato — `marginBadge.tone` sempre foi `'neutral'` nos dados) saíram junto por não fazerem mais sentido sem fundo pra colorir.
 
+## Testado e descartado: esconder as miniaturas de cor atrás do hover (set/2026)
+
+Usuário perguntou se fazia sentido esconder as miniaturas de cor por padrão, revelando só no hover do card (voltando ao comportamento do antigo `.pw-swatch-overlay`, abandonado quando o card virou vertical — ver seção "sem opacidade" mais acima: "hover não existe em touch, não dá pra esconder uma ação atrás dele"). Ressalvei esse ponto antes de qualquer teste. Testado mesmo assim (só via injeção de DOM/CSS no Playwright, nada no código): miniaturas com `opacity:0`/`pointer-events:none` por padrão, reveladas em overlay absoluto sobre a foto no `:hover` do `.pline-card`; `.pline-metarow` subiu (`bottom:12px` → `66px`) pra não colidir com a faixa de cores quando ela aparece.
+
+Resultado real: no repouso, os cards ficam bem mais curtos (sem a faixa de cores ocupando espaço no fluxo), cabendo mais produtos por rolagem — o ganho que o usuário queria confirmar. Mas a ressalva de descoberta se confirmou: sem passar o mouse card por card, o lojista não vê que existem outras cores, nem selos de risco que uma cor alternativa possa ter. **Decisão final: manter como estava** (miniaturas sempre visíveis, sem hover) — nada foi alterado no código, o teste não deixou nenhum resíduo.
+
+## Miniaturas de cor -10% (segunda rodada) (set/2026)
+
+Mais um -10% pedido direto (sem teste prévio — ajuste fino de tamanho). `.pline-dot`: 41px → **37px** (36,9px exato, arredondado). `DOT_SCROLL_STEP` (141→129) e o `iconSize` do fallback do `ProductThumb` dentro do dot (19→17) acompanharam, mesma lógica de todo ajuste de tamanho anterior nessa miniatura — ver histórico completo de incrementos/decrementos na própria regra CSS.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
