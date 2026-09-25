@@ -781,6 +781,8 @@ Usuário achou o banner de `CarrinhoDetail.tsx` (`.sharebanner`, aparece sempre,
 
 Reescrito pra **"Compartilhado com Ana — ela acompanha e comenta esse pedido"**: tirado o parêntese "(representante da sua loja)" — informação que já aparece em vários outros lugares do app (linha "Representante: Ana" nos cards de Meus Carrinhos, mensagens "Aguardando Ana" etc.), não precisa se repetir aqui — e trocado "·" por "—" pra bater com o padrão do `Payment.tsx`.
 
+Em seguida, pedido de tirar o quadro cinza (`background`/`border`) do `.sharebanner` — é um aviso só informativo (não pede nenhuma ação, diferente de um alerta ou confirmação), então não precisa do destaque de "card" que tinha antes. Avatar + texto agora ficam direto no fundo da página.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
