@@ -91,7 +91,7 @@ export function CarrinhoDetail() {
           <div className="sharebanner">
             <div className="avatar">AN</div>
             <div>
-              Compartilhado com <b>{cart.representative}</b> (representante da sua loja) · ela vê e comenta o pedido abaixo
+              Compartilhado com <b>{cart.representative}</b> — ela acompanha e comenta esse pedido
             </div>
           </div>
 

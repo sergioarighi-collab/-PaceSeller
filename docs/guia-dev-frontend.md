@@ -775,6 +775,12 @@ Usuário notou que "Combos sugeridos" ficava sempre depois da grade de produtos 
 
 **Implementado**: `Catalog.tsx` ganhou state `catalogTab: 'produtos' | 'combos'` (default `'produtos'`) e uma barra de abas (`.cattabs`/`.cattab`, sublinhado — não o estilo pill de `.cartswitcher .tab` usado em Meus Carrinhos, que é outro conceito: filtro de estado, não navegação entre 2 visões). Só aparece quando `!context` (o caminho de produto avulso — deep-links do Radar — não tem combos, continua igual, sem abas). Quando a aba é "Combos", os filtros (`.filterbar`, `Coleção`, `Numeração`) e a grade de produtos desmontam (`catalogTab === 'produtos' &&`) e a seção de combos passa a exigir `catalogTab === 'combos'` além de `!context`; a busca (`.filterbar`) usa `style={{display:'none'}}` em vez de desmontar pra não perder o texto digitado ao trocar de aba (as duas gradebox de filtro não têm esse cuidado porque o estado delas já mora em `useState` do componente, não se perde ao desmontar). Rótulo da aba mostra a contagem (`Combos sugeridos (${combos.length})`).
 
+## Banner "Compartilhado com Ana" mais curto (set/2026)
+
+Usuário achou o banner de `CarrinhoDetail.tsx` (`.sharebanner`, aparece sempre, em todo carrinho) verboso: "Compartilhado com **Ana** (representante da sua loja) · ela vê e comenta o pedido abaixo". Concordei — é bastante texto pra algo que repete em toda visita a um carrinho, e o app já tinha um padrão mais curto pro mesmo tipo de aviso em `Payment.tsx` ("Compartilhado com **Ana** — ela já aprovou este pedido").
+
+Reescrito pra **"Compartilhado com Ana — ela acompanha e comenta esse pedido"**: tirado o parêntese "(representante da sua loja)" — informação que já aparece em vários outros lugares do app (linha "Representante: Ana" nos cards de Meus Carrinhos, mensagens "Aguardando Ana" etc.), não precisa se repetir aqui — e trocado "·" por "—" pra bater com o padrão do `Payment.tsx`.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
