@@ -304,7 +304,12 @@
   .bulkrow .bicon{width:26px;height:26px;border-radius:50%;background:var(--positive);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .bulkrow.review .bicon{background:var(--info);}
   .bulkrow .btext{flex:1;font-size:12.5px;line-height:1.4;color:var(--text-primary);}
-  .bulkrow .bbtn{background:var(--black);color:#fff;font-size:12px;font-weight:600;padding:8px 14px;border-radius:4px;white-space:nowrap;cursor:pointer;}
+  /* Contorno em vez de preenchido (set/2026) — pedido do usuário: o banner colorido + ícone já
+     davam destaque sozinhos, preto sólido (mesmo peso do "Criar novo carrinho", a ação primária de
+     verdade da página) competia à toa. Contorno na cor do próprio banner (testado contra contorno
+     preto neutro e aprovado) mantém o botão coeso com o tom positivo/info de cada linha. */
+  .bulkrow .bbtn{background:transparent;color:var(--positive);border:1.5px solid var(--positive);font-size:12px;font-weight:700;padding:7px 14px;border-radius:4px;white-space:nowrap;cursor:pointer;}
+  .bulkrow.review .bbtn{color:var(--info);border-color:var(--info);}
 
   .cartlist{display:flex;flex-direction:column;gap:14px;margin-top:20px;}
   .cart-card{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:18px 20px 16px;}

@@ -841,6 +841,13 @@ Usuário notou que o alerta "Categoria feminina sub-representada" no `qualitybox
 
 O texto virou `Coleção {nome} ausente do pedido` e a contagem do CTA (`+ Adicionar N itens`) passou a ser o número real de produtos daquela coleção no catálogo — antes era um "4" fixo, tão fake quanto a categoria. Testado nos carrinhos mock: "Coleção Inverno" e "Coil Verão" (que cobrem só Hertz/Coil) mostram "Coleção Hertz Art ausente do pedido" (crescimento médio de 27%, o maior entre as coleções que faltam); "Giro Hertz Black" (pago) não mostra nada, e a `qualitybox` inteira agora some quando nem o alerta de coleção nem a sugestão de produto se aplicam (`{(missingCollection || productSuggestion) && (...)}`) — antes a box sempre aparecia mesmo vazia de conteúdo real.
 
+## Botões dos banners de Meus Carrinhos: contorno em vez de preenchido (set/2026)
+
+Pedido do usuário: "Enviar pro representante" e "Revisar sugestão" (banners `.bulkrow`/`.bulkrow.review` no topo de Meus Carrinhos) precisavam ser preto sólido? O banner colorido (verde/azul) + ícone já davam destaque sozinhos — o preto sólido tinha o mesmo peso do "Criar novo carrinho" (a única ação de fato primária da página) e competia à toa.
+
+- Testado contorno colorido (verde pro banner positivo, azul pro banner info, combinando com o tom de cada linha) contra contorno preto neutro (igual ao tratamento do botão "Abrir", set/2026 anterior) — usuário escolheu o **colorido**, por ficar coeso com o próprio banner em vez de neutro.
+- CSS: `.bulkrow .bbtn` virou contorno (`border:1.5px solid var(--positive)`, `color:var(--positive)`, fundo transparente); `.bulkrow.review .bbtn` sobrescreve pra tom info. Mesma linha de "reduzir preenchido em favor de contorno" já aplicada em tags do Catálogo, botão de adicionar, setas do carrossel e no próprio "Abrir".
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
