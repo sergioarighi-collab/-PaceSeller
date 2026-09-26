@@ -8,6 +8,7 @@ import { distributeSizesExact } from '../../lib/productLines'
 import { ProductThumb } from './ProductThumb'
 import { WebModal } from './WebModal'
 import { GradeEditModal } from './GradeEditModal'
+import { GradeEditAllModal } from './GradeEditAllModal'
 
 const MIX_IDEAL_PCT = 70
 const PEEK_MS = 2200
@@ -52,6 +53,9 @@ export function OrderDrawer() {
   // Guarda a qty atual junto com o productId — precisa dela pra pré-popular a grade quando o item
   // ainda não passou pela Ficha de Decisão (sem cartItemSizes ainda, ver distributeSizesExact).
   const [editingGrade, setEditingGrade] = useState<{ productId: string; qty: number } | null>(null)
+  // Alternativa ao "Editar grade" item a item: editar todos os itens numa tabela só (ver
+  // GradeEditAllModal) — só faz sentido oferecer com 2+ produtos no pedido.
+  const [editingAllGrades, setEditingAllGrades] = useState(false)
   const setCartItemSizes = useAppStore((s) => s.setCartItemSizes)
 
   // "Peek": abre sozinho a cada item adicionado (ver peekOrderDrawer no store) e some depois de
@@ -184,6 +188,17 @@ export function OrderDrawer() {
               <div className="nudge-bar-fill" style={{ width: `${MIX_IDEAL_PCT}%` }} />
             </div>
           </div>
+
+          {lines.length > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+              <span
+                style={{ fontSize: 11.5, color: 'var(--info)', fontWeight: 600, cursor: 'pointer' }}
+                onClick={() => setEditingAllGrades(true)}
+              >
+                Editar grades de todos
+              </span>
+            </div>
+          )}
 
           <div className="sidebar-itemlist">
             {comboLines.map(({ combo, cp }) => (
@@ -351,6 +366,20 @@ export function OrderDrawer() {
             />
           )
         })()}
+
+      {editingAllGrades && (
+        <GradeEditAllModal
+          lines={lines}
+          initialSizesByProduct={Object.fromEntries(
+            lines.map(({ product, qty }) => [product.id, cartItemSizes[product.id] ?? distributeSizesExact(product, qty)]),
+          )}
+          onClose={() => setEditingAllGrades(false)}
+          onSave={(sizesByProduct) => {
+            Object.entries(sizesByProduct).forEach(([productId, sizes]) => setCartItemSizes(productId, sizes))
+            setEditingAllGrades(false)
+          }}
+        />
+      )}
     </>
   )
 }
