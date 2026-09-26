@@ -62,13 +62,20 @@ export function ProductLineCard({
   const inCart = Boolean(cartItems[p.id])
   const lineName = p.name.replace(` ${p.colorway}`, '')
 
-  // Só 1 selo em destaque na foto (em vez dos 2-3 empilhados do card antigo): risco > lançamento >
-  // crescimento forte. Crescimento fraco/moderado (<20%) fica sem selo — some do card, mas
-  // continua disponível na Ficha de Decisão do produto (clique na foto/nome).
+  // Só 1 selo em destaque na foto (em vez dos 2-3 empilhados do card antigo): risco > mais vendida >
+  // lançamento > crescimento forte. Crescimento fraco/moderado (<20%) fica sem selo — some do
+  // card, mas continua disponível na Ficha de Decisão do produto (clique na foto/nome).
   const riskBadge = p.badges.find((b) => b.tone === 'risk')
+  // "Mais vendida" reforça, na própria foto, o que a estrela na miniatura de cor já sinaliza —
+  // só aparece quando a cor selecionada É a mais vendida da linha (clicar em outra cor tira o
+  // selo, já que ele descreve aquela cor específica, não a linha inteira). Pedido do usuário depois
+  // de tirar o selo antigo ("Mais vendida" sempre visível, independente da seleção — ver seção
+  // "Card de linha de produto vertical/minimalista") por ser redundante com a estrela; esse é
+  // diferente: só reforça quando relevante, não duplica à toa.
+  const bestSellerBadge = p.id === bestSellerId ? { label: 'Mais vendida', tone: 'positive' as const } : undefined
   const premiumBadge = p.badges.find((b) => b.tone === 'premium')
   const growthBadge = p.badges.find((b) => b.tone === 'positive')
-  const topTag = riskBadge ?? premiumBadge ?? growthBadge
+  const topTag = riskBadge ?? bestSellerBadge ?? premiumBadge ?? growthBadge
   const marginBadge = p.badges.find((b) => b.label.startsWith('Margem estimada'))
 
   function scrollDots(dir: -1 | 1) {

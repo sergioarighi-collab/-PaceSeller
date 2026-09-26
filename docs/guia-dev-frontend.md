@@ -783,6 +783,14 @@ Reescrito pra **"Compartilhado com Ana — ela acompanha e comenta esse pedido"*
 
 Em seguida, pedido de tirar o quadro cinza (`background`/`border`) do `.sharebanner` — é um aviso só informativo (não pede nenhuma ação, diferente de um alerta ou confirmação), então não precisa do destaque de "card" que tinha antes. Avatar + texto agora ficam direto no fundo da página.
 
+## Mais três ajustes no card do Catálogo: setas sem círculo, estrela +10%, tag "Mais vendida" (set/2026)
+
+Três pedidos seguidos na mesma linha de raciocínio de tirar preenchimento/contorno fechado (já aplicado em botão de adicionar, tags do topo e miniaturas):
+
+- **Setas do carrossel de cores (`.pline-dots-arrow`)**: perderam `background`/`border-radius`/`border` — sobra só a flecha, testado antes via `addStyleTag` no Playwright e aprovado.
+- **Estrela de "mais vendida" (`.pline-dot-star`)**: mais um ajuste de escala, `scale(.98)` → `scale(1.08)` (+10%).
+- **Tag "Mais vendida" na foto**: pedido novo — reforçar, na própria foto do card, o que a estrela na miniatura já sinaliza. `ProductLineCard.tsx` ganhou `bestSellerBadge` (`p.id === bestSellerId ? {label:'Mais vendida', tone:'positive'} : undefined`), entrando na prioridade do selo do topo logo depois do risco: `riskBadge ?? bestSellerBadge ?? premiumBadge ?? growthBadge`. Só aparece quando a cor **selecionada no momento** é a mais vendida da linha — troca de cor esconde a tag (ela descreve aquela cor específica, não a linha inteira) e volta a mostrar se o lojista clicar de novo na cor certa. Diferente do antigo ribbon "Mais vendida" (removido na criação do card vertical por ficar sempre visível, duplicando a estrela à toa) — esse é condicional, só reforça quando já é a cor em foco.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

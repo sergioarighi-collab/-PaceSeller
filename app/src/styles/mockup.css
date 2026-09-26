@@ -662,8 +662,11 @@
   .pline-dots-row{display:flex;align-items:center;gap:6px;margin-top:12px;}
   .pline-dots{display:flex;gap:6px;flex:1;min-width:0;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;}
   .pline-dots::-webkit-scrollbar{display:none;}
-  .pline-dots-arrow{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--surface);border:1px solid var(--border-strong);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;}
-  .pline-dots-arrow:hover{background:var(--surface-2);color:var(--text-primary);}
+  /* Sem círculo (set/2026, testado antes via addStyleTag no Playwright) — só a flecha, seguindo a
+     mesma direção do resto do card (estrela, botão de adicionar e tags do topo já perderam
+     preenchimento/contorno fechado nessa leva de ajustes). */
+  .pline-dots-arrow{flex-shrink:0;width:20px;height:20px;background:transparent;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .pline-dots-arrow:hover{color:var(--text-primary);}
   /* 37px = 24px testado no protótipo, +25%/+25%/+20% em três rodadas (24→30→38→46px) e -10%/-10%
      em duas rodadas seguintes (46→41,4→37,3px, arredondado). */
   .pline-dot{width:37px;height:37px;cursor:pointer;overflow:hidden;flex-shrink:0;position:relative;}
@@ -680,7 +683,8 @@
      estrelinha de "mais vendida", que é outro dado, não tem relação com seleção). */
   .pline-dot > img,.pline-dot > svg{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply;}
   /* scale(.98) = .85 + 15%, pedido do usuário. */
-  .pline-dot-star{position:absolute;bottom:0;left:50%;transform:translateX(-50%) scale(.98);color:var(--black);display:flex;filter:drop-shadow(0 0 1px var(--surface)) drop-shadow(0 0 1px var(--surface));}
+  /* scale(1.08) = .98 + 10%, pedido do usuário. */
+  .pline-dot-star{position:absolute;bottom:0;left:50%;transform:translateX(-50%) scale(1.08);color:var(--black);display:flex;filter:drop-shadow(0 0 1px var(--surface)) drop-shadow(0 0 1px var(--surface));}
   /* Hierarquia revista (set/2026) — a primeira versão espalhava eyebrow/nome/cor/botão num só
      flex-row com gaps genéricos (10/12/8px sem critério), sem comunicar o que pertencia a que
      grupo. Reorganizado em 2 blocos com ritmo de espaçamento diferente: "identidade" (eyebrow →
