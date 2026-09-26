@@ -575,17 +575,6 @@ export const initialNotifications: NotificationItem[] = [
   { id: 'n4', kind: 'insight', text: 'Novo insight de alta prioridade no Radar', timeLabel: 'há 2 dias', read: true },
 ]
 
-// Quanto a loja comprou de cada SKU no mesmo período do ano passado — usado no checklist
-// "Antes de fechar" do carrinho (ago/2026) pra comparar o pedido de agora com o histórico da
-// própria loja, em vez de depender de import manual de planilha (ver docs/guia-dev-frontend.md).
-// Cobre só os SKUs que aparecem nos carrinhos mock hoje; SKU sem entrada aqui = sem dado
-// histórico suficiente, e o item correspondente simplesmente não entra na comparação.
-export const samePeriodLastYearQty: Record<string, number> = {
-  '2101-30': 34, // Tênis Tesla Hertz Black
-  '1901-67': 12, // Tênis Tesla Coil Black White
-  '2101-31': 14, // Tênis Tesla Hertz Rose
-}
-
 // @deprecated (lojista desktop) — mantido só porque o fluxo mobile do representante
 // (screens/representante/SuggestedOrder.tsx) ainda usa esse formato de mix por %.
 // A tela "Planejar" do lojista desktop não usa mais este objeto.

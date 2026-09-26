@@ -5,10 +5,9 @@ import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { Toast } from '../../components/desktop/Toast'
 import { ConfirmModal } from '../../components/desktop/ConfirmModal'
-import { products, samePeriodLastYearQty } from '../../lib/data'
+import { products } from '../../lib/data'
 import { useAppStore, pedidoActionKind, pedidoPares, pedidoStatusBadge } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
-import { deltaInfo } from '../../lib/productLines'
 import { formatBRL } from '../../lib/format'
 
 const conditionLabel: Record<string, string> = {
@@ -24,6 +23,7 @@ export function CarrinhoDetail() {
   const carrinhos = useAppStore((s) => s.carrinhos)
   const setActiveCarrinho = useAppStore((s) => s.setActiveCarrinho)
   const startEditPedido = useAppStore((s) => s.startEditPedido)
+  const addToCart = useAppStore((s) => s.addToCart)
   const sendPedidoToRepresentante = useAppStore((s) => s.sendPedidoToRepresentante)
   const setRepCanEdit = useAppStore((s) => s.setRepCanEdit)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
@@ -48,21 +48,26 @@ export function CarrinhoDetail() {
   const gradeOk = pares >= GRADE_MINIMA_PARES
   const statusBadge = pedidoStatusBadge(pedido, cart.representative)
 
-  // Compara os itens deste carrinho com o que a loja comprou no mesmo período do ano passado —
-  // só entram os SKUs com dado histórico (ver samePeriodLastYearQty em lib/data.ts), e só se o
-  // pedido ainda não foi pago (pago já foi decidido, não faz sentido re-questionar "antes de fechar").
-  const yoyRows =
+  // "Antes de fechar" (set/2026): revisado pra só trazer info acionável no momento de fechar o
+  // pedido — tirado o check "mix balanceado" (positivo, não pedia ação nenhuma) e o comparativo
+  // com o ano passado (histórico, mais análise do que decisão de compra — cabe melhor num
+  // painel/Radar). No lugar entrou uma sugestão concreta de produto: usa o mesmo critério de
+  // "Oportunidade perdida" já usado no OrderDrawer (produto que vende bem mas a loja ainda não
+  // tem), só que aqui olhando os itens do pedido já fechado, não o carrinho em montagem. Só um
+  // produto por vez (o de maior chance), não uma lista — pedido do usuário foi não trazer
+  // informação por trazer.
+  const productSuggestion =
     pedido.status === 'pago'
-      ? []
-      : pedido.items
-          .filter((item) => samePeriodLastYearQty[item.productId] !== undefined)
-          .map((item) => ({
-            productId: item.productId,
-            name: item.name.replace('Tênis Tesla ', ''),
-            prevQty: samePeriodLastYearQty[item.productId],
-            nowQty: item.qty,
-            delta: deltaInfo(samePeriodLastYearQty[item.productId], item.qty),
-          }))
+      ? undefined
+      : products.find(
+          (p) => p.badges.some((b) => b.label === 'Oportunidade perdida') && !pedido.items.some((item) => item.productId === p.id),
+        )
+
+  function addSuggestionToPedido() {
+    if (!productSuggestion) return
+    startEditPedido(cart.id, pedido.id)
+    addToCart(productSuggestion.id, 12)
+  }
 
   return (
     <DesktopPage>
@@ -200,14 +205,6 @@ export function CarrinhoDetail() {
             <div className="qtitle">Antes de fechar</div>
             <div className="qline">
               <div className="qleft">
-                <span className="ck" style={{ background: 'var(--positive-dim)', color: 'var(--positive)' }}>
-                  ✓
-                </span>
-                Mix balanceado entre categorias
-              </div>
-            </div>
-            <div className="qline">
-              <div className="qleft">
                 <span className="ck" style={{ background: 'var(--risk-dim)', color: 'var(--risk)' }}>
                   !
                 </span>
@@ -217,25 +214,16 @@ export function CarrinhoDetail() {
                 + Adicionar 4 itens
               </div>
             </div>
-            {yoyRows.length > 0 && (
-              <div className="qline" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
+            {productSuggestion && (
+              <div className="qline">
                 <div className="qleft">
                   <span className="ck" style={{ background: 'var(--info-dim)', color: 'var(--info)' }}>
-                    ↕
+                    +
                   </span>
-                  Comparado ao mesmo período do ano passado
+                  {productSuggestion.name.replace('Tênis Tesla ', '')} vende bem, mas sua loja ainda não tem
                 </div>
-                <div className="yoylist">
-                  {yoyRows.map((r) => (
-                    <div className="yoyrow" key={r.productId}>
-                      <span>
-                        <b>{r.name}</b> · ano passado {r.prevQty} pares
-                      </span>
-                      <span className={`deltabadge ${r.delta.tone}`}>
-                        {r.nowQty} pares · {r.delta.text}
-                      </span>
-                    </div>
-                  ))}
+                <div className="miniaction" style={{ cursor: 'pointer' }} onClick={addSuggestionToPedido}>
+                  + Adicionar
                 </div>
               </div>
             )}

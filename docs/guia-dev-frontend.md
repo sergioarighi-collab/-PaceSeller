@@ -811,6 +811,16 @@ Ou seja: um pedido que já batia a grade mínima ("Pronto pra enviar") só mostr
 
 **Fix**: trocado `pedidoActionKind(pedido) === 'editar'` por `pedidoActionKind(pedido) !== 'acompanhar'` — "Editar no drawer" agora aparece em qualquer pedido editável (rascunho, pronto pra enviar, ou aguardando/sugerido), independente de já ter sido enviado pro representante ou não. Some apenas quando o pedido já foi pago, já que nesse ponto editar não faz mais sentido. Não precisou mudar `handleEditarNoDrawer` nem `startEditPedido` — a função já tratava corretamente o caso `status === 'aguardando'` (mostra modal de confirmação "Editar pedido aguardando aprovação", já que editar aqui volta o pedido pra rascunho e exige reenvio) e ia direto pro editor nos demais casos. Testado nos três cenários (Coleção Inverno = enviar, Coil Verão = revisar, Giro Hertz Black = acompanhar/pago) via Playwright contra o preview buildado.
 
+## "Antes de fechar" revisado: só o que é acionável na hora de fechar (set/2026)
+
+Usuário achou o carrinho com informação demais e pediu pra repensar o bloco "Antes de fechar" (`CarrinhoDetail.tsx`) do zero: o que é realmente útil pro lojista no momento exato de fechar um pedido? Critério que guiou a resposta: só faz sentido mostrar algo ali se **pede uma decisão/ação agora** — informação passiva (só pra confirmar que está tudo bem, ou pra contexto histórico) compete por atenção com o que realmente importa e tende a ser ignorada.
+
+- **Removido: check "Mix balanceado entre categorias"** (positivo) — só confirmava que estava tudo ok, não levava a ação nenhuma.
+- **Removido: comparativo "mesmo período do ano passado"** (YoY, por produto) — é análise histórica, não uma decisão de compra; cabe melhor num painel/Radar do que no momento de fechar. Removido também o suporte todo: `samePeriodLastYearQty` (`data.ts`), `deltaInfo`/`DeltaTone` (`productLines.ts`), CSS `.yoylist`/`.yoyrow`/`.deltabadge` — nada mais usava.
+- **Mantido: alerta "Categoria feminina sub-representada"** + CTA "+ Adicionar 4 itens" — é o único que já pedia uma ação concreta.
+- **Novo: sugestão de produto pra completar a venda** — responde a pergunta "o que poderia ser acrescentado pra potencializar a venda" com algo concreto, não um alerta genérico de categoria. Reaproveita o mesmo critério de "Oportunidade perdida" já usado nas sugestões do `OrderDrawer` (produto com boa saída que a loja ainda não vende), olhando os itens do **pedido já fechado** deste carrinho (não o carrinho em montagem). Mostra só **um** produto (o de maior chance), não uma lista — indo direto ao ponto do pedido do usuário de "não trazer informação por trazer". Clicar em "+ Adicionar" chama `startEditPedido` + `addToCart(produto, 12)`, reaproveitando o fluxo de edição que já existe — abre o drawer já em modo edição, com os itens atuais do pedido mais o produto sugerido.
+- Testado via Playwright no carrinho "Coleção Inverno": bloco mostra só as 2 linhas acionáveis (alerta de categoria + sugestão "Coil Off White Furta Cor vende bem, mas sua loja ainda não tem"); clicar em "+ Adicionar" da sugestão abre o drawer em modo edição com os 3 itens originais + o novo (66 pares no total, era 54).
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

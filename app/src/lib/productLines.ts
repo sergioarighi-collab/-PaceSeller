@@ -81,13 +81,3 @@ export function suggestedGradeQty(product: Product): { qty: number; reason: stri
   }
 }
 
-export type DeltaTone = 'up' | 'down' | 'flat' | 'new'
-
-// Compara uma quantidade "agora" com uma quantidade "antes" (ex: mesmo período do ano passado).
-export function deltaInfo(prev: number, now: number): { tone: DeltaTone; text: string } {
-  if (prev === 0) return { tone: 'new', text: 'Novo' }
-  const pct = Math.round(((now - prev) / prev) * 100)
-  if (pct > 0) return { tone: 'up', text: `+${pct}%` }
-  if (pct < 0) return { tone: 'down', text: `${pct}%` }
-  return { tone: 'flat', text: '0%' }
-}
