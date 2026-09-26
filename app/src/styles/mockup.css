@@ -227,8 +227,12 @@
   .cartline .cname{font-size:13px;color:var(--text-primary);font-weight:500;}
   .cartline .cmeta{font-size:11px;color:var(--text-tertiary);font-family:var(--mono);margin-top:3px;}
   .cartline .cval{font-family:var(--mono);font-size:13px;color:var(--text-primary);}
-  .qualitybox{background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:14px;margin:16px 0;}
-  .qualitybox .qtitle{font-size:11px;font-family:var(--mono);text-transform:uppercase;color:var(--text-tertiary);letter-spacing:.05em;margin-bottom:10px;}
+  /* Destaque (set/2026) — pedido do usuário pra dar mais peso visual ao bloco: borda esquerda
+     neutra (preta, não vermelha) porque o conteúdo é misto (alerta de risco + sugestão de
+     produto), não só risco — testado antes via addStyleTag, com borda vermelha como alternativa
+     descartada por sugerir "tudo ali é problema". */
+  .qualitybox{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--black);border-radius:4px;padding:14px;margin:16px 0;}
+  .qualitybox .qtitle{font-size:11px;font-family:var(--mono);text-transform:uppercase;color:var(--text-primary);font-weight:700;letter-spacing:.05em;margin-bottom:10px;}
   .qline{display:flex;align-items:center;justify-content:space-between;padding:7px 0;font-size:12.5px;color:var(--text-primary);}
   .qline .qleft{display:flex;align-items:center;gap:8px;}
   .miniaction{font-size:11.5px;font-weight:600;color:var(--on-black);background:var(--black);padding:5px 9px;border-radius:4px;}
@@ -307,6 +311,12 @@
   .cc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;}
   .cc-name{font-family:var(--display);font-size:16.5px;font-weight:700;color:var(--text-primary);}
   .cc-meta{font-family:var(--mono);font-size:11px;color:var(--text-tertiary);margin-top:4px;}
+  /* "Abrir" com mais destaque (set/2026) — pedido do usuário; contorno mais forte em vez de
+     preencher de preto (testado e descartado: com 3+ carrinhos na lista, um "Abrir" preto por
+     card competia com os banners de ação já pretos no topo da página, tipo "Enviar pro
+     representante" — o contorno resolve sem virar preto entre pretos). Escopado a .cart-card
+     porque .btn-secondary é genérico e usado em telas sem essa disputa de atenção. */
+  .cart-card .btn-secondary{border:1.5px solid var(--black);color:var(--text-primary);font-weight:700;}
 
   .thumbrow{display:flex;gap:6px;margin-top:12px;}
   /* 44px/2px de radius — mesma miniatura do swatch de cor do Catálogo (.pw-swatch), pra manter

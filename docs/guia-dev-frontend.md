@@ -821,6 +821,13 @@ Usuário achou o carrinho com informação demais e pediu pra repensar o bloco "
 - **Novo: sugestão de produto pra completar a venda** — responde a pergunta "o que poderia ser acrescentado pra potencializar a venda" com algo concreto, não um alerta genérico de categoria. Reaproveita o mesmo critério de "Oportunidade perdida" já usado nas sugestões do `OrderDrawer` (produto com boa saída que a loja ainda não vende), olhando os itens do **pedido já fechado** deste carrinho (não o carrinho em montagem). Mostra só **um** produto (o de maior chance), não uma lista — indo direto ao ponto do pedido do usuário de "não trazer informação por trazer". Clicar em "+ Adicionar" chama `startEditPedido` + `addToCart(produto, 12)`, reaproveitando o fluxo de edição que já existe — abre o drawer já em modo edição, com os itens atuais do pedido mais o produto sugerido.
 - Testado via Playwright no carrinho "Coleção Inverno": bloco mostra só as 2 linhas acionáveis (alerta de categoria + sugestão "Coil Off White Furta Cor vende bem, mas sua loja ainda não tem"); clicar em "+ Adicionar" da sugestão abre o drawer em modo edição com os 3 itens originais + o novo (66 pares no total, era 54).
 
+## Mais destaque: "Antes de fechar" e botão "Abrir" (set/2026)
+
+Dois pedidos de destaque visual, testados via `addStyleTag` antes de implementar:
+
+- **`.qualitybox` ("Antes de fechar", `CarrinhoDetail.tsx`)**: ganhou `border-left:4px solid var(--black)` + `.qtitle` mais escuro/bold. Testadas duas cores de borda — vermelha (tom de risco) e preta/neutra — vermelha descartada porque o bloco tem conteúdo misto (alerta de risco + sugestão de produto, essa última tom info/positivo), e uma borda vermelha sugeria "tudo ali é problema".
+- **Botão "Abrir" (`.cart-card .btn-secondary`, `MeusCarrinhos.tsx`)**: ganhou contorno mais forte (`border:1.5px solid var(--black)`, `font-weight:700`). Testado também preto sólido (igual `.btn-primary`) e descartado — a página já tem banners de ação em preto no topo ("Enviar pro representante", "Revisar sugestão"); com 3+ carrinhos na lista, um "Abrir" preto por card competiria com esses CTAs mais importantes. Mudança escopada a `.cart-card` (não em `.btn-secondary` global) porque essa classe é genérica e usada em telas sem essa disputa de atenção.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
