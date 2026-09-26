@@ -104,7 +104,15 @@ export function CarrinhoDetail() {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                {pedidoActionKind(pedido) === 'editar' && (
+                {/* "Editar no drawer" aparece em qualquer pedido editável — rascunho incompleto,
+                    "Pronto pra enviar" (pedidoActionKind === 'enviar') ou já enviado/sugerido e
+                    aguardando decisão (pedidoActionKind === 'revisar') — independente de já ter
+                    sido enviado pro representante ou não. Só some quando o pedido já foi pago
+                    (pedidoActionKind === 'acompanhar'), que não faz mais sentido editar. Antes,
+                    um pedido que já batia a grade mínima ou estava em "aguardando" via sugestão do
+                    representante só mostrava outras ações aqui, sem nenhum jeito visível de editar
+                    (usuário relatou não achar como editar). */}
+                {pedidoActionKind(pedido) !== 'acompanhar' && (
                   <span
                     style={{ fontSize: 11.5, color: 'var(--info)', fontWeight: 500, cursor: 'pointer' }}
                     onClick={handleEditarNoDrawer}

@@ -791,6 +791,19 @@ Três pedidos seguidos na mesma linha de raciocínio de tirar preenchimento/cont
 - **Estrela de "mais vendida" (`.pline-dot-star`)**: mais um ajuste de escala, `scale(.98)` → `scale(1.08)` (+10%).
 - **Tag "Mais vendida" na foto**: pedido novo — reforçar, na própria foto do card, o que a estrela na miniatura já sinaliza. `ProductLineCard.tsx` ganhou `bestSellerBadge` (`p.id === bestSellerId ? {label:'Mais vendida', tone:'positive'} : undefined`), entrando na prioridade do selo do topo logo depois do risco: `riskBadge ?? bestSellerBadge ?? premiumBadge ?? growthBadge`. Só aparece quando a cor **selecionada no momento** é a mais vendida da linha — troca de cor esconde a tag (ela descreve aquela cor específica, não a linha inteira) e volta a mostrar se o lojista clicar de novo na cor certa. Diferente do antigo ribbon "Mais vendida" (removido na criação do card vertical por ficar sempre visível, duplicando a estrela à toa) — esse é condicional, só reforça quando já é a cor em foco.
 
+## Bug real encontrado e corrigido: "Editar no drawer" sumia em vários estados do pedido no carrinho (set/2026)
+
+Usuário relatou não conseguir achar como editar um pedido depois de entrar em um carrinho. Causa raiz em `CarrinhoDetail.tsx`: o link "Editar no drawer" no cabeçalho do pedido só era renderizado quando `pedidoActionKind(pedido) === 'editar'` — que é apenas um dos quatro resultados possíveis dessa função (`store.ts`):
+
+- `'acompanhar'` — pedido já pago (`status === 'pago'`)
+- `'revisar'` — pedido em `'aguardando'` sugerido pela **representante** (`suggestedBy === 'representante'`)
+- `'enviar'` — rascunho que já bateu a grade mínima (pronto pra mandar pra Ana)
+- `'editar'` — qualquer outro caso (rascunho ainda incompleto, ou `'aguardando'` enviado pelo próprio lojista)
+
+Ou seja: um pedido que já batia a grade mínima ("Pronto pra enviar") só mostrava o link **"Enviar pro representante"**, e um pedido sugerido pela Ana ("Aguardando você — revisar") não mostrava nenhum link de ação no cabeçalho — nos dois casos, nenhum jeito visível de editar antes de decidir o que fazer.
+
+**Fix**: trocado `pedidoActionKind(pedido) === 'editar'` por `pedidoActionKind(pedido) !== 'acompanhar'` — "Editar no drawer" agora aparece em qualquer pedido editável (rascunho, pronto pra enviar, ou aguardando/sugerido), independente de já ter sido enviado pro representante ou não. Some apenas quando o pedido já foi pago, já que nesse ponto editar não faz mais sentido. Não precisou mudar `handleEditarNoDrawer` nem `startEditPedido` — a função já tratava corretamente o caso `status === 'aguardando'` (mostra modal de confirmação "Editar pedido aguardando aprovação", já que editar aqui volta o pedido pra rascunho e exige reenvio) e ia direto pro editor nos demais casos. Testado nos três cenários (Coleção Inverno = enviar, Coil Verão = revisar, Giro Hertz Black = acompanhar/pago) via Playwright contra o preview buildado.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
