@@ -5,7 +5,7 @@ import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { Toast } from '../../components/desktop/Toast'
 import { ConfirmModal } from '../../components/desktop/ConfirmModal'
-import { products } from '../../lib/data'
+import { products, collectionTitle } from '../../lib/data'
 import { useAppStore, pedidoActionKind, pedidoPares, pedidoStatusBadge } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { formatBRL } from '../../lib/format'
@@ -47,6 +47,30 @@ export function CarrinhoDetail() {
   const pares = pedidoPares(pedido)
   const gradeOk = pares >= GRADE_MINIMA_PARES
   const statusBadge = pedidoStatusBadge(pedido, cart.representative)
+
+  // Coleção sub-representada (set/2026): substitui o antigo "Categoria feminina sub-representada"
+  // — texto fixo que não correspondia a nenhum dado real (o catálogo não tem categoria de gênero,
+  // só coleção: Coil/Hertz/Hertz Art/Flow/Flow XL/Fusion/TG II — ver types.ts). Critério novo:
+  // coleções que o pedido não tem nenhum item, ordenadas pelo crescimento médio dos produtos
+  // dela — só sugere a de maior crescimento, e só se for positivo (crescimento negativo não é
+  // motivo pra sugerir adicionar). Sem coleção qualificada, a linha simplesmente não aparece —
+  // mesmo princípio da sugestão de produto abaixo, de não trazer informação por trazer.
+  const missingCollection = (() => {
+    if (pedido.status === 'pago') return undefined
+    const pedidoCollections = new Set(
+      pedido.items.map((item) => products.find((p) => p.id === item.productId)?.collection).filter(Boolean),
+    )
+    const candidates = Array.from(new Set(products.map((p) => p.collection)))
+      .filter((c) => !pedidoCollections.has(c))
+      .map((collection) => {
+        const items = products.filter((p) => p.collection === collection)
+        const avgGrowth = items.reduce((sum, p) => sum + p.growthPct, 0) / items.length
+        return { collection, avgGrowth, count: items.length }
+      })
+      .filter((c) => c.avgGrowth > 0)
+      .sort((a, b) => b.avgGrowth - a.avgGrowth)
+    return candidates[0]
+  })()
 
   // "Antes de fechar" (set/2026): revisado pra só trazer info acionável no momento de fechar o
   // pedido — tirado o check "mix balanceado" (positivo, não pedia ação nenhuma) e o comparativo
@@ -201,33 +225,37 @@ export function CarrinhoDetail() {
             </div>
           )}
 
-          <div className="qualitybox">
-            <div className="qtitle">Antes de fechar</div>
-            <div className="qline">
-              <div className="qleft">
-                <span className="ck" style={{ background: 'var(--risk-dim)', color: 'var(--risk)' }}>
-                  !
-                </span>
-                Categoria feminina sub-representada
-              </div>
-              <div className="miniaction" style={{ cursor: 'pointer' }} onClick={shopMoreForThisCarrinho}>
-                + Adicionar 4 itens
-              </div>
+          {(missingCollection || productSuggestion) && (
+            <div className="qualitybox">
+              <div className="qtitle">Antes de fechar</div>
+              {missingCollection && (
+                <div className="qline">
+                  <div className="qleft">
+                    <span className="ck" style={{ background: 'var(--risk-dim)', color: 'var(--risk)' }}>
+                      !
+                    </span>
+                    Coleção {collectionTitle[missingCollection.collection as keyof typeof collectionTitle]} ausente do pedido
+                  </div>
+                  <div className="miniaction" style={{ cursor: 'pointer' }} onClick={shopMoreForThisCarrinho}>
+                    + Adicionar {missingCollection.count} itens
+                  </div>
+                </div>
+              )}
+              {productSuggestion && (
+                <div className="qline">
+                  <div className="qleft">
+                    <span className="ck" style={{ background: 'var(--info-dim)', color: 'var(--info)' }}>
+                      +
+                    </span>
+                    {productSuggestion.name.replace('Tênis Tesla ', '')} vende bem, mas sua loja ainda não tem
+                  </div>
+                  <div className="miniaction" style={{ cursor: 'pointer' }} onClick={addSuggestionToPedido}>
+                    + Adicionar
+                  </div>
+                </div>
+              )}
             </div>
-            {productSuggestion && (
-              <div className="qline">
-                <div className="qleft">
-                  <span className="ck" style={{ background: 'var(--info-dim)', color: 'var(--info)' }}>
-                    +
-                  </span>
-                  {productSuggestion.name.replace('Tênis Tesla ', '')} vende bem, mas sua loja ainda não tem
-                </div>
-                <div className="miniaction" style={{ cursor: 'pointer' }} onClick={addSuggestionToPedido}>
-                  + Adicionar
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
         <div className="web-sidebar">

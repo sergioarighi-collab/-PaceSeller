@@ -828,6 +828,19 @@ Dois pedidos de destaque visual, testados via `addStyleTag` antes de implementar
 - **`.qualitybox` ("Antes de fechar", `CarrinhoDetail.tsx`)**: ganhou `border-left:4px solid var(--black)` + `.qtitle` mais escuro/bold. Testadas duas cores de borda — vermelha (tom de risco) e preta/neutra — vermelha descartada porque o bloco tem conteúdo misto (alerta de risco + sugestão de produto, essa última tom info/positivo), e uma borda vermelha sugeria "tudo ali é problema".
 - **Botão "Abrir" (`.cart-card .btn-secondary`, `MeusCarrinhos.tsx`)**: ganhou contorno mais forte (`border:1.5px solid var(--black)`, `font-weight:700`). Testado também preto sólido (igual `.btn-primary`) e descartado — a página já tem banners de ação em preto no topo ("Enviar pro representante", "Revisar sugestão"); com 3+ carrinhos na lista, um "Abrir" preto por card competiria com esses CTAs mais importantes. Mudança escopada a `.cart-card` (não em `.btn-secondary` global) porque essa classe é genérica e usada em telas sem essa disputa de atenção.
 
+## Bug real encontrado e corrigido: "Categoria feminina sub-representada" não existia (set/2026)
+
+Usuário notou que o alerta "Categoria feminina sub-representada" no `qualitybox` ("Antes de fechar", `CarrinhoDetail.tsx`) não correspondia a nenhum dado real — o catálogo da Tesla Skate não tem categoria de gênero, só **coleção** (`Coil`, `Hertz`, `Hertz Art`, `Flow`, `Flow XL`, `Fusion`, `TG II` — ver `Product.collection`/`collectionTitle` em `data.ts`). Era texto fixo desde a criação do bloco, nunca ligado a dado nenhum.
+
+**Fix**: novo cálculo `missingCollection`, baseado em dado real:
+
+1. Junta os `productId` do pedido com `products` pra descobrir quais coleções o pedido já cobre.
+2. Das coleções que faltam, calcula o crescimento médio (`growthPct`) dos produtos de cada uma.
+3. Só considera coleções com crescimento médio **positivo** (negativo não é motivo pra sugerir adicionar) e pega a de maior crescimento.
+4. Sem nenhuma coleção qualificada, a linha não aparece — mesmo princípio de não trazer informação por trazer já aplicado na sugestão de produto (linha abaixo).
+
+O texto virou `Coleção {nome} ausente do pedido` e a contagem do CTA (`+ Adicionar N itens`) passou a ser o número real de produtos daquela coleção no catálogo — antes era um "4" fixo, tão fake quanto a categoria. Testado nos carrinhos mock: "Coleção Inverno" e "Coil Verão" (que cobrem só Hertz/Coil) mostram "Coleção Hertz Art ausente do pedido" (crescimento médio de 27%, o maior entre as coleções que faltam); "Giro Hertz Black" (pago) não mostra nada, e a `qualitybox` inteira agora some quando nem o alerta de coleção nem a sugestão de produto se aplicam (`{(missingCollection || productSuggestion) && (...)}`) — antes a box sempre aparecia mesmo vazia de conteúdo real.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
