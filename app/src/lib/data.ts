@@ -1,4 +1,4 @@
-import type { Client, InsightCardData, Product, User, Carrinho, Combo, NotificationItem } from './types'
+import type { InsightCardData, Product, User, Carrinho, Combo, NotificationItem, Lojista } from './types'
 
 // Todas as pendências do lojista, agrupadas por prazo pra agir (ago/2026, substitui os 4 cards
 // soltos + a lista "por categoria" escondida atrás de um clique — ver docs/guia-dev-frontend.md).
@@ -424,40 +424,6 @@ export const combos: Combo[] = [
   },
 ]
 
-export const clients: Client[] = [
-  {
-    id: 'c1',
-    name: 'Radical Skate',
-    score: 92,
-    scoreTone: 'positive',
-    scoreLabel: '92% recompra',
-    suggestion: 'Sugestão: pedido de R$ 4.200, com base no histórico de inverno',
-    actionLabel: 'Montar pedido sugerido',
-    actionStyle: 'primary',
-    opportunity: true,
-  },
-  {
-    id: 'c2',
-    name: 'Loja Vertex',
-    score: -22,
-    scoreTone: 'risk',
-    scoreLabel: '-22% volume',
-    suggestion: 'Queda de compra nos últimos 30 dias. Sugestão: ligar hoje',
-    actionLabel: 'Ligar agora',
-    actionStyle: 'outline',
-  },
-  {
-    id: 'c3',
-    name: 'Casa Esporte',
-    score: 0,
-    scoreTone: 'info',
-    scoreLabel: 'Sem nova coleção',
-    suggestion: 'Ainda não visualizou o lançamento Urban Winter',
-    actionLabel: 'Enviar coleção',
-    actionStyle: 'outline',
-  },
-]
-
 export const users: User[] = [
   { id: 'u1', name: 'Ana Silva', initials: 'AN', role: 'titular' },
   { id: 'u2', name: 'Bruno Costa', initials: 'BR', role: 'auxiliar' },
@@ -558,6 +524,106 @@ export const initialCarrinhos: Carrinho[] = [
   },
 ]
 
+// Carteira do representante (set/2026) — início do fluxo desktop da Ana (ver guia-dev-frontend.md).
+// "Radical Skate" é a mesma loja/carrinhos do fluxo do lojista (o avatar do lojista no WebTopNav já
+// mostrava "Radical Skate · Porto Alegre, RS" — não inventamos uma loja nova, reaproveitamos
+// `initialCarrinhos` pra manter os dois pontos de vista consistentes no mesmo pedido). As outras
+// duas lojas são novas, com carrinhos próprios, pra dar volume real de carteira (nomes vindos do
+// antigo mock `clients`, removido nesta leva por não ter carrinho/pedido de verdade).
+// Limitação conhecida: o store mantém `lojistas` e `carrinhos` (visão do lojista logado) como
+// cópias independentes da mesma seed, não uma referência compartilhada — editar um carrinho pelo
+// lado do lojista não reflete ao vivo na carteira do representante nesta leva (não existe backend
+// real por trás, então não há uma "fonte única" de fato; ver seção de gaps no guia-dev-frontend.md).
+export const initialLojistas: Lojista[] = [
+  {
+    id: 'radical-skate',
+    name: 'Radical Skate',
+    city: 'Porto Alegre, RS',
+    contactName: 'Carlos Andrade',
+    carrinhos: initialCarrinhos,
+  },
+  {
+    id: 'loja-vertex',
+    name: 'Loja Vertex',
+    city: 'Recife, PE',
+    contactName: 'Juliana Farias',
+    carrinhos: [
+      {
+        id: 'reposicao-fusion',
+        name: 'Reposição Fusion',
+        representative: 'Ana',
+        updatedAt: 'há 3h',
+        daysSinceActivity: 0,
+        repCanEdit: true,
+        autoSendOnGradeMinima: false,
+        pedido: {
+          id: '4901-1',
+          label: 'Pedido',
+          status: 'rascunho',
+          items: [{ productId: '2601-01', name: 'Tênis Tesla Fusion Black Red', qty: 12, grade: '38–41', value: 4078.8 }],
+          subtotal: 4078.8,
+          discount: 0,
+          total: 4078.8,
+          marginPct: 40,
+          paymentCondition: '30',
+          deliveryEstimateDays: 20,
+        },
+      },
+      {
+        id: 'giro-tg2',
+        name: 'Giro TG II',
+        representative: 'Ana',
+        updatedAt: 'há 6 dias',
+        daysSinceActivity: 6,
+        repCanEdit: true,
+        autoSendOnGradeMinima: false,
+        pedido: {
+          id: '4902-1',
+          label: 'Pedido',
+          status: 'aguardando',
+          items: [{ productId: '2304-01', name: 'Tênis Tesla TG II Black Reflect', qty: 40, grade: '37–42', value: 11996 }],
+          subtotal: 11996,
+          discount: 0,
+          total: 11996,
+          marginPct: 40,
+          paymentCondition: '30',
+          deliveryEstimateDays: 18,
+        },
+      },
+    ],
+  },
+  {
+    id: 'casa-esporte',
+    name: 'Casa Esporte',
+    city: 'Curitiba, PR',
+    contactName: 'Roberto Lima',
+    carrinhos: [
+      {
+        id: 'colecao-hertz-art',
+        name: 'Coleção Hertz',
+        representative: 'Ana',
+        updatedAt: 'há 2 dias',
+        daysSinceActivity: 2,
+        repCanEdit: true,
+        autoSendOnGradeMinima: false,
+        pedido: {
+          id: '4880-1',
+          label: 'Pedido',
+          status: 'pago',
+          items: [{ productId: '2101-33', name: 'Tênis Tesla Hertz All Black Furta Cor', qty: 20, grade: '37–41', value: 6598 }],
+          subtotal: 6598,
+          discount: 0,
+          total: 6598,
+          marginPct: 40,
+          paymentCondition: '30',
+          paymentSplit: [{ method: 'pix', amount: 6598 }],
+          deliveryEstimateDays: 10,
+        },
+      },
+    ],
+  },
+]
+
 // Dropdown de notificações do sino (WebTopNav) — gap mapeado em analise-ux-gaps-atrito-venda.md,
 // implementado ago/2026. 3 tipos: comentário do representante, mudança de status de pedido,
 // novo insight de alta prioridade no Radar.
@@ -575,28 +641,6 @@ export const initialNotifications: NotificationItem[] = [
   { id: 'n4', kind: 'insight', text: 'Novo insight de alta prioridade no Radar', timeLabel: 'há 2 dias', read: true },
 ]
 
-// @deprecated (lojista desktop) — mantido só porque o fluxo mobile do representante
-// (screens/representante/SuggestedOrder.tsx) ainda usa esse formato de mix por %.
-// A tela "Planejar" do lojista desktop não usa mais este objeto.
-export const mixPlan = {
-  planName: 'Coleção de Inverno',
-  investment: 18000,
-  mix: [
-    { label: 'Coil', pct: 60 },
-    { label: 'Hertz', pct: 25 },
-    { label: 'Flow', pct: 15 },
-  ],
-  turnoverDays: 42,
-  marginPct: 39,
-  coveragePct: 92,
-  items: [
-    { productId: '2101-30', name: 'Tênis Tesla Hertz Black', qty: 24 },
-    { productId: '1901-67', name: 'Tênis Tesla Coil Black White', qty: 12 },
-    { productId: '2101-31', name: 'Tênis Tesla Hertz Rose', qty: 18 },
-    { productId: '2304-01', name: 'Tênis Tesla TG II Black Reflect', qty: 40 },
-  ],
-}
-
 // Prazo real confirmado com o cliente: ~15 dias corridos até a entrega (não 7).
 export const trackingSteps = [
   { id: 't1', status: 'done' as const, title: 'Pedido confirmado', date: '12 jul, 09:40' },
@@ -611,9 +655,3 @@ export const trackingSteps = [
   { id: 't4', status: 'pending' as const, title: 'Entregue na loja', date: 'Previsão: 27 jul' },
 ]
 
-export const goals = [
-  { id: 'g1', title: 'Repor estoque', sub: 'Focar em produtos acabando' },
-  { id: 'g2', title: 'Planejar a coleção', sub: 'Montar mix com orçamento' },
-  { id: 'g3', title: 'Recuperar clientes', sub: 'Reativar quem parou de comprar' },
-  { id: 'g4', title: 'Só olhar geral', sub: 'Entender como está o negócio' },
-]

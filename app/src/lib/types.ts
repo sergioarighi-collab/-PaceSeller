@@ -43,16 +43,16 @@ export interface Product {
   stockPares: number
 }
 
-export interface Client {
+// Loja atendida pelo representante (set/2026) — antes só existia o ponto de vista de UM lojista
+// (a lista `carrinhos` do store, implicitamente "a loja logada"). O representante vê vários desses
+// ao mesmo tempo, cada um com seus próprios carrinhos/pedidos — por isso `carrinhos` mora aqui
+// dentro, não solto no store. Substitui o antigo `Client` (mobile, sem carrinho/pedido de verdade).
+export interface Lojista {
   id: string
   name: string
-  score: number
-  scoreTone: Severity
-  scoreLabel: string
-  suggestion: string
-  actionLabel: string
-  actionStyle: 'primary' | 'outline'
-  opportunity?: boolean
+  city: string
+  contactName: string
+  carrinhos: Carrinho[]
 }
 
 export interface MixItem {

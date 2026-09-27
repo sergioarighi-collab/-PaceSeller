@@ -23,9 +23,7 @@ import { Chat } from './screens/lojista/Chat'
 import { Colecao } from './screens/lojista/Colecao'
 import { Loyalty } from './screens/lojista/Loyalty'
 
-import { RepRadar } from './screens/representante/Radar'
-import { Wallet } from './screens/representante/Wallet'
-import { SuggestedOrder } from './screens/representante/SuggestedOrder'
+import { RepCarteira } from './screens/representante/Carteira'
 
 function App() {
   return (
@@ -57,9 +55,7 @@ function App() {
         <Route path="/carrinhos/:cartId/:pedidoId/acompanhamento" element={<Tracking />} />
         <Route path="/carrinhos/:cartId/:pedidoId/chat" element={<Chat />} />
 
-        <Route path="/rep/radar" element={<RepRadar />} />
-        <Route path="/rep/carteira" element={<Wallet />} />
-        <Route path="/rep/carteira/:clientId/pedido" element={<SuggestedOrder />} />
+        <Route path="/rep/carteira" element={<RepCarteira />} />
       </Routes>
     </BrowserRouter>
   )

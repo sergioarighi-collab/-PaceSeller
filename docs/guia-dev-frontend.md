@@ -16,21 +16,21 @@ cd app && npm run build                  # tsc -b && vite build
 ## Estrutura de pastas (`app/src/`)
 
 ```
-screens/lojista/       telas do fluxo desktop do lojista (o que está ativo hoje)
-screens/representante/ telas do representante — mobile antigo, não retrabalhado nesta leva
-screens/shared/        telas de convergência do protótipo mobile antigo
-components/desktop/    componentes compartilhados do fluxo desktop (ver abaixo)
+screens/lojista/       telas do fluxo desktop do lojista (completo, mergeado na main)
+screens/representante/ telas do representante — fluxo desktop novo (em construção, set/2026)
+screens/shared/        telas de login/onboarding compartilhadas (mobile antigo, exceto o login em si)
+components/desktop/    componentes compartilhados do fluxo desktop (lojista E representante)
 components/ui/         componentes do protótipo mobile antigo
 components/layout/     shells de navegação do protótipo mobile antigo
-lib/types.ts           tipos (Product, Carrinho, Pedido, ...)
-lib/data.ts            catálogo mock, carrinhos mock, insights do radar etc.
+lib/types.ts           tipos (Product, Carrinho, Pedido, Lojista, ...)
+lib/data.ts            catálogo mock, carrinhos mock, carteira de lojistas mock, insights do radar etc.
 lib/store.ts           estado global (zustand): persona, carrinho em montagem, onboarding, etc.
 lib/format.ts          formatBRL
 styles/mockup.css      CSS literal extraído do mockup HTML de referência (`telas/`) — ver convenção abaixo
 assets/images/          fotos reais (hero de login, banner do Radar)
 ```
 
-**Importante:** o fluxo desktop do lojista (`screens/lojista` + `components/desktop`) é a parte ativa do produto. `screens/representante`, `screens/shared` e `components/ui`/`components/layout` são do protótipo mobile anterior e não foram retrabalhados — não assuma que seguem os mesmos padrões deste guia.
+**Importante:** o fluxo desktop do lojista (`screens/lojista` + `components/desktop`) está completo (PR #2, mergeado na main). A partir de set/2026, `screens/representante` também virou desktop (ver seção "Fluxo desktop do representante" mais abaixo) — as 3 telas mobile antigas (Radar/Wallet/SuggestedOrder, com dados rasos em `Client`/`clients`) foram removidas, substituídas por telas novas no mesmo padrão do lojista (`DesktopPage`-like + `mockup.css`). `screens/shared` (login/onboarding) e `components/ui`/`components/layout` continuam sendo o protótipo mobile anterior, não retrabalhados — não assuma que seguem os mesmos padrões deste guia.
 
 ## Convenção de CSS — por que não é Tailwind
 
@@ -847,6 +847,70 @@ Pedido do usuário: "Enviar pro representante" e "Revisar sugestão" (banners `.
 
 - Testado contorno colorido (verde pro banner positivo, azul pro banner info, combinando com o tom de cada linha) contra contorno preto neutro (igual ao tratamento do botão "Abrir", set/2026 anterior) — usuário escolheu o **colorido**, por ficar coeso com o próprio banner em vez de neutro.
 - CSS: `.bulkrow .bbtn` virou contorno (`border:1.5px solid var(--positive)`, `color:var(--positive)`, fundo transparente); `.bulkrow.review .bbtn` sobrescreve pra tom info. Mesma linha de "reduzir preenchido em favor de contorno" já aplicada em tags do Catálogo, botão de adicionar, setas do carrossel e no próprio "Abrir".
+
+## Fluxo desktop do representante — início (set/2026)
+
+Com o fluxo do lojista completo e mergeado na `main` (PR #2), começou o fluxo desktop do **representante** (Ana), em `claude/representante`. Pedido do usuário: "manter a mesma lógica, só que adequada pro REP" — o representante vende pro lojista e atende **vários** lojistas, o inverso do ponto de vista que existia até aqui (tudo modelado do lado de UM lojista só).
+
+### O que já existia e foi substituído
+
+`screens/representante/` tinha 3 telas mobile antigas (Radar, Wallet/"Carteira", SuggestedOrder) usando `AppShell` (shell mobile, Tailwind) e um mock raso (`clients: Client[]` — só nome/score/sugestão, sem `Carrinho`/`Pedido` de verdade). Usuário decidiu **substituir** por telas desktop no mesmo padrão do lojista, não manter as duas em paralelo. Removidos nesta leva: as 3 telas, `ClientCard.tsx`, `FocusSheet.tsx`, `GoalCard.tsx` (só usados por elas), e do `data.ts`/`types.ts`/`store.ts`: `Client`, `clients`, `goals`, `mixPlan` (`@deprecated` desde antes), `goalId`/`setGoal`/`focusOpen`/`openFocus`/`closeFocus`.
+
+### Modelo de dados: `Lojista`
+
+O modelo inteiro (desde o início do fluxo lojista) assumia implicitamente **uma** loja — `store.carrinhos` é "os carrinhos da loja logada", sem entidade "Loja" nenhuma. Pro representante ver vários lojistas, `types.ts` ganhou:
+
+```ts
+export interface Lojista {
+  id: string
+  name: string
+  city: string
+  contactName: string
+  carrinhos: Carrinho[]
+}
+```
+
+`carrinhos` mora **dentro** do `Lojista` (não solto), porque cada loja tem os seus próprios. `data.ts` ganhou `initialLojistas: Lojista[]` (seed do `store.lojistas`), com 3 lojas:
+
+- **Radical Skate** (Porto Alegre, RS) — **não é uma loja nova**: é a mesma loja do fluxo do lojista (o avatar do `WebTopNav` já mostrava "Radical Skate · Porto Alegre, RS"). Reaproveita `initialCarrinhos` direto, pra manter os dois pontos de vista consistentes sobre o mesmo pedido em vez de inventar dados paralelos.
+- **Loja Vertex** (Recife, PE) e **Casa Esporte** (Curitiba, PR) — lojas novas, com carrinhos próprios (nomes vindos do antigo mock `clients`, removido por não ter carrinho real), pra dar volume de carteira de verdade.
+
+**Limitação conhecida:** `store.lojistas` e `store.carrinhos` são cópias independentes da mesma seed, não uma referência compartilhada — não existe backend/fonte única de verdade neste protótipo, então editar um carrinho pelo lado do lojista não reflete ao vivo na carteira do representante nesta leva. Documentado no comentário acima de `initialLojistas` em `data.ts`.
+
+### `pedidoAguardandoAprovacaoRep` (`store.ts`)
+
+`pedidoActionKind`/`pedidoStatusBadge` (existentes) são escritos do ponto de vista do **lojista** — ex.: `pedidoActionKind === 'editar'` cobre tanto "rascunho incompleto" quanto "aguardando, mandado pelo lojista" (pro lojista a UI é a mesma: link de editar), mas pro representante são situações opostas (no 2º caso é a vez **dele** agir). Novo helper:
+
+```ts
+export function pedidoAguardandoAprovacaoRep(pedido: Pedido): boolean {
+  return pedido.status === 'aguardando' && pedido.suggestedBy !== 'representante'
+}
+```
+
+Espelho de `pedidoActionKind === 'revisar'` (que é "aguardando, suggestedBy === representante" — a vez do LOJISTA revisar o que a Ana sugeriu).
+
+### Tela: Carteira de lojistas (`screens/representante/Carteira.tsx`, rota `/rep/carteira`)
+
+Primeira tela do fluxo novo — escolhida como ponto de partida por ser equivalente a "Meus Carrinhos", só que um nível acima: cada card é uma **loja**, não um carrinho. Reaproveita as classes CSS de `.cart-card`/`.pedrow`/`.pstatus`/`.pgrade`/`.pact` já existentes (`mockup.css`, criadas pro `MeusCarrinhos.tsx`) — mesma lógica visual, dado diferente.
+
+- 4 stat tiles: lojas na carteira, pedidos no total, **aguardando você** (usa `pedidoAguardandoAprovacaoRep`), valor em andamento (soma `pedido.total` de tudo que não está pago).
+- Um `.cart-card` por lojista (nome, cidade, contato), com a lista de carrinhos daquela loja dentro, cada um numa `.pedrow`.
+- Status de cada `.pedrow` usa `repStatusLabel()` (local ao componente, não em `store.ts` — é só rótulo/apresentação, a regra de negócio real já está em `pedidoAguardandoAprovacaoRep`): espelha `pedidoStatusBadge` mas com a leitura invertida ("Aguardando você" quando é a vez da Ana; "Aguardando o lojista" quando é a vez dele).
+- **"Abrir" em cada pedido ainda não faz nada de verdade** — mostra um toast "em breve" (mesmo padrão já usado no menu do avatar do lojista pros itens que não existem: "Meu perfil", "Configurações", "Minha loja"). Aprovar/comentar/editar em nome do lojista fica pra uma próxima leva — esta foi deliberadamente só a tela de listagem.
+
+### `RepTopNav.tsx` (`components/desktop/`)
+
+Nav novo, mais simples que o `WebTopNav` do lojista: sem ícone de sacola (não existe fluxo de montar pedido pro representante ainda) nem sino de notificação (não existe `notifications` do lado dele). "Radar" e "Catálogo" ficam como link desabilitado com toast "em breve" — só "Carteira" funciona. Avatar lê `activeUser` do store (mesmo campo que o `WebTopNav` do lojista usa) — é o mesmo mecanismo de login multi-usuário (titular/auxiliar) que já existia em `WhoIsUsing.tsx`/`ConfirmPin.tsx`, e que é **exclusivo do login do representante** (o lojista vai direto de `LoginLojista` pro `/radar`, sem passar por "quem está usando"). Corrigidas 3 navegações que apontavam pra `/rep/radar` (rota removida junto com a tela antiga) pra `/rep/carteira`: `WhoIsUsing.tsx`, `ConfirmPin.tsx` (2x).
+
+### Testado
+
+Fluxo de login completo via Playwright contra o preview buildado: `/login/representante` → "Entrar" → `/login/quem-esta-usando` → clicar "Ana Silva" → `/rep/carteira`, carregando sem erro de console. Números da Carteira conferidos manualmente (3 lojas, 6 pedidos, 1 "aguardando você" = Giro TG II da Loja Vertex, R$ 40.624,80 em andamento = soma de tudo que não está pago). Toasts "em breve" (Radar, Catálogo, "Abrir") e menu do avatar (nome/loja corretos, "Sair" volta pro `/`) verificados.
+
+### Próximos passos (não implementados ainda)
+
+- Drill-down real: abrir um pedido específico de um lojista (reaproveitar algo como `CarrinhoDetail.tsx`, adaptado pra ação do representante — aprovar, comentar, editar em nome do lojista).
+- Radar do representante (priorização de carteira — score de recompra, ação sugerida por lojista) — mapeado em `docs/product-design-retail-performance-platform.md` (seção 1.2), nunca implementado no fluxo desktop.
+- Ligar `lojistas` e `carrinhos` numa fonte única (hoje são cópias independentes, ver limitação acima).
 
 ## Regras de negócio confirmadas (não são chute)
 

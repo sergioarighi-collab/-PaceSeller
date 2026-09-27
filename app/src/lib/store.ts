@@ -1,7 +1,7 @@
 import { create } from 'zustand'
-import type { Persona, User, Carrinho, Pedido, PedidoItem, NotificationItem } from './types'
+import type { Persona, User, Carrinho, Pedido, PedidoItem, NotificationItem, Lojista } from './types'
 import { GRADE_MINIMA_PARES } from './types'
-import { users, products, initialCarrinhos, initialNotifications, combos } from './data'
+import { users, products, initialCarrinhos, initialLojistas, initialNotifications, combos } from './data'
 import { comboPrice, distributeSizesExact } from './productLines'
 
 interface AppState {
@@ -10,9 +10,6 @@ interface AppState {
 
   activeUser: User | null
   setActiveUser: (u: User) => void
-
-  goalId: string
-  setGoal: (id: string) => void
 
   /** true quando o lojista pulou o onboarding (perfil incompleto). */
   onboardingSkipped: boolean
@@ -27,10 +24,6 @@ interface AppState {
    */
   profileCompleted: boolean
   completeProfile: () => void
-
-  focusOpen: boolean
-  openFocus: () => void
-  closeFocus: () => void
 
   activeOrderId: string
   setActiveOrderId: (id: string) => void
@@ -97,6 +90,11 @@ interface AppState {
   /** Carrinhos de verdade (Meus Carrinhos) — cada um com 1 pedido (ver `Carrinho.pedido`). Mutável:
    * o pedido cresce quando o lojista fecha o pedido em montagem no drawer (ver commitCartToCarrinho). */
   carrinhos: Carrinho[]
+  /** Carteira do representante (set/2026) — lojas atendidas pela Ana, cada uma com seus próprios
+   * carrinhos/pedidos (ver `Lojista` em types.ts). Só leitura por enquanto: nenhuma ação do lado do
+   * representante (aprovar, editar, comentar) está ligada aqui ainda — é seed inicial da tela
+   * "Carteira de lojistas", primeiro passo do fluxo desktop do representante. */
+  lojistas: Lojista[]
   /**
    * Em qual carrinho o próximo "Adicionar ao carrinho" do drawer entra, sem perguntar — `null`
    * cria um carrinho novo. Setado por "+ Adicionar itens"/"Continuar comprando" dentro de um
@@ -156,19 +154,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeUser: null,
   setActiveUser: (u) => set({ activeUser: u }),
 
-  goalId: 'g1',
-  setGoal: (id) => set({ goalId: id }),
-
   onboardingSkipped: false,
   skipOnboarding: () => set({ onboardingSkipped: true }),
   dismissOnboardingNotice: () => set({ onboardingSkipped: false }),
 
   profileCompleted: false,
   completeProfile: () => set({ profileCompleted: true }),
-
-  focusOpen: false,
-  openFocus: () => set({ focusOpen: true }),
-  closeFocus: () => set({ focusOpen: false }),
 
   activeOrderId: 'o1',
   setActiveOrderId: (id) => set({ activeOrderId: id }),
@@ -263,6 +254,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     })),
 
   carrinhos: initialCarrinhos,
+  lojistas: initialLojistas,
   activeCarrinhoId: null,
   setActiveCarrinho: (id) => set({ activeCarrinhoId: id }),
   editingPedido: null,
@@ -494,6 +486,16 @@ export function pedidoActionKind(pedido: Pedido): PedidoActionKind {
   if (pedido.status === 'aguardando' && pedido.suggestedBy === 'representante') return 'revisar'
   if (pedido.status === 'rascunho' && pedidoPares(pedido) >= GRADE_MINIMA_PARES) return 'enviar'
   return 'editar'
+}
+
+// Do ponto de vista do REPRESENTANTE (não do lojista): true quando o pedido está esperando a
+// aprovação/revisão da Ana, não do lojista — o espelho de `pedidoActionKind === 'revisar'`, que é
+// a mesma condição de status vista do lado oposto. Não dá pra reaproveitar `pedidoActionKind`
+// direto aqui porque ele não distingue "aguardando, mandado pelo lojista" (rep precisa agir) de
+// "rascunho" (ninguém precisa agir ainda) — os dois caem em 'editar' do lado do lojista, já que a
+// UI dele é a mesma nos dois casos (link de editar), mas pro representante são situações opostas.
+export function pedidoAguardandoAprovacaoRep(pedido: Pedido): boolean {
+  return pedido.status === 'aguardando' && pedido.suggestedBy !== 'representante'
 }
 
 export interface PedidoStatusBadge {
