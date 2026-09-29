@@ -540,6 +540,8 @@ export const initialLojistas: Lojista[] = [
     name: 'Radical Skate',
     city: 'Porto Alegre, RS',
     contactName: 'Carlos Andrade',
+    lastVisitLabel: 'há 3 dias',
+    daysSinceVisit: 3,
     carrinhos: initialCarrinhos,
   },
   {
@@ -547,6 +549,8 @@ export const initialLojistas: Lojista[] = [
     name: 'Loja Vertex',
     city: 'Recife, PE',
     contactName: 'Juliana Farias',
+    lastVisitLabel: 'há 24 dias',
+    daysSinceVisit: 24,
     carrinhos: [
       {
         id: 'reposicao-fusion',
@@ -597,6 +601,8 @@ export const initialLojistas: Lojista[] = [
     name: 'Casa Esporte',
     city: 'Curitiba, PR',
     contactName: 'Roberto Lima',
+    lastVisitLabel: 'há 18 dias',
+    daysSinceVisit: 18,
     carrinhos: [
       {
         id: 'colecao-hertz-art',

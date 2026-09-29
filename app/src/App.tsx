@@ -24,6 +24,7 @@ import { Colecao } from './screens/lojista/Colecao'
 import { Loyalty } from './screens/lojista/Loyalty'
 
 import { RepCarteira } from './screens/representante/Carteira'
+import { RepRadar } from './screens/representante/Radar'
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
         <Route path="/carrinhos/:cartId/:pedidoId/acompanhamento" element={<Tracking />} />
         <Route path="/carrinhos/:cartId/:pedidoId/chat" element={<Chat />} />
 
+        <Route path="/rep/radar" element={<RepRadar />} />
         <Route path="/rep/carteira" element={<RepCarteira />} />
       </Routes>
     </BrowserRouter>

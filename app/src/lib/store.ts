@@ -498,6 +498,49 @@ export function pedidoAguardandoAprovacaoRep(pedido: Pedido): boolean {
   return pedido.status === 'aguardando' && pedido.suggestedBy !== 'representante'
 }
 
+const SEM_VISITA_DIAS = 15
+// Mesmo corte que já separa produto premium (24–63 pares, ver buildStockPares em data.ts) de
+// regular (60–239) — captura só os itens que a própria ficha do produto já chama de "estoque
+// ainda limitado" (why-box), não gera alerta pra estoque regular que nunca cruza essa faixa.
+const ESTOQUE_BAIXO_PARES = 40
+
+export interface LojistaSinal {
+  kind: 'revisao' | 'visita' | 'estoque'
+  tone: 'risk' | 'info'
+  text: string
+}
+
+// Sinais de prioridade pro Radar do representante (set/2026): pedido aguardando aprovação da Ana,
+// loja sem visita recente, item de um pedido ainda aberto com estoque limitado na fábrica — os 3
+// tipos pedidos pelo usuário. Só entra sinal com dado real por trás (mesmo princípio já usado no
+// "Antes de fechar" do lojista) — uma loja em dia simplesmente não aparece no Radar, o que é
+// desejável pra uma tela de priorização (a lista completa, com ou sem sinal, já existe na Carteira).
+export function lojistaSinais(lojista: Lojista): LojistaSinal[] {
+  const sinais: LojistaSinal[] = []
+  for (const cart of lojista.carrinhos) {
+    const pedido = cart.pedido
+    if (pedidoAguardandoAprovacaoRep(pedido)) {
+      sinais.push({ kind: 'revisao', tone: 'info', text: `"${cart.name}" está aguardando sua aprovação` })
+    }
+    if (pedido.status !== 'pago') {
+      for (const item of pedido.items) {
+        const product = products.find((p) => p.id === item.productId)
+        if (product && product.stockPares < ESTOQUE_BAIXO_PARES) {
+          sinais.push({
+            kind: 'estoque',
+            tone: 'risk',
+            text: `${product.name.replace('Tênis Tesla ', '')} — só ${product.stockPares} pares na fábrica (em "${cart.name}")`,
+          })
+        }
+      }
+    }
+  }
+  if (lojista.daysSinceVisit >= SEM_VISITA_DIAS) {
+    sinais.push({ kind: 'visita', tone: 'risk', text: `Sem visita ${lojista.lastVisitLabel}` })
+  }
+  return sinais
+}
+
 export interface PedidoStatusBadge {
   label: string
   tone: 'neutral' | 'info' | 'positive'

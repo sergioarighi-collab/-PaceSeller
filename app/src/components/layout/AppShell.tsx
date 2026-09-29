@@ -10,9 +10,8 @@ const lojistaNav = [
   { to: '/fidelizacao', label: 'Clientes', icon: ClientsIcon },
 ]
 
-// Radar do representante ainda não existe no fluxo desktop novo (set/2026, ver
-// screens/representante/Carteira.tsx) — item removido daqui pra não linkar pra uma rota morta.
 const repNav = [
+  { to: '/rep/radar', label: 'Radar', icon: RadarIcon },
   { to: '/rep/carteira', label: 'Carteira', icon: ClientsIcon },
   { to: '/catalogo', label: 'Catálogo', icon: CatalogIcon },
   { to: '/pedidos', label: 'Pedidos', icon: OrdersIcon },

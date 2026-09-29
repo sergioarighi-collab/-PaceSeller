@@ -52,6 +52,11 @@ export interface Lojista {
   name: string
   city: string
   contactName: string
+  // Mesmo padrão de `Carrinho.updatedAt`/`daysSinceActivity` (texto solto pra exibição + número
+  // pra cálculo) — usado pelo sinal "sem visita" do Radar do representante (set/2026). Os dois
+  // precisam ser atualizados juntos.
+  lastVisitLabel: string
+  daysSinceVisit: number
   carrinhos: Carrinho[]
 }
 

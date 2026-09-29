@@ -11,7 +11,7 @@ export function ConfirmPin() {
   const [pin, setPin] = useState<number[]>([1, 2])
 
   useEffect(() => {
-    if (pin.length === 4) navigate('/rep/carteira')
+    if (pin.length === 4) navigate('/rep/radar')
   }, [pin, navigate])
 
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫']
@@ -55,7 +55,7 @@ export function ConfirmPin() {
 
       <div
         className="text-center text-[12.5px] text-text-secondary mt-6 cursor-pointer"
-        onClick={() => navigate('/rep/carteira')}
+        onClick={() => navigate('/rep/radar')}
       >
         Esqueceu o PIN? <b className="text-text-primary">Entrar como {titular.name.split(' ')[0]}</b>
       </div>

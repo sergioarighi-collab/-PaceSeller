@@ -22,7 +22,7 @@ export function WhoIsUsing() {
           key={u.id}
           onClick={() => {
             setActiveUser(u)
-            if (u.role === 'titular') navigate('/rep/carteira')
+            if (u.role === 'titular') navigate('/rep/radar')
             else navigate(`/login/pin/${u.id}`)
           }}
           className="flex items-center gap-3 bg-surface border border-border-strong rounded-[4px] p-3.5 mb-2.5 cursor-pointer"

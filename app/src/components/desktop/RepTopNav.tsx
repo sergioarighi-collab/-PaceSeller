@@ -6,11 +6,11 @@ import { Toast } from './Toast'
 // Nav do representante (set/2026, primeiro passo do fluxo desktop dele — ver guia-dev-frontend.md).
 // Deliberadamente mais simples que o WebTopNav do lojista: sem ícone de sacola/pedido em montagem
 // (o representante ainda não tem um fluxo de montar pedido pra um lojista nesta leva) nem sino de
-// notificação (não existe `notifications` do lado do representante ainda). "Radar"/"Catálogo" ficam
-// como link desabilitado com toast "em breve", mesmo padrão já usado no avatar do lojista pros itens
+// notificação (não existe `notifications` do lado do representante ainda). "Catálogo" fica como
+// link desabilitado com toast "em breve", mesmo padrão já usado no avatar do lojista pros itens
 // que ainda não existem — evita link morto sem feedback nenhum ao clicar.
 const navItems = [
-  { to: '/rep/radar', label: 'Radar', enabled: false },
+  { to: '/rep/radar', label: 'Radar', enabled: true },
   { to: '/rep/carteira', label: 'Carteira', enabled: true },
   { to: '/rep/catalogo', label: 'Catálogo', enabled: false },
 ]

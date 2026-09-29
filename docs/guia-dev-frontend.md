@@ -909,8 +909,38 @@ Fluxo de login completo via Playwright contra o preview buildado: `/login/repres
 ### Próximos passos (não implementados ainda)
 
 - Drill-down real: abrir um pedido específico de um lojista (reaproveitar algo como `CarrinhoDetail.tsx`, adaptado pra ação do representante — aprovar, comentar, editar em nome do lojista).
-- Radar do representante (priorização de carteira — score de recompra, ação sugerida por lojista) — mapeado em `docs/product-design-retail-performance-platform.md` (seção 1.2), nunca implementado no fluxo desktop.
+- "Modo loja": entrar no contexto de um lojista específico (Catálogo, sugestão de grade, condição de pagamento escopados pra ele) — discutido com o usuário, ainda não implementado.
 - Ligar `lojistas` e `carrinhos` numa fonte única (hoje são cópias independentes, ver limitação acima).
+
+## Radar do representante (set/2026)
+
+Segunda tela do fluxo desktop do representante, depois da Carteira — mapeado (mas nunca implementado no fluxo desktop) em `docs/product-design-retail-performance-platform.md` (seção 1.2). Diferença de propósito entre as duas: **Carteira** é a lista completa (toda loja aparece, com ou sem pendência); **Radar** é só priorização — cruza os dados de cada lojista com 3 sinais e mostra **só quem precisa de ação agora**. Pedido do usuário: o Radar entra geral (carteira inteira), e é dali que ele escolhe o lojista específico — não abre direto num cliente.
+
+### `lojistaSinais()` (`store.ts`) — os 3 sinais, com dado real por trás
+
+```ts
+export interface LojistaSinal {
+  kind: 'revisao' | 'visita' | 'estoque'
+  tone: 'risk' | 'info'
+  text: string
+}
+```
+
+1. **Aguardando aprovação** — reaproveita `pedidoAguardandoAprovacaoRep` (já existia, da Carteira).
+2. **Sem visita recente** — novo campo em `Lojista`: `daysSinceVisit`/`lastVisitLabel` (mesmo padrão de `Carrinho.daysSinceActivity`/`updatedAt`, os dois precisam ser atualizados juntos). Corte: `SEM_VISITA_DIAS = 15`.
+3. **Estoque limitado** — pra cada item de um pedido ainda não pago, olha `product.stockPares` (dado que já existia, usado só pro aviso de estoque insuficiente no drawer até aqui) contra um corte de 40 pares. Esse número não foi chutado: é o mesmo que já separa produto premium (24–63 pares, ver `buildStockPares` em `data.ts`) de regular (60–239) — na prática só itens premium entram no alerta, o que já bate com o texto que a Ficha de Decisão desses produtos mostra ("Peça de lançamento — estoque ainda limitado"). Pedidos `pago` ficam de fora (produção já foi decidida, o alerta não muda mais nada).
+
+Lojista sem nenhum sinal simplesmente não aparece no Radar — mesmo princípio de "não trazer informação por trazer" já usado no "Antes de fechar" do lojista. A lista completa (com ou sem pendência) continua na Carteira.
+
+### Tela (`screens/representante/Radar.tsx`, rota `/rep/radar`)
+
+Reaproveita a mesma estrutura visual da Carteira (`.stattiles`, `.cart-card`) — 3 stat tiles (uma por tipo de sinal) e um `.cart-card` por lojista com pendência, listando os sinais daquela loja com o mesmo ícone `.ck` usado no "Antes de fechar" do `CarrinhoDetail.tsx` (círculo colorido conforme o tom: vermelho `risk`, azul `info`). "Ver na carteira" ainda não faz deep-link pro lojista específico (a Carteira não tem esse filtro ainda) — leva pra lista completa.
+
+**Vira a tela de entrada do login do representante**: `WhoIsUsing.tsx`/`ConfirmPin.tsx` agora navegam pra `/rep/radar` (antes iam pra `/rep/carteira`, rota provisória enquanto o Radar não existia) — mesmo padrão do login do lojista, que também entra direto no Radar dele, não em "Meus Carrinhos". `RepTopNav.tsx`: item "Radar" saiu de desabilitado ("em breve") pra link de verdade.
+
+### Testado
+
+Com os 3 lojistas mock reais: Radical Skate (1 sinal — Coil Denim, 28 pares), Loja Vertex (3 sinais — Fusion Black Red 35 pares, Giro TG II aguardando aprovação, sem visita há 24 dias) e Casa Esporte (1 sinal — sem visita há 18 dias), total 5 pendências em 3 lojas. Fluxo de login completo via Playwright: `/login/representante` → Entrar → escolher "Ana Silva" → cai em `/rep/radar` direto, sem erro de console; "Ver na carteira" leva pra `/rep/carteira`; nav "Radar" volta pra `/rep/radar`.
 
 ## Regras de negócio confirmadas (não são chute)
 
