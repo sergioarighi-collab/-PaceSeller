@@ -942,6 +942,18 @@ Reaproveita a mesma estrutura visual da Carteira (`.stattiles`, `.cart-card`) �
 
 Com os 3 lojistas mock reais: Radical Skate (1 sinal — Coil Denim, 28 pares), Loja Vertex (3 sinais — Fusion Black Red 35 pares, Giro TG II aguardando aprovação, sem visita há 24 dias) e Casa Esporte (1 sinal — sem visita há 18 dias), total 5 pendências em 3 lojas. Fluxo de login completo via Playwright: `/login/representante` → Entrar → escolher "Ana Silva" → cai em `/rep/radar` direto, sem erro de console; "Ver na carteira" leva pra `/rep/carteira`; nav "Radar" volta pra `/rep/radar`.
 
+## Entrada do representante vira desktop (set/2026)
+
+Usuário notou que a entrada do representante (`/login/representante` → `/login/quem-esta-usando` → `/login/pin/:userId`) estava com layout mobile (`AuthShell`, Tailwind), destoando do resto do fluxo desktop — `ProfileSelect.tsx` e `LoginLojista.tsx` já usavam `LoginSplitShell`. As 3 telas foram reconstruídas com os mesmos componentes do lojista:
+
+- **`LoginRepresentante.tsx`**: agora é `LoginSplitShell`, praticamente espelhando `LoginLojista.tsx` (mesmos `.fieldgroup`/`.textinput`/`.passwordfield`/`.btn-primary`/`.switchlink`) — só copy e destino (`/login/quem-esta-usando`) diferentes.
+- **`WhoIsUsing.tsx`** ("relação com o preposto" — titular Ana Silva + auxiliares Bruno/Carla, mesmo `User.role` já usado): virou uma lista de `.optioncard` (o mesmo componente do picker "Em qual carrinho?" do `OrderDrawer`) — avatar circular com iniciais (preto pro titular, cinza pros auxiliares), nome, "Titular da conta"/"Auxiliar", e um badge `TITULAR`/`AUXILIAR` (`.badge` genérico) à direita. "+ Adicionar auxiliar" continua um placeholder tracejado, sem ação (mesmo estado de antes).
+- **`ConfirmPin.tsx`**: o teclado numérico touch (padrão mobile) virou um campo de texto único de 4 dígitos (`.textinput`, `inputMode="numeric"`, `maxLength=4`) com botão "Confirmar" (desabilitado até ter 4 dígitos) — equivalente desktop natural pra um PIN/código de verificação, sem inventar um componente novo. Aproveitado pra corrigir um gap pequeno: o link "Esqueceu o PIN? Entrar como Ana" antes não chamava `setActiveUser(titular)`, só navegava — agora chama, consistente com o resto do fluxo (toda entrada como um usuário específico passa por `setActiveUser`).
+
+**Limpeza:** `AuthShell.tsx`/`Field.tsx` (`components/layout/`, `components/ui/`) ficaram 100% órfãos depois da troca — nada mais importava `AuthShell`, `Logo`, `FieldGroup`, `FieldRow2`, `TextInput` (o antigo, sem estilo do mockup), `SelectRow`, `ChipSelect`. Removidos os dois arquivos inteiros.
+
+**Testado:** fluxo completo via Playwright — `/login/representante` → "Entrar" → `/login/quem-esta-usando` → clicar "Bruno Costa" (auxiliar) → `/login/pin/u2` → preencher "1234" → "Confirmar" → `/rep/radar`, sem erro de console.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

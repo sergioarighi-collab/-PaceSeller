@@ -1,58 +1,84 @@
 import { useNavigate } from 'react-router-dom'
-import { AuthShell } from '../../components/layout/AuthShell'
+import { LoginSplitShell } from '../../components/desktop/LoginSplitShell'
 import { users } from '../../lib/data'
 import { useAppStore } from '../../lib/store'
 
+// Desktop (set/2026) — antes usava AuthShell (mobile, Tailwind). É a tela de "prepostos": o titular
+// da conta do representante (Ana) mais os auxiliares que também usam a mesma conta — mesmo
+// mecanismo de User.role já usado no protótipo mobile, só reconstruído com os componentes desktop
+// (.optioncard, já usado no picker "Em qual carrinho?" do OrderDrawer). Ver guia-dev-frontend.md.
 export function WhoIsUsing() {
   const navigate = useNavigate()
   const setActiveUser = useAppStore((s) => s.setActiveUser)
+  const titular = users.find((u) => u.role === 'titular')!
 
   return (
-    <AuthShell width={460}>
-      <div className="text-center mb-6">
-        <div className="eyebrow">Conta: Ana Silva</div>
-        <h2 className="font-display text-xl font-bold text-text-primary mt-1">Quem está usando agora?</h2>
-        <div className="text-[12.5px] text-text-secondary mt-2 max-w-[320px] mx-auto leading-relaxed">
-          Isso identifica cada ação feita dentro da conta — pedidos, comentários e mensagens
-        </div>
+    <LoginSplitShell heroTitle="Cada ação, com a assinatura certa." heroSub="Titular e auxiliares compartilham a mesma carteira — cada pedido, comentário e mensagem fica registrado em nome de quem realmente agiu.">
+      <div className="loginhead">
+        <div className="kicker">Conta: {titular.name}</div>
+        <h2>Quem está usando agora?</h2>
+        <div className="sub">Isso identifica cada ação feita dentro da conta — pedidos, comentários e mensagens</div>
       </div>
 
-      {users.map((u) => (
-        <div
-          key={u.id}
-          onClick={() => {
-            setActiveUser(u)
-            if (u.role === 'titular') navigate('/rep/radar')
-            else navigate(`/login/pin/${u.id}`)
-          }}
-          className="flex items-center gap-3 bg-surface border border-border-strong rounded-[4px] p-3.5 mb-2.5 cursor-pointer"
-        >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 22 }}>
+        {users.map((u) => (
           <div
-            className={`w-9 h-9 rounded-full flex items-center justify-center font-mono text-xs font-semibold shrink-0 ${
-              u.role === 'titular' ? 'bg-black text-white' : 'bg-surface-3 text-text-primary'
-            }`}
+            key={u.id}
+            className="optioncard"
+            style={{ cursor: 'pointer' }}
+            onClick={() => {
+              setActiveUser(u)
+              if (u.role === 'titular') navigate('/rep/radar')
+              else navigate(`/login/pin/${u.id}`)
+            }}
           >
-            {u.initials}
-          </div>
-          <div className="flex-1">
-            <div className="text-[13.5px] font-semibold text-text-primary">{u.name}</div>
-            <div className="text-[11.5px] text-text-secondary">
-              {u.role === 'titular' ? 'Titular da conta' : 'Auxiliar'}
+            <div
+              className="oicon"
+              style={{
+                borderRadius: '50%',
+                fontFamily: 'var(--mono)',
+                fontWeight: 600,
+                fontSize: 12,
+                background: u.role === 'titular' ? 'var(--black)' : 'var(--surface-2)',
+                color: u.role === 'titular' ? '#fff' : 'var(--text-primary)',
+              }}
+            >
+              {u.initials}
             </div>
+            <div style={{ flex: 1 }}>
+              <div className="otitle">{u.name}</div>
+              <div className="osub">{u.role === 'titular' ? 'Titular da conta' : 'Auxiliar'}</div>
+            </div>
+            <span
+              className="badge"
+              style={
+                u.role === 'titular'
+                  ? { background: 'var(--black)', color: '#fff' }
+                  : { background: 'var(--surface-2)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }
+              }
+            >
+              {u.role === 'titular' ? 'TITULAR' : 'AUXILIAR'}
+            </span>
           </div>
-          <span
-            className={`text-[10px] font-mono uppercase px-2 py-1 rounded-[4px] ${
-              u.role === 'titular' ? 'bg-black text-white' : 'bg-surface-2 text-text-secondary border border-border'
-            }`}
-          >
-            {u.role === 'titular' ? 'Titular' : 'Auxiliar'}
-          </span>
-        </div>
-      ))}
+        ))}
 
-      <div className="flex items-center justify-center gap-2 border border-dashed border-border-strong rounded-[4px] p-3.5 text-[13px] text-text-secondary cursor-pointer">
-        <span>+</span> Adicionar auxiliar
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            border: '1px dashed var(--border-strong)',
+            borderRadius: 4,
+            padding: 14,
+            fontSize: 13,
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+          }}
+        >
+          <span>+</span> Adicionar auxiliar
+        </div>
       </div>
-    </AuthShell>
+    </LoginSplitShell>
   )
 }

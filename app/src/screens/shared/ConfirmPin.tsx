@@ -1,64 +1,82 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { useEffect, useState } from 'react'
-import { AuthShell } from '../../components/layout/AuthShell'
+import { useState } from 'react'
+import { LoginSplitShell } from '../../components/desktop/LoginSplitShell'
 import { users } from '../../lib/data'
+import { useAppStore } from '../../lib/store'
 
+// Desktop (set/2026) — antes usava AuthShell + teclado numérico touch (padrão de celular). Pra
+// desktop, um campo de texto de 4 dígitos com confirmação por botão/Enter é o equivalente natural
+// (mesmo princípio de outros apps com PIN/código de verificação em tela grande). Ver
+// guia-dev-frontend.md.
 export function ConfirmPin() {
   const navigate = useNavigate()
   const { userId } = useParams()
+  const setActiveUser = useAppStore((s) => s.setActiveUser)
   const user = users.find((u) => u.id === userId) ?? users[1]
   const titular = users.find((u) => u.role === 'titular')!
-  const [pin, setPin] = useState<number[]>([1, 2])
+  const [pin, setPin] = useState('')
 
-  useEffect(() => {
+  function confirm() {
     if (pin.length === 4) navigate('/rep/radar')
-  }, [pin, navigate])
-
-  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫']
+  }
 
   return (
-    <AuthShell width={340} center>
-      <div className="text-center mb-6">
-        <div className="w-13 h-13 rounded-full bg-surface-3 flex items-center justify-center font-mono text-sm font-semibold text-text-primary mx-auto">
+    <LoginSplitShell heroTitle="Cada ação, com a assinatura certa." heroSub="Titular e auxiliares compartilham a mesma carteira — cada pedido, comentário e mensagem fica registrado em nome de quem realmente agiu." center>
+      <div className="loginhead" style={{ textAlign: 'center' }}>
+        <div
+          className="oicon"
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: '50%',
+            fontFamily: 'var(--mono)',
+            fontWeight: 600,
+            fontSize: 14,
+            background: 'var(--surface-2)',
+            color: 'var(--text-primary)',
+            margin: '0 auto',
+          }}
+        >
           {user.initials}
         </div>
-        <h2 className="font-display text-xl font-bold text-text-primary mt-3.5">Oi, {user.name.split(' ')[0]}</h2>
-        <div className="text-[12.5px] text-text-secondary mt-2 max-w-[220px] mx-auto leading-relaxed">
+        <h2 style={{ marginTop: 14 }}>Oi, {user.name.split(' ')[0]}</h2>
+        <div className="sub" style={{ margin: '7px auto 0', maxWidth: 280 }}>
           Confirme seu PIN de 4 dígitos pra continuar como auxiliar de {titular.name.split(' ')[0]}
         </div>
       </div>
 
-      <div className="flex justify-center gap-2.5 mb-6">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div
-            key={i}
-            className={`w-3 h-3 rounded-full ${i < pin.length ? 'bg-black' : 'bg-border-strong'}`}
-          />
-        ))}
-      </div>
-
-      <div className="grid grid-cols-3 gap-3 max-w-[240px] mx-auto">
-        {keys.map((k, i) => (
-          <button
-            key={i}
-            disabled={!k}
-            onClick={() => {
-              if (k === '⌫') setPin((p) => p.slice(0, -1))
-              else if (k) setPin((p) => (p.length < 4 ? [...p, Number(k)] : p))
-            }}
-            className="aspect-square rounded-full bg-surface-2 border border-border flex items-center justify-center text-base text-text-primary disabled:opacity-0"
-          >
-            {k}
-          </button>
-        ))}
+      <div className="fieldgroup" style={{ padding: 0, marginTop: 22 }}>
+        <input
+          className="textinput"
+          style={{ textAlign: 'center', fontFamily: 'var(--mono)', fontSize: 22, letterSpacing: '0.5em', paddingLeft: 22 }}
+          value={pin}
+          maxLength={4}
+          inputMode="numeric"
+          autoFocus
+          placeholder="••••"
+          onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+          onKeyDown={(e) => e.key === 'Enter' && confirm()}
+        />
       </div>
 
       <div
-        className="text-center text-[12.5px] text-text-secondary mt-6 cursor-pointer"
-        onClick={() => navigate('/rep/radar')}
+        className="btn-primary"
+        style={{ marginTop: 18, cursor: pin.length === 4 ? 'pointer' : 'not-allowed', opacity: pin.length === 4 ? 1 : 0.5 }}
+        onClick={confirm}
       >
-        Esqueceu o PIN? <b className="text-text-primary">Entrar como {titular.name.split(' ')[0]}</b>
+        Confirmar
       </div>
-    </AuthShell>
+
+      <div
+        className="switchlink"
+        style={{ cursor: 'pointer' }}
+        onClick={() => {
+          setActiveUser(titular)
+          navigate('/rep/radar')
+        }}
+      >
+        Esqueceu o PIN? <b>Entrar como {titular.name.split(' ')[0]}</b>
+      </div>
+    </LoginSplitShell>
   )
 }
