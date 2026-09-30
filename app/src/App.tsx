@@ -1,4 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import type { ComponentType } from 'react'
+import { useAppStore } from './lib/store'
+import { LojistaGate } from './components/desktop/LojistaGate'
 
 import { ProfileSelect } from './screens/shared/ProfileSelect'
 import { LoginLojista } from './screens/shared/LoginLojista'
@@ -24,6 +27,23 @@ import { Loyalty } from './screens/lojista/Loyalty'
 import { RepCarteira } from './screens/representante/Carteira'
 import { RepRadar } from './screens/representante/Radar'
 
+// "Modo loja" (set/2026): Catálogo/Meus Carrinhos são as MESMAS telas do lojista, reaproveitadas
+// pro representante (ver enterLojista em store.ts) — mas só fazem sentido com um lojista escolhido
+// no contexto. Sem isso, o representante vê o gate de seleção em vez da tela. O lojista nunca vê
+// esse gate (persona !== 'representante' pula direto). Ver guia-dev-frontend.md.
+function comLojistaSelecionada<P extends object>(Component: ComponentType<P>) {
+  return function Gated(props: P) {
+    const persona = useAppStore((s) => s.persona)
+    const activeLojistaId = useAppStore((s) => s.activeLojistaId)
+    if (persona === 'representante' && !activeLojistaId) return <LojistaGate />
+    return <Component {...props} />
+  }
+}
+
+const GatedCatalog = comLojistaSelecionada(Catalog)
+const GatedMeusCarrinhos = comLojistaSelecionada(MeusCarrinhos)
+const GatedCarrinhoDetail = comLojistaSelecionada(CarrinhoDetail)
+
 function App() {
   return (
     <BrowserRouter>
@@ -40,13 +60,13 @@ function App() {
         <Route path="/onboarding/vendas" element={<WizardStep2 />} />
 
         <Route path="/radar" element={<Radar />} />
-        <Route path="/catalogo" element={<Catalog />} />
-        <Route path="/catalogo/:id" element={<Catalog />} />
+        <Route path="/catalogo" element={<GatedCatalog />} />
+        <Route path="/catalogo/:id" element={<GatedCatalog />} />
         <Route path="/fidelizacao" element={<Loyalty />} />
         <Route path="/colecoes/fusion" element={<Colecao />} />
 
-        <Route path="/carrinhos" element={<MeusCarrinhos />} />
-        <Route path="/carrinhos/:cartId" element={<CarrinhoDetail />} />
+        <Route path="/carrinhos" element={<GatedMeusCarrinhos />} />
+        <Route path="/carrinhos/:cartId" element={<GatedCarrinhoDetail />} />
         <Route path="/carrinhos/:cartId/:pedidoId/pagamento" element={<Payment />} />
         <Route path="/carrinhos/:cartId/:pedidoId/confirmado" element={<OrderConfirmed />} />
         <Route path="/carrinhos/:cartId/:pedidoId/acompanhamento" element={<Tracking />} />

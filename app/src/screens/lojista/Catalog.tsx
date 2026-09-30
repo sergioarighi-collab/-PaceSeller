@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
-import { WebTopNav } from '../../components/desktop/WebTopNav'
+import { PersonaTopNav } from '../../components/desktop/PersonaTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { ProductThumb } from '../../components/desktop/ProductThumb'
 import { ProductLineCard } from '../../components/desktop/ProductLineCard'
@@ -186,7 +186,7 @@ export function Catalog() {
 
     return (
       <DesktopPage>
-        <WebTopNav />
+        <PersonaTopNav />
         <Breadcrumb items={[{ label: 'Radar', to: '/radar' }, { label: 'Catálogo', to: '/catalogo' }, { label: p.name }]} />
         <div className="web-app-layout">
           <div className="web-content" style={{ display: 'flex', gap: 40 }}>
@@ -304,7 +304,7 @@ export function Catalog() {
 
   return (
     <DesktopPage>
-      <WebTopNav />
+      <PersonaTopNav />
       <Breadcrumb items={[{ label: 'Radar', to: '/radar' }, { label: 'Catálogo Inteligente' }]} />
 
       {context && (

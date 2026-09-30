@@ -1,23 +1,29 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
+import { useAppStore } from '../../lib/store'
 import { Toast } from './Toast'
 
 // Nav do representante (set/2026, primeiro passo do fluxo desktop dele — ver guia-dev-frontend.md).
 // Deliberadamente mais simples que o WebTopNav do lojista: sem ícone de sacola/pedido em montagem
-// (o representante ainda não tem um fluxo de montar pedido pra um lojista nesta leva) nem sino de
-// notificação (não existe `notifications` do lado do representante ainda). "Catálogo" fica como
-// link desabilitado com toast "em breve", mesmo padrão já usado no avatar do lojista pros itens
-// que ainda não existem — evita link morto sem feedback nenhum ao clicar.
+// próprio (o "Seu pedido" do drawer só faz sentido depois de entrar numa loja — ver OrderDrawer
+// dentro do próprio Catálogo) nem sino de notificação (não existe `notifications` do lado do
+// representante ainda).
+// "Catálogo" aponta pra rota /catalogo (a mesma do lojista, reaproveitada — ver "modo loja" em
+// guia-dev-frontend.md), não uma rota própria do representante.
 const navItems = [
   { to: '/rep/radar', label: 'Radar', enabled: true },
   { to: '/rep/carteira', label: 'Carteira', enabled: true },
-  { to: '/rep/catalogo', label: 'Catálogo', enabled: false },
+  { to: '/catalogo', label: 'Catálogo', enabled: true },
 ]
 
 export function RepTopNav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [comingSoon, setComingSoon] = useState<string | null>(null)
   const navigate = useNavigate()
+  const lojistas = useAppStore((s) => s.lojistas)
+  const activeLojistaId = useAppStore((s) => s.activeLojistaId)
+  const exitLojista = useAppStore((s) => s.exitLojista)
+  const lojistaAtiva = lojistas.find((l) => l.id === activeLojistaId)
 
   return (
     <div className="web-topnav">
@@ -58,6 +64,22 @@ export function RepTopNav() {
         </div>
       </div>
       <div className="navright">
+        {lojistaAtiva && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, marginRight: 4 }}>
+            <span style={{ color: 'var(--text-secondary)' }}>
+              Atendendo: <b style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{lojistaAtiva.name}</b>
+            </span>
+            <span
+              style={{ color: 'var(--info)', fontWeight: 600, cursor: 'pointer' }}
+              onClick={() => {
+                exitLojista()
+                navigate('/rep/radar')
+              }}
+            >
+              Trocar loja
+            </span>
+          </div>
+        )}
         <div className="avatar-wrap">
           <div className="avatar-chip" style={{ cursor: 'pointer' }} onClick={() => setMenuOpen((o) => !o)}>
             AN

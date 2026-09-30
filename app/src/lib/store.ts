@@ -88,10 +88,18 @@ interface AppState {
    * o pedido cresce quando o lojista fecha o pedido em montagem no drawer (ver commitCartToCarrinho). */
   carrinhos: Carrinho[]
   /** Carteira do representante (set/2026) — lojas atendidas pela Ana, cada uma com seus próprios
-   * carrinhos/pedidos (ver `Lojista` em types.ts). Só leitura por enquanto: nenhuma ação do lado do
-   * representante (aprovar, editar, comentar) está ligada aqui ainda — é seed inicial da tela
-   * "Carteira de lojistas", primeiro passo do fluxo desktop do representante. */
+   * carrinhos/pedidos (ver `Lojista` em types.ts). */
   lojistas: Lojista[]
+  /**
+   * "Modo loja" (set/2026): qual lojista o representante está atendendo agora, se algum — `null`
+   * fora desse modo. Enquanto ativo, `carrinhos` (acima) passa a apontar pros carrinhos DESSE
+   * lojista (ver `enterLojista`), então o Catálogo/OrderDrawer/Meus Carrinhos funcionam pro
+   * representante exatamente como já funcionam pro lojista, sem duplicar nenhuma tela — só troca
+   * de "dono" dos dados. `exitLojista` salva de volta em `lojistas` antes de sair.
+   */
+  activeLojistaId: string | null
+  enterLojista: (lojistaId: string) => void
+  exitLojista: () => void
   /**
    * Em qual carrinho o próximo "Adicionar ao carrinho" do drawer entra, sem perguntar — `null`
    * cria um carrinho novo. Setado por "+ Adicionar itens"/"Continuar comprando" dentro de um
@@ -134,6 +142,14 @@ interface AppState {
    * (mesma trava que já existe em "Ir para pagamento" no CarrinhoDetail).
    */
   sendPedidoToRepresentante: (carrinhoId: string, pedidoId: string) => void
+  /**
+   * Ação do REPRESENTANTE (set/2026, primeira ação de verdade do "modo loja"): aprova um pedido
+   * que está aguardando aprovação dele (ver `pedidoAguardandoAprovacaoRep`) — muda o status pra
+   * `aprovado`. Só age nesse caso específico; chamar fora dele não faz nada (mesma trava defensiva
+   * de `sendPedidoToRepresentante`). Opera sobre `carrinhos` (o "modo loja" já aponta isso pro
+   * lojista certo, ver `enterLojista`), não sobre `lojistas` direto.
+   */
+  aprovarPedido: (carrinhoId: string) => void
 
   /** Notificações do sino (WebTopNav) — comentário do representante, mudança de status, insight
    * do Radar. Gap mapeado desde `analise-ux-gaps-atrito-venda.md`, implementado ago/2026. */
@@ -249,6 +265,34 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   carrinhos: initialCarrinhos,
   lojistas: initialLojistas,
+  activeLojistaId: null,
+  enterLojista: (lojistaId) => {
+    const s = get()
+    const lojista = s.lojistas.find((l) => l.id === lojistaId)
+    if (!lojista) return
+    set({
+      activeLojistaId: lojistaId,
+      carrinhos: lojista.carrinhos,
+      cartItems: {},
+      cartCombos: {},
+      cartItemSizes: {},
+      editingPedido: null,
+      activeCarrinhoId: null,
+    })
+  },
+  exitLojista: () => {
+    const s = get()
+    if (!s.activeLojistaId) return
+    set({
+      lojistas: s.lojistas.map((l) => (l.id === s.activeLojistaId ? { ...l, carrinhos: s.carrinhos } : l)),
+      activeLojistaId: null,
+      cartItems: {},
+      cartCombos: {},
+      cartItemSizes: {},
+      editingPedido: null,
+      activeCarrinhoId: null,
+    })
+  },
   activeCarrinhoId: null,
   setActiveCarrinho: (id) => set({ activeCarrinhoId: id }),
   editingPedido: null,
@@ -297,11 +341,13 @@ export const useAppStore = create<AppState>((set, get) => ({
       const carrinhos = s.carrinhos.map((c) => {
         if (c.id !== editing.carrinhoId) return c
         // Editar um pedido que já foi enviado pra aprovação ("aguardando" sem ser sugestão da
-        // Ana) reabre a aprovação: volta pra rascunho, porque o conteúdo que ela estava avaliando
-        // mudou (ver ConfirmModal em CarrinhoDetail/MeusCarrinhos, que avisa isso antes de deixar
-        // editar). Sugestão da Ana (`suggestedBy === 'representante'`) não entra aqui — hoje não
-        // tem CTA de editar pra esse caso (o lojista revisa/aprova, não edita direto).
-        const baseStatus = c.pedido.status === 'aguardando' && !c.pedido.suggestedBy ? 'rascunho' : c.pedido.status
+        // Ana) ou já aprovado por ela (ver aprovarPedido, set/2026) reabre o processo: volta pra
+        // rascunho, porque o conteúdo que ela avaliou/aprovou mudou (ver ConfirmModal em
+        // CarrinhoDetail/MeusCarrinhos, que avisa isso antes de deixar editar). Sugestão da Ana
+        // (`suggestedBy === 'representante'`) não entra aqui — hoje não tem CTA de editar pra esse
+        // caso (o lojista revisa/aprova, não edita direto).
+        const baseStatus =
+          (c.pedido.status === 'aguardando' || c.pedido.status === 'aprovado') && !c.pedido.suggestedBy ? 'rascunho' : c.pedido.status
         const nextStatus = c.autoSendOnGradeMinima && baseStatus === 'rascunho' && totalItems >= GRADE_MINIMA_PARES ? 'aguardando' : baseStatus
         return {
           ...c,
@@ -419,6 +465,13 @@ export const useAppStore = create<AppState>((set, get) => ({
         return { ...c, updatedAt: 'agora', daysSinceActivity: 0, pedido: { ...c.pedido, status: 'aguardando' } }
       }),
     })),
+  aprovarPedido: (carrinhoId) =>
+    set((s) => ({
+      carrinhos: s.carrinhos.map((c) => {
+        if (c.id !== carrinhoId || !pedidoAguardandoAprovacaoRep(c.pedido)) return c
+        return { ...c, pedido: { ...c.pedido, status: 'aprovado' } }
+      }),
+    })),
 
   notifications: initialNotifications,
   notifOpen: false,
@@ -502,6 +555,10 @@ export interface LojistaSinal {
   kind: 'revisao' | 'visita' | 'estoque'
   tone: 'risk' | 'info'
   text: string
+  // Presente em 'revisao'/'estoque' (nascem de um carrinho específico) — o Radar usa isso pra
+  // linkar a ação direto pro pedido, em vez de só abrir a loja no catálogo. Ausente em 'visita',
+  // que é um sinal da loja como um todo, não de um carrinho.
+  cartId?: string
 }
 
 // Sinais de prioridade pro Radar do representante (set/2026): pedido aguardando aprovação da Ana,
@@ -514,7 +571,7 @@ export function lojistaSinais(lojista: Lojista): LojistaSinal[] {
   for (const cart of lojista.carrinhos) {
     const pedido = cart.pedido
     if (pedidoAguardandoAprovacaoRep(pedido)) {
-      sinais.push({ kind: 'revisao', tone: 'info', text: `"${cart.name}" está aguardando sua aprovação` })
+      sinais.push({ kind: 'revisao', tone: 'info', text: `"${cart.name}" está aguardando sua aprovação`, cartId: cart.id })
     }
     if (pedido.status !== 'pago') {
       for (const item of pedido.items) {
@@ -524,6 +581,7 @@ export function lojistaSinais(lojista: Lojista): LojistaSinal[] {
             kind: 'estoque',
             tone: 'risk',
             text: `${product.name.replace('Tênis Tesla ', '')} — só ${product.stockPares} pares na fábrica (em "${cart.name}")`,
+            cartId: cart.id,
           })
         }
       }
@@ -555,6 +613,9 @@ export function pedidoStatusBadge(pedido: Pedido, representativeName: string): P
   // tracking que já significa "saiu da fábrica pra loja" — daí um rótulo neutro sobre posse, não
   // sobre etapa de produção.
   if (pedido.status === 'pago') return { label: 'Com a Tesla', tone: 'positive' }
+  // Aprovado pelo representante (set/2026, ver aprovarPedido) — pronto pra pagar, mas ainda não é
+  // "Com a Tesla" (isso só acontece depois do pagamento de verdade, ver Payment.tsx).
+  if (pedido.status === 'aprovado') return { label: `Aprovado por ${representativeName} — pronto pra pagar`, tone: 'positive' }
   if (pedido.status === 'aguardando') {
     if (pedido.suggestedBy === 'representante') return { label: 'Aguardando você — revisar', tone: 'info' }
     return { label: `Aguardando ${representativeName}`, tone: 'neutral' }

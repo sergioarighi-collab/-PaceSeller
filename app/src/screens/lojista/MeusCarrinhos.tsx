@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
-import { WebTopNav } from '../../components/desktop/WebTopNav'
+import { PersonaTopNav } from '../../components/desktop/PersonaTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { ProductThumb } from '../../components/desktop/ProductThumb'
 import { ConfirmModal } from '../../components/desktop/ConfirmModal'
@@ -111,7 +111,7 @@ export function MeusCarrinhos() {
 
   return (
     <DesktopPage>
-      <WebTopNav />
+      <PersonaTopNav />
       <Breadcrumb items={[{ label: 'Radar', to: '/radar' }, { label: 'Meus Carrinhos' }]} />
       <div className="web-main" style={{ paddingTop: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>

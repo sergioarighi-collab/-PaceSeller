@@ -914,6 +914,8 @@ Fluxo de login completo via Playwright contra o preview buildado: `/login/repres
 
 ## Radar do representante (set/2026)
 
+**Atualizado logo em seguida — ver "Radar vira a carteira inteira + modo loja" mais abaixo:** a versão descrita aqui (só lojista com pendência) virou o Radar mostrando a carteira INTEIRA, ranqueada. Mantido este registro pelo histórico dos 3 sinais (`lojistaSinais`), que não mudou.
+
 Segunda tela do fluxo desktop do representante, depois da Carteira — mapeado (mas nunca implementado no fluxo desktop) em `docs/product-design-retail-performance-platform.md` (seção 1.2). Diferença de propósito entre as duas: **Carteira** é a lista completa (toda loja aparece, com ou sem pendência); **Radar** é só priorização — cruza os dados de cada lojista com 3 sinais e mostra **só quem precisa de ação agora**. Pedido do usuário: o Radar entra geral (carteira inteira), e é dali que ele escolhe o lojista específico — não abre direto num cliente.
 
 ### `lojistaSinais()` (`store.ts`) — os 3 sinais, com dado real por trás
@@ -966,6 +968,52 @@ Reverte parte da seção anterior. Informação nova do usuário: a identificaç
 - Isso não significa que a conta do representante deixou de ter prepostos — só que, deste ponto em diante, "quem exatamente está logado" é uma pergunta pro backend responder (auth de verdade), não uma tela deste protótipo.
 
 Testado via Playwright: `/login/representante` → "Entrar" → cai direto em `/rep/radar`, sem passar por tela nenhuma no meio, sem erro de console; fluxo do lojista conferido sem regressão (WebTopNav renderizando normalmente sem `activeUser`).
+
+## Radar vira a carteira inteira + "modo loja" com ação real (set/2026)
+
+Pedido do usuário: o Radar tem que trazer a carteira **inteira** (não só quem tem pendência), ranqueada por importância, com insight + ação por sinal — e clicar numa ação já seleciona o lojista e entra direto no contexto dele (catálogo/carrinho com as regras daquela loja), sem passo manual no meio. Se ele entrar no Catálogo sem vir de uma ação, tem que escolher manualmente qual lojista vai atender antes de ver o catálogo.
+
+### Radar: lista completa ranqueada, não mais filtrada
+
+`RepRadar` (`screens/representante/Radar.tsx`) agora mapeia **todos** os lojistas (antes, `.filter((x) => x.sinais.length > 0)` escondia quem estava em dia) e ordena por uma pontuação simples (`PESO_SINAL`: revisão=3, estoque=2, visita=1 — revisão pesa mais por travar uma venda, estoque por poder faltar antes de agir). Lojista sem sinal nenhum ainda aparece, só que com um "Tudo em dia" em vez da lista de pendências — diferente da vez que tiramos o check positivo do "Antes de fechar" do lojista: lá era redundante (a linha já não aparecia se não tivesse pendência), aqui é o contrário — o Radar virou um diretório completo e "tudo em dia" é informação nova (confirma que aquela loja não precisa de nada agora), não redundante.
+
+### "Modo loja" — o mecanismo por trás de tudo isso
+
+O modelo inteiro (Catálogo, `OrderDrawer`, Meus Carrinhos, Carrinho) sempre trabalhou em cima de `store.carrinhos`, um array só, implicitamente "a loja logada". Em vez de duplicar essas telas pro representante, `store.ts` ganhou um jeito de **apontar** `carrinhos` pra qualquer lojista da carteira:
+
+```ts
+activeLojistaId: string | null
+enterLojista: (lojistaId) => void  // troca `carrinhos` pros carrinhos desse lojista, zera cartItems/cartCombos/editingPedido
+exitLojista: () => void            // salva `carrinhos` de volta em `lojistas[x]` antes de sair
+```
+
+Com isso, **as mesmas telas do lojista são reaproveitadas 100% pelo representante** (exatamente o pedido do usuário: "podemos usar os mesmos componentes do lojista") — não existe um `Catalog.tsx`/`MeusCarrinhos.tsx` separado pro representante, é literalmente o mesmo componente, só que `carrinhos` aponta pra outro lugar. Rotas reaproveitadas sem mudança nenhuma: `/catalogo`, `/catalogo/:id`, `/carrinhos`, `/carrinhos/:cartId`.
+
+- **`LojistaGate.tsx`** (novo, `components/desktop/`): tela "Qual loja você vai atender agora?" — lista de `.optioncard` (mesmo componente do picker "Em qual carrinho?" do `OrderDrawer`), clicar chama `enterLojista`.
+- **`App.tsx`**: `comLojistaSelecionada(Component)` — pequeno HOC que envolve `Catalog`/`MeusCarrinhos`/`CarrinhoDetail`: se `persona === 'representante' && !activeLojistaId`, renderiza `LojistaGate` no lugar da tela. Fica num componente próprio (não dentro de `Catalog.tsx` etc.) de propósito — inserir um `return` condicional no meio de um componente com dezenas de hooks já declarados quebraria a regra dos hooks; um wrapper por fora não tem esse problema, porque a tela real simplesmente não chega a montar.
+- **`PersonaTopNav.tsx`** (novo, `components/desktop/`): `Catalog.tsx`/`MeusCarrinhos.tsx`/`CarrinhoDetail.tsx` trocaram `<WebTopNav/>` direto por `<PersonaTopNav/>`, que escolhe `WebTopNav` (lojista) ou `RepTopNav` (representante) por `persona`. Sem isso, o representante veria o nav/avatar do lojista (`WebTopNav` mostra "Radical Skate · Porto Alegre, RS" fixo) atendendo uma loja qualquer.
+- **`RepTopNav.tsx`**: "Catálogo" saiu de link desabilitado ("em breve") pra rota real (`/catalogo`, a mesma do lojista). Quando `activeLojistaId` existe, mostra "Atendendo: {loja} · Trocar loja" — clicar em "Trocar loja" chama `exitLojista()` e volta pro `/rep/radar`.
+- **Limitação aceita:** `carrinhos` e `lojistas` continuam sendo cópias sincronizadas manualmente (`enterLojista`/`exitLojista`), não uma referência compartilhada — não tem backend nenhum por trás pra ser a fonte única de verdade de fato. Isso já estava documentado como gap desde a criação de `Lojista`.
+
+### Primeira ação de verdade: aprovar pedido
+
+`Pedido.status` já tinha um valor `'aprovado'` no tipo (`types.ts`) desde a criação do modelo Carrinho→Pedido, mas nunca tinha sido setado em lugar nenhum — ficou dormente até agora, esperando exatamente por isso.
+
+- **`aprovarPedido(carrinhoId)`** (`store.ts`, novo): muda o pedido pra `'aprovado'`, só quando `pedidoAguardandoAprovacaoRep` é true (mesma trava defensiva de `sendPedidoToRepresentante`).
+- **`pedidoStatusBadge`**: ganhou o branch `'aprovado'` → `"Aprovado por {representante} — pronto pra pagar"`, tom positivo. Sem isso, um pedido aprovado cairia no `return` genérico e mostraria "Rascunho" — rótulo errado.
+- **`commitCartToCarrinho`**: o reset pra rascunho ao editar (que já existia pra `'aguardando'`) passou a cobrir `'aprovado'` também — editar um pedido já aprovado muda o conteúdo que a Ana avaliou, então reabre o processo, mesma lógica de antes.
+- **`CarrinhoDetail.tsx`**: o cabeçalho do pedido (`og-head`) agora bifurca por persona. Lojista continua vendo exatamente o que já via (Editar no drawer/Enviar pro representante). Representante vê só **"Aprovar pedido"**, e só quando `pedidoAguardandoAprovacaoRep` é true — fora disso, fica só o badge de status, sem ação nenhuma (visão somente-leitura por enquanto; comentar/rejeitar/editar em nome do lojista ficam pra depois). Breadcrumb também virou consciente de persona ("Radar/Carteira" pro representante vs. "Radar/Meus Carrinhos" pro lojista), e o banner "Compartilhado com Ana" some pro representante (não faz sentido ela ver isso sobre si mesma).
+- **`RepRadar.tsx`**: o sinal `'revisao'` agora carrega o `cartId` de origem (`LojistaSinal.cartId`, novo) — clicar em "Revisar pedido" chama `enterLojista` + navega direto pro `/carrinhos/:cartId` daquele pedido específico, não só pro catálogo geral. "Falar agora" (estoque) e "Agendar visita" ainda não têm uma ação de sistema própria — abrem a loja no catálogo por enquanto, sem fingir uma ação que não existe.
+
+### O que ficou de fora de propósito
+
+- Copy de `MeusCarrinhos.tsx` continua com frases pensadas pro lojista ("com Ana, sua representante", "Criar novo carrinho") que soam estranhas vistas pelo próprio representante — não ajustado nesta leva (baixo risco, mas cosmético; ver se vale a pena numa leva futura).
+- Rejeitar/comentar um pedido do lado do representante — só "aprovar" existe.
+- "Abrir" por pedido na Carteira (`screens/representante/Carteira.tsx`) continua um toast "em breve" — não foi religado pro modo loja nesta leva (o pedido do usuário era especificamente sobre o Radar).
+
+### Testado
+
+Fluxo completo via Playwright contra o preview buildado: login → Radar (3 lojas ranqueadas: Loja Vertex com 3 sinais primeiro, Radical Skate com 1, Casa Esporte com 1) → "Revisar pedido" no sinal da Loja Vertex → entra em modo loja (RepTopNav mostra "Atendendo: Loja Vertex") → cai direto no `CarrinhoDetail` do pedido certo (`/carrinhos/giro-tg2`) com "Aprovar pedido" no lugar de "Editar no drawer" → clicar aprova de verdade (badge muda pra "Aprovado por Ana — pronto pra pagar"). Testado também: entrar em "Catálogo" pela nav sem lojista escolhido mostra o `LojistaGate`; escolher uma loja lá entra no Catálogo de verdade (mesma tela do lojista) com o nav certo; adicionar um produto ao carrinho dentro do modo loja cria/atualiza o carrinho daquele lojista especificamente (verificado via navegação in-app, não por reload de página — reload zera todo o estado do Zustand, esperado, não é bug); "Trocar loja" sai do modo loja e volta pro Radar.
 
 ## Regras de negócio confirmadas (não são chute)
 

@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
-import { WebTopNav } from '../../components/desktop/WebTopNav'
+import { PersonaTopNav } from '../../components/desktop/PersonaTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { Toast } from '../../components/desktop/Toast'
 import { ConfirmModal } from '../../components/desktop/ConfirmModal'
 import { products, collectionTitle } from '../../lib/data'
-import { useAppStore, pedidoActionKind, pedidoPares, pedidoStatusBadge } from '../../lib/store'
+import { useAppStore, pedidoActionKind, pedidoPares, pedidoStatusBadge, pedidoAguardandoAprovacaoRep } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { formatBRL } from '../../lib/format'
 
@@ -25,7 +25,9 @@ export function CarrinhoDetail() {
   const startEditPedido = useAppStore((s) => s.startEditPedido)
   const addToCart = useAppStore((s) => s.addToCart)
   const sendPedidoToRepresentante = useAppStore((s) => s.sendPedidoToRepresentante)
+  const aprovarPedido = useAppStore((s) => s.aprovarPedido)
   const setRepCanEdit = useAppStore((s) => s.setRepCanEdit)
+  const persona = useAppStore((s) => s.persona)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
   const pedido = cart.pedido
 
@@ -35,12 +37,13 @@ export function CarrinhoDetail() {
   }
 
   const [savedToast, setSavedToast] = useState(false)
-  // "Editar no drawer" num pedido "Aguardando Ana" reabre a aprovação (ver commitCartToCarrinho em
-  // store.ts) — avisa antes de deixar entrar, em vez de simplesmente voltar o status sem avisar.
+  // "Editar no drawer" num pedido "Aguardando Ana" ou já "Aprovado" (set/2026) reabre o processo
+  // (ver commitCartToCarrinho em store.ts) — avisa antes de deixar entrar, em vez de simplesmente
+  // voltar o status sem avisar.
   const [confirmEditAguardando, setConfirmEditAguardando] = useState(false)
 
   function handleEditarNoDrawer() {
-    if (pedido.status === 'aguardando') setConfirmEditAguardando(true)
+    if (pedido.status === 'aguardando' || pedido.status === 'aprovado') setConfirmEditAguardando(true)
     else startEditPedido(cart.id, pedido.id)
   }
 
@@ -95,8 +98,14 @@ export function CarrinhoDetail() {
 
   return (
     <DesktopPage>
-      <WebTopNav />
-      <Breadcrumb items={[{ label: 'Radar', to: '/radar' }, { label: 'Meus Carrinhos', to: '/carrinhos' }, { label: cart.name }]} />
+      <PersonaTopNav />
+      <Breadcrumb
+        items={
+          persona === 'representante'
+            ? [{ label: 'Radar', to: '/rep/radar' }, { label: 'Carteira', to: '/rep/carteira' }, { label: cart.name }]
+            : [{ label: 'Radar', to: '/radar' }, { label: 'Meus Carrinhos', to: '/carrinhos' }, { label: cart.name }]
+        }
+      />
       <div className="web-app-layout">
         <div className="web-content">
           <div className="cartswitcher" style={{ marginTop: 16 }}>
@@ -117,12 +126,14 @@ export function CarrinhoDetail() {
             </div>
           </div>
 
-          <div className="sharebanner">
-            <div className="avatar">AN</div>
-            <div>
-              Compartilhado com <b>{cart.representative}</b> — ela acompanha e comenta esse pedido
+          {persona !== 'representante' && (
+            <div className="sharebanner">
+              <div className="avatar">AN</div>
+              <div>
+                Compartilhado com <b>{cart.representative}</b> — ela acompanha e comenta esse pedido
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="ordergroup">
             <div className="og-head">
@@ -133,29 +144,46 @@ export function CarrinhoDetail() {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                {/* "Editar no drawer" aparece em qualquer pedido editável — rascunho incompleto,
-                    "Pronto pra enviar" (pedidoActionKind === 'enviar') ou já enviado/sugerido e
-                    aguardando decisão (pedidoActionKind === 'revisar') — independente de já ter
-                    sido enviado pro representante ou não. Só some quando o pedido já foi pago
-                    (pedidoActionKind === 'acompanhar'), que não faz mais sentido editar. Antes,
-                    um pedido que já batia a grade mínima ou estava em "aguardando" via sugestão do
-                    representante só mostrava outras ações aqui, sem nenhum jeito visível de editar
-                    (usuário relatou não achar como editar). */}
-                {pedidoActionKind(pedido) !== 'acompanhar' && (
-                  <span
-                    style={{ fontSize: 11.5, color: 'var(--info)', fontWeight: 500, cursor: 'pointer' }}
-                    onClick={handleEditarNoDrawer}
-                  >
-                    Editar no drawer
-                  </span>
-                )}
-                {pedidoActionKind(pedido) === 'enviar' && (
-                  <span
-                    style={{ fontSize: 11.5, color: 'var(--positive)', fontWeight: 600, cursor: 'pointer' }}
-                    onClick={() => sendPedidoToRepresentante(cart.id, pedido.id)}
-                  >
-                    Enviar pro representante
-                  </span>
+                {persona === 'representante' ? (
+                  // Ações do REPRESENTANTE (set/2026, "modo loja"): só "Aprovar pedido" existe de
+                  // verdade por enquanto — quando não se aplica, fica só o badge de status (visão
+                  // somente-leitura). Comentar/editar em nome do lojista fica pra uma próxima leva,
+                  // ver guia-dev-frontend.md.
+                  pedidoAguardandoAprovacaoRep(pedido) && (
+                    <span
+                      style={{ fontSize: 11.5, color: 'var(--positive)', fontWeight: 600, cursor: 'pointer' }}
+                      onClick={() => aprovarPedido(cart.id)}
+                    >
+                      Aprovar pedido
+                    </span>
+                  )
+                ) : (
+                  <>
+                    {/* "Editar no drawer" aparece em qualquer pedido editável — rascunho incompleto,
+                        "Pronto pra enviar" (pedidoActionKind === 'enviar') ou já enviado/sugerido e
+                        aguardando decisão (pedidoActionKind === 'revisar') — independente de já ter
+                        sido enviado pro representante ou não. Só some quando o pedido já foi pago
+                        (pedidoActionKind === 'acompanhar'), que não faz mais sentido editar. Antes,
+                        um pedido que já batia a grade mínima ou estava em "aguardando" via sugestão do
+                        representante só mostrava outras ações aqui, sem nenhum jeito visível de editar
+                        (usuário relatou não achar como editar). */}
+                    {pedidoActionKind(pedido) !== 'acompanhar' && (
+                      <span
+                        style={{ fontSize: 11.5, color: 'var(--info)', fontWeight: 500, cursor: 'pointer' }}
+                        onClick={handleEditarNoDrawer}
+                      >
+                        Editar no drawer
+                      </span>
+                    )}
+                    {pedidoActionKind(pedido) === 'enviar' && (
+                      <span
+                        style={{ fontSize: 11.5, color: 'var(--positive)', fontWeight: 600, cursor: 'pointer' }}
+                        onClick={() => sendPedidoToRepresentante(cart.id, pedido.id)}
+                      >
+                        Enviar pro representante
+                      </span>
+                    )}
+                  </>
                 )}
                 <span className={`badge ${statusBadge.tone === 'positive' ? 'pos' : statusBadge.tone}`}>{statusBadge.label}</span>
               </div>
@@ -309,8 +337,12 @@ export function CarrinhoDetail() {
 
       {confirmEditAguardando && (
         <ConfirmModal
-          title="Editar pedido aguardando aprovação"
-          message={`Esse pedido está aguardando aprovação de ${cart.representative}. Editar agora volta ele pra rascunho — você vai precisar enviar de novo depois de ajustar.`}
+          title={pedido.status === 'aprovado' ? 'Editar pedido já aprovado' : 'Editar pedido aguardando aprovação'}
+          message={
+            pedido.status === 'aprovado'
+              ? `${cart.representative} já aprovou esse pedido. Editar agora volta ele pra rascunho — você vai precisar enviar de novo depois de ajustar.`
+              : `Esse pedido está aguardando aprovação de ${cart.representative}. Editar agora volta ele pra rascunho — você vai precisar enviar de novo depois de ajustar.`
+          }
           confirmLabel="Editar mesmo assim"
           onCancel={() => setConfirmEditAguardando(false)}
           onConfirm={() => {
