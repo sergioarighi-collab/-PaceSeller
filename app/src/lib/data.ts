@@ -1,4 +1,4 @@
-import type { InsightCardData, Product, User, Carrinho, Combo, NotificationItem, Lojista } from './types'
+import type { InsightCardData, Product, Carrinho, Combo, NotificationItem, Lojista } from './types'
 
 // Todas as pendências do lojista, agrupadas por prazo pra agir (ago/2026, substitui os 4 cards
 // soltos + a lista "por categoria" escondida atrás de um clique — ver docs/guia-dev-frontend.md).
@@ -422,12 +422,6 @@ export const combos: Combo[] = [
     reason: 'Comprados juntos com frequência',
     reasonTone: 'pair',
   },
-]
-
-export const users: User[] = [
-  { id: 'u1', name: 'Ana Silva', initials: 'AN', role: 'titular' },
-  { id: 'u2', name: 'Bruno Costa', initials: 'BR', role: 'auxiliar' },
-  { id: 'u3', name: 'Carla Nunes', initials: 'CA', role: 'auxiliar' },
 ]
 
 // Carrinho → Pedido: um carrinho é compartilhado com o representante fixo da loja (Ana) e tem

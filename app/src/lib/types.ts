@@ -151,13 +151,6 @@ export interface Carrinho {
   lastComment?: { author: string; text: string; timeLabel: string }
 }
 
-export interface User {
-  id: string
-  name: string
-  initials: string
-  role: 'titular' | 'auxiliar'
-}
-
 // Dropdown do sino no WebTopNav (ago/2026) — 3 tipos de evento mapeados desde
 // `analise-ux-gaps-atrito-venda.md`, nunca implementados até agora.
 export interface NotificationItem {

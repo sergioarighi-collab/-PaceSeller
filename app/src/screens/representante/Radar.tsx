@@ -12,21 +12,19 @@ import { useAppStore, lojistaSinais } from '../../lib/store'
 export function RepRadar() {
   const navigate = useNavigate()
   const lojistas = useAppStore((s) => s.lojistas)
-  const activeUser = useAppStore((s) => s.activeUser)
 
   const comSinais = lojistas.map((lojista) => ({ lojista, sinais: lojistaSinais(lojista) })).filter((x) => x.sinais.length > 0)
   const totalSinais = comSinais.reduce((sum, x) => sum + x.sinais.length, 0)
   const aguardandoCount = comSinais.reduce((sum, x) => sum + x.sinais.filter((s) => s.kind === 'revisao').length, 0)
   const semVisitaCount = comSinais.reduce((sum, x) => sum + x.sinais.filter((s) => s.kind === 'visita').length, 0)
   const estoqueCount = comSinais.reduce((sum, x) => sum + x.sinais.filter((s) => s.kind === 'estoque').length, 0)
-  const firstName = (activeUser?.name ?? 'Ana Silva').split(' ')[0]
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-app)' }}>
       <RepTopNav />
 
       <div className="web-hero-band">
-        <div className="whgreet">Bom dia, {firstName}</div>
+        <div className="whgreet">Bom dia, Ana</div>
         <h1>{comSinais.length > 0 ? `${comSinais.length} loja${comSinais.length > 1 ? 's' : ''} precisam de atenção` : 'Sua carteira está em dia'}</h1>
         <div className="whsub">
           {totalSinais > 0

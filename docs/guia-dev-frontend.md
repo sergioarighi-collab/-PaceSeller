@@ -944,6 +944,8 @@ Com os 3 lojistas mock reais: Radical Skate (1 sinal — Coil Denim, 28 pares), 
 
 ## Entrada do representante vira desktop (set/2026)
 
+**Parcialmente revertido logo em seguida — ver "Login do representante simplificado" mais abaixo:** `WhoIsUsing.tsx`/`ConfirmPin.tsx` (o "quem está usando"/PIN descritos aqui) foram removidos de vez, não só restyleados. Mantido este registro pelo histórico da decisão de design (`LoginSplitShell`/`.optioncard`), que segue valendo pro resto da entrada (`LoginRepresentante.tsx`).
+
 Usuário notou que a entrada do representante (`/login/representante` → `/login/quem-esta-usando` → `/login/pin/:userId`) estava com layout mobile (`AuthShell`, Tailwind), destoando do resto do fluxo desktop — `ProfileSelect.tsx` e `LoginLojista.tsx` já usavam `LoginSplitShell`. As 3 telas foram reconstruídas com os mesmos componentes do lojista:
 
 - **`LoginRepresentante.tsx`**: agora é `LoginSplitShell`, praticamente espelhando `LoginLojista.tsx` (mesmos `.fieldgroup`/`.textinput`/`.passwordfield`/`.btn-primary`/`.switchlink`) — só copy e destino (`/login/quem-esta-usando`) diferentes.
@@ -953,6 +955,17 @@ Usuário notou que a entrada do representante (`/login/representante` → `/logi
 **Limpeza:** `AuthShell.tsx`/`Field.tsx` (`components/layout/`, `components/ui/`) ficaram 100% órfãos depois da troca — nada mais importava `AuthShell`, `Logo`, `FieldGroup`, `FieldRow2`, `TextInput` (o antigo, sem estilo do mockup), `SelectRow`, `ChipSelect`. Removidos os dois arquivos inteiros.
 
 **Testado:** fluxo completo via Playwright — `/login/representante` → "Entrar" → `/login/quem-esta-usando` → clicar "Bruno Costa" (auxiliar) → `/login/pin/u2` → preencher "1234" → "Confirmar" → `/rep/radar`, sem erro de console.
+
+## Login do representante simplificado: sem identificação de preposto no front (set/2026)
+
+Reverte parte da seção anterior. Informação nova do usuário: a identificação de qual preposto (titular/auxiliar) está usando a conta vai ser resolvida **no backend**, não neste protótipo — então o login do representante não precisa mais perguntar "quem está usando" nem confirmar PIN. Vira um login normal, igual ao do lojista (`LoginLojista.tsx`): preenche e-mail/senha, entra direto no `/rep/radar`.
+
+- **Removidos:** `screens/shared/WhoIsUsing.tsx` e `screens/shared/ConfirmPin.tsx` (e as rotas `/login/quem-esta-usando`/`/login/pin/:userId` em `App.tsx`) — só existiam pra esse fluxo.
+- **`LoginRepresentante.tsx`**: `enter()` agora navega direto pra `/rep/radar`, sem passo intermediário.
+- **Limpeza em cascata:** como só `WhoIsUsing`/`ConfirmPin` chamavam `setActiveUser`, o campo `activeUser`/`setActiveUser` do store virou morto (nunca mais seria setado por ninguém) — removido de `store.ts`, junto com o tipo `User` (`types.ts`), o mock `users`/`defaultTitular` (`data.ts`/`store.ts`) e as leituras de `activeUser` em `WebTopNav.tsx`/`RepTopNav.tsx`/`Radar.tsx` (representante), que voltaram a mostrar os nomes fixos direto ("Carlos Andrade"/"CA", "Ana Silva"/"AN") — na prática eram sempre esse fallback mesmo, já que nada no fluxo do lojista jamais chamava `setActiveUser`.
+- Isso não significa que a conta do representante deixou de ter prepostos — só que, deste ponto em diante, "quem exatamente está logado" é uma pergunta pro backend responder (auth de verdade), não uma tela deste protótipo.
+
+Testado via Playwright: `/login/representante` → "Entrar" → cai direto em `/rep/radar`, sem passar por tela nenhuma no meio, sem erro de console; fluxo do lojista conferido sem regressão (WebTopNav renderizando normalmente sem `activeUser`).
 
 ## Regras de negócio confirmadas (não são chute)
 

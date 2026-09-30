@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useAppStore } from '../../lib/store'
 import { Toast } from './Toast'
 
 // Nav do representante (set/2026, primeiro passo do fluxo desktop dele — ver guia-dev-frontend.md).
@@ -19,8 +18,6 @@ export function RepTopNav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [comingSoon, setComingSoon] = useState<string | null>(null)
   const navigate = useNavigate()
-  const activeUser = useAppStore((s) => s.activeUser)
-  const initials = activeUser?.initials ?? 'AN'
 
   return (
     <div className="web-topnav">
@@ -63,14 +60,14 @@ export function RepTopNav() {
       <div className="navright">
         <div className="avatar-wrap">
           <div className="avatar-chip" style={{ cursor: 'pointer' }} onClick={() => setMenuOpen((o) => !o)}>
-            {initials}
+            AN
           </div>
           {menuOpen && (
             <>
               <div style={{ position: 'fixed', inset: 0, zIndex: 9 }} onClick={() => setMenuOpen(false)} />
               <div className="avatar-menu">
                 <div className="am-header">
-                  <div className="am-name">{activeUser?.name ?? 'Ana Silva'}</div>
+                  <div className="am-name">Ana Silva</div>
                   <div className="am-store">Representante · Tesla Skate</div>
                 </div>
                 <div

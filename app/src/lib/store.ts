@@ -1,15 +1,12 @@
 import { create } from 'zustand'
-import type { Persona, User, Carrinho, Pedido, PedidoItem, NotificationItem, Lojista } from './types'
+import type { Persona, Carrinho, Pedido, PedidoItem, NotificationItem, Lojista } from './types'
 import { GRADE_MINIMA_PARES } from './types'
-import { users, products, initialCarrinhos, initialLojistas, initialNotifications, combos } from './data'
+import { products, initialCarrinhos, initialLojistas, initialNotifications, combos } from './data'
 import { comboPrice, distributeSizesExact } from './productLines'
 
 interface AppState {
   persona: Persona | null
   setPersona: (p: Persona) => void
-
-  activeUser: User | null
-  setActiveUser: (u: User) => void
 
   /** true quando o lojista pulou o onboarding (perfil incompleto). */
   onboardingSkipped: boolean
@@ -150,9 +147,6 @@ interface AppState {
 export const useAppStore = create<AppState>((set, get) => ({
   persona: null,
   setPersona: (p) => set({ persona: p }),
-
-  activeUser: null,
-  setActiveUser: (u) => set({ activeUser: u }),
 
   onboardingSkipped: false,
   skipOnboarding: () => set({ onboardingSkipped: true }),
@@ -623,5 +617,3 @@ export function comboSummary(cartCombos: Record<string, number>) {
   const totalValue = entries.reduce((sum, e) => sum + e.cp.finalPrice, 0)
   return { entries, totalItems, totalValue }
 }
-
-export const defaultTitular = users[0]

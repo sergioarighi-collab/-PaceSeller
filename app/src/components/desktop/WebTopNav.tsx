@@ -12,7 +12,6 @@ const navItems = [
 export function WebTopNav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [comingSoon, setComingSoon] = useState<string | null>(null)
-  const activeUser = useAppStore((s) => s.activeUser)
   const toggleOrderDrawer = useAppStore((s) => s.toggleOrderDrawer)
   const cartItems = useAppStore((s) => s.cartItems)
   const cartCombos = useAppStore((s) => s.cartCombos)
@@ -22,7 +21,6 @@ export function WebTopNav() {
   const closeNotifications = useAppStore((s) => s.closeNotifications)
   const markAllNotificationsRead = useAppStore((s) => s.markAllNotificationsRead)
   const navigate = useNavigate()
-  const initials = activeUser?.initials ?? 'CA'
   const { totalItems: itemsQty } = cartSummary(cartItems)
   const { totalItems: combosQty } = comboSummary(cartCombos)
   const bagCount = itemsQty + combosQty
@@ -151,14 +149,14 @@ export function WebTopNav() {
         </div>
         <div className="avatar-wrap">
           <div className="avatar-chip" style={{ cursor: 'pointer' }} onClick={() => setMenuOpen((o) => !o)}>
-            {initials}
+            CA
           </div>
           {menuOpen && (
             <>
               <div style={{ position: 'fixed', inset: 0, zIndex: 9 }} onClick={() => setMenuOpen(false)} />
               <div className="avatar-menu">
                 <div className="am-header">
-                  <div className="am-name">{activeUser?.name ?? 'Carlos Andrade'}</div>
+                  <div className="am-name">Carlos Andrade</div>
                   <div className="am-store">Radical Skate · Porto Alegre, RS</div>
                 </div>
                 <div

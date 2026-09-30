@@ -7,8 +7,6 @@ import { ForgotPassword } from './screens/shared/ForgotPassword'
 import { ResetSent } from './screens/shared/ResetSent'
 import { NewPassword } from './screens/shared/NewPassword'
 import { PasswordChanged } from './screens/shared/PasswordChanged'
-import { WhoIsUsing } from './screens/shared/WhoIsUsing'
-import { ConfirmPin } from './screens/shared/ConfirmPin'
 
 import { WizardStep1 } from './screens/lojista/WizardStep1'
 import { WizardStep2 } from './screens/lojista/WizardStep2'
@@ -33,8 +31,6 @@ function App() {
         <Route path="/" element={<ProfileSelect />} />
         <Route path="/login/lojista" element={<LoginLojista />} />
         <Route path="/login/representante" element={<LoginRepresentante />} />
-        <Route path="/login/quem-esta-usando" element={<WhoIsUsing />} />
-        <Route path="/login/pin/:userId" element={<ConfirmPin />} />
         <Route path="/recuperar-senha" element={<ForgotPassword />} />
         <Route path="/recuperar-senha/enviado" element={<ResetSent />} />
         <Route path="/recuperar-senha/nova" element={<NewPassword />} />

@@ -6,6 +6,9 @@ import { useAppStore } from '../../lib/store'
 // Desktop (set/2026) — antes usava AuthShell (mobile, Tailwind), inconsistente com o resto do
 // fluxo de entrada (ProfileSelect e LoginLojista já são LoginSplitShell). Mesmo componente, só
 // copy/destino trocados — ver guia-dev-frontend.md.
+// Login simplificado (set/2026): entra direto no Radar, sem passar por "quem está usando"/PIN —
+// decisão do usuário de tirar a identificação de preposto do front (isso passa a ser resolvido no
+// back, não é modelado neste protótipo). Mesmo padrão do LoginLojista, que também entra direto.
 export function LoginRepresentante() {
   const navigate = useNavigate()
   const setPersona = useAppStore((s) => s.setPersona)
@@ -15,7 +18,7 @@ export function LoginRepresentante() {
 
   function enter() {
     setPersona('representante')
-    navigate('/login/quem-esta-usando')
+    navigate('/rep/radar')
   }
 
   return (
