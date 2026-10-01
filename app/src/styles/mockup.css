@@ -350,6 +350,18 @@
   .radar-card.tone-info .radar-cta{background:var(--info);}
   .radar-empty{font-size:12.5px;color:var(--text-secondary);margin-top:auto;padding-top:16px;}
 
+  /* Hierarquia entre filtro de loja (primário) e de período (secundário) no Radar do representante
+     (set/2026) — mesmo `.chip`/`.tl-filters` da base, só com modificadores: loja fica maior e
+     preenchida quando selecionada (como um filtro "de verdade"); período vira link de texto puro,
+     sem fundo nem borda, pra não brigar visualmente com o que já tem precedência na lógica
+     (escolher uma loja ignora a aba de período, ver Radar.tsx). */
+  .radar-filterlabel{font-family:var(--mono);font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+  .radar-filter-primary .chip{font-size:13px;padding:9px 16px;font-weight:600;}
+  .radar-filter-primary .chip.selected{background:var(--black);color:#fff;border-color:var(--black);}
+  .radar-filter-secondary{gap:14px;}
+  .radar-filter-secondary .chip{font-size:11.5px;padding:0;border:none;background:transparent;color:var(--text-tertiary);border-radius:0;}
+  .radar-filter-secondary .chip.selected{background:transparent;border:none;color:var(--text-primary);font-weight:600;}
+
   .thumbrow{display:flex;gap:6px;margin-top:12px;}
   /* 44px/2px de radius — mesma miniatura do swatch de cor do Catálogo (.pw-swatch), pra manter
      consistência do tamanho de foto de produto no app inteiro (set/2026). */

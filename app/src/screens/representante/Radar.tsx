@@ -119,7 +119,13 @@ export function RepRadar() {
       </div>
 
       <div className="web-main">
-        <div className="tl-filters">
+        {/* Hierarquia entre os dois filtros (set/2026, pedido do usuário): loja é o filtro
+            primário — chip maior, preenchido quando selecionado — porque escolher uma loja
+            específica tem precedência sobre o período (ver `visiveis` acima: selecionar uma loja
+            ignora a aba de período ativa). Período fica como filtro secundário, só links de texto
+            sem fundo, pra não competir visualmente com o filtro que realmente manda. */}
+        <div className="radar-filterlabel">Loja</div>
+        <div className="tl-filters radar-filter-primary">
           <div className={`chip ${!lojistaFiltro ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setLojistaFiltro(null)}>
             Todas
           </div>
@@ -134,7 +140,10 @@ export function RepRadar() {
             </div>
           ))}
         </div>
-        <div className="tl-filters" style={{ marginTop: 10 }}>
+        <div className="radar-filterlabel" style={{ marginTop: 16 }}>
+          Período
+        </div>
+        <div className="tl-filters radar-filter-secondary">
           {timeframeOrder.map((tf) => (
             <div
               key={tf}

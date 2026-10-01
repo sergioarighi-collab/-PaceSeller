@@ -1046,6 +1046,16 @@ Pedido do usuário: transformar cada loja do Radar num card (como já tinha sido
 
 Via Playwright contra o preview buildado: grade mostra os cards com cor/ícone certos (azul+relógio pra "aguardando aprovação", vermelho+triângulo pra estoque, verde+check pra "tudo em dia"); aba "Em 15 dias" mostra 0 (nenhuma loja tem o sinal principal nessa faixa agora); aba "Nos próximos 30 dias" traz Casa Esporte (visita há 18 dias) + Esporte Total (tudo em dia); clicar na chip "Casa Esporte" mostra ela mesmo fora da aba de período ativa (precedência loja > período); fluxo completo "Revisar pedido" → `/carrinhos/giro-tg2` → "Aprovar pedido" → badge muda pra "Aprovado por Ana — pronto pra pagar" continua funcionando sem regressão.
 
+## Hierarquia visual entre os filtros do Radar (set/2026)
+
+Pedido do usuário: as duas linhas de filtro do Radar (loja/período) tinham o mesmo peso visual (`.tl-filters`/`.chip` iguais), mas loja é o filtro mais importante — já tinha precedência na lógica (escolher uma loja ignora o período, ver seção anterior), faltava o visual bater com isso.
+
+- **`.radar-filter-primary`** (loja): chip maior (`font-size:13px`, `padding:9px 16px`, `font-weight:600`), selecionado vira preto sólido com texto branco — o mesmo tratamento visual de "isso é um filtro de verdade" que o app já usa noutros lugares.
+- **`.radar-filter-secondary`** (período): perdeu fundo/borda do chip — virou link de texto puro (`background:transparent;border:none`), selecionado só fica mais escuro e bold. Sem o peso de um botão, lê como informação secundária.
+- **`.radar-filterlabel`**: rótulo mono maiúsculo ("LOJA"/"PERÍODO") acima de cada linha, mesmo estilo de `.flabel`/`.tlabel` já usados no resto do app — deixa explícito que são dois filtros diferentes, não uma lista corrida de chips.
+
+Testado via Playwright: clicar em "Em 15 dias" filtra certo (só aparece quem tem o sinal principal nessa faixa); clicar numa loja específica depois ainda ignora a aba de período ativa (precedência mantida).
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
