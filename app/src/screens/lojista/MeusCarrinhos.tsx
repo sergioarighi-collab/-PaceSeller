@@ -37,6 +37,7 @@ export function MeusCarrinhos() {
   const cartCombos = useAppStore((s) => s.cartCombos)
   const activeCarrinhoId = useAppStore((s) => s.activeCarrinhoId)
   const editingPedido = useAppStore((s) => s.editingPedido)
+  const persona = useAppStore((s) => s.persona)
   const [filter, setFilter] = useState<(typeof filters)[number]>(filters[0])
   // "Editar no drawer" num pedido "Aguardando Ana" reabre a aprovação (ver commitCartToCarrinho em
   // store.ts) — avisa antes de deixar entrar. Guarda o carrinho pendente de confirmação (não um
@@ -231,7 +232,7 @@ export function MeusCarrinhos() {
             const gradeOk = pares >= GRADE_MINIMA_PARES
             const gradePct = Math.min(100, Math.round((pares / GRADE_MINIMA_PARES) * 100))
             const action = pedidoAction(cart, pedido)
-            const statusBadge = pedidoStatusBadge(pedido, cart.representative)
+            const statusBadge = pedidoStatusBadge(pedido, cart.representative, persona === 'representante')
 
             return (
               <div className="cart-card" key={cart.id}>

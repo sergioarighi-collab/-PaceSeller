@@ -56,7 +56,7 @@ function SinalIcon({ kind }: { kind: LojistaSinal['kind'] | 'empty' }) {
 
 const sinalCta: Record<LojistaSinal['kind'], string> = {
   revisao: 'Revisar pedido',
-  estoque: 'Falar agora',
+  estoque: 'Sugerir reposição',
   visita: 'Agendar visita',
 }
 
@@ -71,6 +71,7 @@ export function RepRadar() {
   const navigate = useNavigate()
   const lojistas = useAppStore((s) => s.lojistas)
   const enterLojista = useAppStore((s) => s.enterLojista)
+  const sugerirReposicao = useAppStore((s) => s.sugerirReposicao)
   const [lojistaFiltro, setLojistaFiltro] = useState<string | null>(null)
   const [timeframeFiltro, setTimeframeFiltro] = useState<SinalTimeframe>('hoje')
 
@@ -99,13 +100,30 @@ export function RepRadar() {
     navigate('/catalogo')
   }
 
-  // "Revisar pedido" leva direto pro pedido específico (não só o catálogo) — é a ação mais pronta
-  // pra virar execução real: reaproveita CarrinhoDetail.tsx com o botão "Aprovar pedido" (ver
-  // aprovarPedido em store.ts). "Falar agora"/"Agendar visita" ainda não têm uma ação de sistema
-  // própria, então abrem a loja no catálogo por enquanto — ver guia-dev-frontend.md.
+  // Cada sinal já executa a ação de verdade, não só abre uma tela pro representante fazer o resto
+  // na mão (set/2026, pedido do usuário: "os cards de gatilho já devem levar o usuário para a
+  // ação... até mesmo para jogar para o carrinho e encaminhar para o cliente"):
+  // - 'revisao': o pedido já existe, só falta aprovar — vai direto pro CarrinhoDetail com o botão
+  //   "Aprovar pedido" (ver aprovarPedido em store.ts).
+  // - 'estoque': joga o produto num carrinho novo e já encaminha pro lojista (`sugerirReposicao`
+  //   em store.ts — mesmo par `status: 'aguardando'` + `suggestedBy: 'representante'` que o lado do
+  //   lojista já sabia exibir), e abre esse carrinho pra confirmar o que foi enviado.
+  // - 'visita': não tem um carrinho/produto por trás, é um sinal sobre a loja como um todo — não dá
+  //   pra "executar" sozinho, então abre a loja no catálogo pra o representante decidir o que levar.
   function executarSinal(lojistaId: string, sinal: LojistaSinal) {
     enterLojista(lojistaId)
-    navigate(sinal.kind === 'revisao' && sinal.cartId ? `/carrinhos/${sinal.cartId}` : '/catalogo')
+    if (sinal.kind === 'revisao' && sinal.cartId) {
+      navigate(`/carrinhos/${sinal.cartId}`)
+      return
+    }
+    if (sinal.kind === 'estoque' && sinal.productId) {
+      const novoCarrinhoId = sugerirReposicao(sinal.productId)
+      if (novoCarrinhoId) {
+        navigate(`/carrinhos/${novoCarrinhoId}`)
+        return
+      }
+    }
+    navigate('/catalogo')
   }
 
   return (

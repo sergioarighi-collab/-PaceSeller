@@ -49,7 +49,7 @@ export function CarrinhoDetail() {
 
   const pares = pedidoPares(pedido)
   const gradeOk = pares >= GRADE_MINIMA_PARES
-  const statusBadge = pedidoStatusBadge(pedido, cart.representative)
+  const statusBadge = pedidoStatusBadge(pedido, cart.representative, persona === 'representante')
 
   // Coleção sub-representada (set/2026): substitui o antigo "Categoria feminina sub-representada"
   // — texto fixo que não correspondia a nenhum dado real (o catálogo não tem categoria de gênero,
@@ -215,13 +215,18 @@ export function CarrinhoDetail() {
                 Subtotal: {formatBRL(pedido.total)}
                 {pedido.discount > 0 && <span style={{ color: 'var(--positive)', fontWeight: 500 }}> (−3%)</span>}
               </span>
-              <div
-                className={gradeOk ? 'btn-primary' : 'btn-secondary'}
-                style={{ width: 180, cursor: gradeOk ? 'pointer' : 'not-allowed', opacity: gradeOk ? 1 : 0.6 }}
-                onClick={() => gradeOk && navigate(`/carrinhos/${cart.id}/${pedido.id}/pagamento`)}
-              >
-                Ir para pagamento
-              </div>
+              {/* Pagar é ação do lojista, não da representante (ela só aprova — ver aprovarPedido em
+                  store.ts) — sem isso, o "modo loja" deixava a Ana pagar pedido do próprio lojista
+                  sem querer, pela mesma tela reaproveitada. */}
+              {persona !== 'representante' && (
+                <div
+                  className={gradeOk ? 'btn-primary' : 'btn-secondary'}
+                  style={{ width: 180, cursor: gradeOk ? 'pointer' : 'not-allowed', opacity: gradeOk ? 1 : 0.6 }}
+                  onClick={() => gradeOk && navigate(`/carrinhos/${cart.id}/${pedido.id}/pagamento`)}
+                >
+                  Ir para pagamento
+                </div>
+              )}
             </div>
             <div className={`grademin ${gradeOk ? 'ok' : 'warn'}`}>
               {gradeOk ? (
@@ -294,29 +299,40 @@ export function CarrinhoDetail() {
             O carrinho fecha e paga como um pedido só — na hora de pagar você pode dividir o valor entre mais de uma forma (parte no cartão, parte no PIX, por exemplo)
           </div>
 
-          <div
-            className="permswitch"
-            style={{ marginTop: 18 }}
-            onClick={() => setRepCanEdit(cart.id, !cart.repCanEdit)}
-            title="Simulado: hoje não existe desktop do representante pra aplicar essa permissão de verdade"
-          >
-            <div className={`swtrack ${cart.repCanEdit ? '' : 'off'}`}>
-              <div className="knob" />
+          {/* Toggle/"Falar com"/"Salvar rascunho" são ações do LOJISTA sobre a relação com a
+              representante (conceder permissão a ela, falar com ela, guardar o próprio rascunho) —
+              não fazem sentido no "modo loja": a Ana veria um toggle/botão falando dela mesma em
+              terceira pessoa. Escondidos pra persona === 'representante' (set/2026, mesmo princípio
+              do "Ir para pagamento" acima). */}
+          {persona !== 'representante' && (
+            <div
+              className="permswitch"
+              style={{ marginTop: 18 }}
+              onClick={() => setRepCanEdit(cart.id, !cart.repCanEdit)}
+              title="Simulado: hoje não existe desktop do representante pra aplicar essa permissão de verdade"
+            >
+              <div className={`swtrack ${cart.repCanEdit ? '' : 'off'}`}>
+                <div className="knob" />
+              </div>
+              {cart.representative} pode editar este carrinho
             </div>
-            {cart.representative} pode editar este carrinho
-          </div>
+          )}
 
           <div className="sbtns">
-            <div
-              className="btn-secondary"
-              style={{ cursor: 'pointer' }}
-              onClick={() => navigate(`/carrinhos/${cart.id}/${pedido.id}/chat`)}
-            >
-              Falar com {cart.representative}
-            </div>
-            <div className="btn-secondary" style={{ cursor: 'pointer' }} onClick={() => setSavedToast(true)}>
-              Salvar carrinho como rascunho
-            </div>
+            {persona !== 'representante' && (
+              <>
+                <div
+                  className="btn-secondary"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`/carrinhos/${cart.id}/${pedido.id}/chat`)}
+                >
+                  Falar com {cart.representative}
+                </div>
+                <div className="btn-secondary" style={{ cursor: 'pointer' }} onClick={() => setSavedToast(true)}>
+                  Salvar carrinho como rascunho
+                </div>
+              </>
+            )}
             <a
               href="#"
               style={{ display: 'block', textAlign: 'center', fontSize: 12.5, color: 'var(--text-secondary)', fontWeight: 500, marginTop: 4 }}

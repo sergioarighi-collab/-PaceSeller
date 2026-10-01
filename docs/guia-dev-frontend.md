@@ -1056,6 +1056,36 @@ Pedido do usuário: as duas linhas de filtro do Radar (loja/período) tinham o m
 
 Testado via Playwright: clicar em "Em 15 dias" filtra certo (só aparece quem tem o sinal principal nessa faixa); clicar numa loja específica depois ainda ignora a aba de período ativa (precedência mantida).
 
+## Cards de gatilho do Radar já executam a ação (set/2026)
+
+Pedido do usuário: "a ideia é que os cards de gatilho, dentro do radar, já devem levar o usuário para a ação. até mesmo para jogar para o carrinho e encaminhar para o cliente." Até aqui, "Revisar pedido" já levava direto pro pedido certo (ver seção "Radar vira a carteira inteira"), mas "Falar agora" (sinal de estoque) só abria o catálogo geral — o representante ainda tinha que montar e enviar tudo na mão.
+
+### `sugerirReposicao(productId)` (`store.ts`, novo)
+
+A ação de verdade por trás do sinal de estoque: monta um Pedido com a quantidade sugerida pro produto (`suggestedGradeQty`, mesma heurística de giro já usada na Ficha de Decisão), já **nasce `status: 'aguardando'` + `suggestedBy: 'representante'`** — o mesmo par de campos que o lado do lojista já sabia exibir desde que o modelo existe (`pedidoActionKind`, `pedidoStatusBadge`), só que até agora nada do lado do representante realmente criava um pedido assim (o único exemplo era dado mock fixo, "Coil Verão"). Cria um carrinho novo pra isso ("Reposição — {produto}"), em vez de empurrar pro carrinho que já estava aberto — um pedido que o lojista já está montando sozinho não deveria mudar de conteúdo/status por baixo dos panos.
+
+`LojistaSinal` ganhou `productId` (só em `'estoque'`) pra `executarSinal` conseguir chamar `sugerirReposicao` direto, sem precisar descobrir de novo qual item disparou o sinal.
+
+- **`executarSinal` (`RepRadar.tsx`)**: `'estoque'` agora chama `sugerirReposicao` e navega pro carrinho recém-criado (já mostra pro representante exatamente o que foi mandado). `'revisao'` continua indo direto pro pedido específico. `'visita'` continua abrindo só o catálogo — não tem um carrinho/produto por trás pra "executar" sozinho, é um sinal sobre a loja como um todo.
+- CTA do sinal de estoque virou **"Sugerir reposição"** (era "Falar agora") — o texto antigo não refletia mais o que o clique faz agora.
+
+### Bug exposto por essa mudança: "modo loja" reusava telas do lojista sem filtrar ações que só fazem sentido pra ele
+
+Testar o fluxo de ponta a ponta (clicar no sinal → cair no carrinho recém-criado, já visto pela própria Ana) expôs que `CarrinhoDetail.tsx` nunca tinha sido auditado pra esse ângulo específico — algumas partes da tela, reaproveitadas 100% do lojista, não tinham gate de persona:
+
+- **Botão "Ir para pagamento`"`**: pagar é ação do lojista (ela decide quando fechar e com qual forma de pagamento), não da representante — ela só aprova (`aprovarPedido`). Esse botão não tinha nenhum gate de persona; agora some quando `persona === 'representante'`.
+- **Sidebar** (`"Falar com Ana"`, `"Salvar carrinho como rascunho"`, toggle `"Ana pode editar este carrinho"`): essas três são ações do LOJISTA sobre a relação dele com a representante — vistas pela própria Ana, viravam texto sem sentido (um toggle "Ana pode editar" falando dela mesma em terceira pessoa, um botão "Falar com Ana" pra ela clicar em si mesma). Todas as três agora somem pra `persona === 'representante'`; "← Continuar comprando" continua (faz sentido pros dois lados).
+- **`pedidoStatusBadge(pedido, representativeName, viewerIsRep)`** ganhou um 3º parâmetro: o rótulo "Aguardando você — revisar" (pro caso `suggestedBy === 'representante'`) só faz sentido pro LOJISTA ler ("é sua vez"). Antes dessa mudança, ele nunca tinha sido visto pela própria Ana porque esse status só existia em dado mock fixo nunca navegado por ela; `sugerirReposicao` criou o primeiro caso real de a Ana ver essa tela sobre um carrinho dela mesma, e o rótulo precisava inverter: ela vê **"Aguardando o lojista — revisar"**. Mesmo tratamento no caso `'aprovado'` ("Aprovado — aguardando pagamento do lojista" pra ela, "Aprovado por {representante} — pronto pra pagar" pro lojista) e no `'aguardando'` sem sugestão (ela vê "Aguardando você", o lojista vê "Aguardando {representante}"). Os dois call sites (`CarrinhoDetail.tsx`, `MeusCarrinhos.tsx`) passam `persona === 'representante'`.
+
+### O que ficou de fora de propósito
+
+- Clicar em "Sugerir reposição" de novo pro mesmo produto cria outro carrinho de reposição (não há trava de "já sugeri isso") — o sinal de estoque continua aparecendo depois (o estoque da fábrica não muda, é dado mock estático), então nada impede repetir. Aceitável num protótipo sem backend; se virar confuso, a saída mais simples é esconder o sinal de produtos que já têm um carrinho `suggestedBy: 'representante'` em aberto.
+- Sidebar/pagamento ganharam gate de persona só em `CarrinhoDetail.tsx` (onde o teste expôs o problema) — não foi feita uma auditoria linha a linha de todo o resto do "modo loja" atrás de outros cantos reaproveitados do lojista que possam ter o mesmo tipo de vazamento.
+
+### Testado
+
+Via Playwright contra o preview buildado: clicar em "Sugerir reposição" no sinal de estoque da Radical Skate cria o carrinho "Reposição — Coil Denim" (36 pares, grade mínima batida) e navega direto pra ele, com `RepTopNav` mostrando "Atendendo: Radical Skate"; a tela mostra "Aguardando o lojista — revisar" (não "Aguardando você"); nem o botão "Ir para pagamento" nem a sidebar (toggle/"Falar com"/"Salvar rascunho") aparecem; "← Continuar comprando" continua ali. Fluxo "Revisar pedido" → `/carrinhos/giro-tg2` → "Aprovar pedido" → badge continua funcionando sem regressão.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { Persona, Carrinho, Pedido, PedidoItem, NotificationItem, Lojista } from './types'
 import { GRADE_MINIMA_PARES } from './types'
 import { products, initialCarrinhos, initialLojistas, initialNotifications, combos } from './data'
-import { comboPrice, distributeSizesExact } from './productLines'
+import { comboPrice, distributeSizesExact, suggestedGradeQty } from './productLines'
 
 interface AppState {
   persona: Persona | null
@@ -150,6 +150,18 @@ interface AppState {
    * lojista certo, ver `enterLojista`), não sobre `lojistas` direto.
    */
   aprovarPedido: (carrinhoId: string) => void
+  /**
+   * Ação do REPRESENTANTE (set/2026): monta e já encaminha pro lojista um pedido de reposição pra
+   * um produto específico — nasce com `status: 'aguardando'` e `suggestedBy: 'representante'` (o
+   * mesmo par de campos que o lado do lojista já sabia exibir desde que o modelo de dados existe,
+   * ver `pedidoActionKind`/`pedidoStatusBadge`, só que até agora nada do lado do representante
+   * realmente criava um pedido assim). É a ação de verdade por trás do "Falar agora" do sinal de
+   * estoque no Radar: em vez de só abrir o catálogo, já joga o produto num carrinho novo e manda
+   * pro lojista revisar. Opera sobre `carrinhos` (modo loja já aponta pro lojista certo, ver
+   * `enterLojista`) — retorna o id do carrinho criado (pra navegar direto pra ele) ou `null` se o
+   * produto não existir.
+   */
+  sugerirReposicao: (productId: string) => string | null
 
   /** Notificações do sino (WebTopNav) — comentário do representante, mudança de status, insight
    * do Radar. Gap mapeado desde `analise-ux-gaps-atrito-venda.md`, implementado ago/2026. */
@@ -472,6 +484,41 @@ export const useAppStore = create<AppState>((set, get) => ({
         return { ...c, pedido: { ...c.pedido, status: 'aprovado' } }
       }),
     })),
+  sugerirReposicao: (productId) => {
+    const s = get()
+    const product = products.find((p) => p.id === productId)
+    if (!product) return null
+    const { qty } = suggestedGradeQty(product)
+    const value = product.priceFactory * qty
+    const pdvTotal = product.pricePdv * qty
+    const marginPct = pdvTotal > 0 ? Math.round(((pdvTotal - value) / pdvTotal) * 100) : 0
+    const item: PedidoItem = { productId: product.id, name: product.name, qty, grade: gradeRangeLabel(product.suggestedSizes), value }
+    const pedido: Pedido = {
+      id: `pedido-${Date.now()}`,
+      label: 'Pedido',
+      status: 'aguardando',
+      items: [item],
+      subtotal: value,
+      discount: 0,
+      total: value,
+      marginPct,
+      paymentCondition: '30',
+      deliveryEstimateDays: 15,
+      suggestedBy: 'representante',
+    }
+    const novoCarrinho: Carrinho = {
+      id: `carrinho-${Date.now()}`,
+      name: `Reposição — ${product.name.replace('Tênis Tesla ', '')}`,
+      representative: 'Ana',
+      updatedAt: 'agora',
+      daysSinceActivity: 0,
+      repCanEdit: true,
+      autoSendOnGradeMinima: false,
+      pedido,
+    }
+    set({ carrinhos: [...s.carrinhos, novoCarrinho] })
+    return novoCarrinho.id
+  },
 
   notifications: initialNotifications,
   notifOpen: false,
@@ -561,6 +608,10 @@ export interface LojistaSinal {
   // linkar a ação direto pro pedido, em vez de só abrir a loja no catálogo. Ausente em 'visita',
   // que é um sinal da loja como um todo, não de um carrinho.
   cartId?: string
+  // Presente só em 'estoque' — o produto específico que está acabando, pra `executarSinal` (Radar)
+  // poder chamar `sugerirReposicao` com ele direto, sem precisar re-descobrir qual item do pedido
+  // disparou o sinal.
+  productId?: string
   // Prazo pra agir, mesma ideia do filtro "Hoje/15 dias/30 dias" do Radar do lojista (set/2026) —
   // calculado aqui, não escolhido à mão: 'revisao' trava uma venda, é sempre "hoje"; 'estoque' vira
   // "hoje" só quando o estoque já está bem crítico (<30 pares); 'visita' escala com o tanto de dias
@@ -589,6 +640,7 @@ export function lojistaSinais(lojista: Lojista): LojistaSinal[] {
             tone: 'risk',
             text: `${product.name.replace('Tênis Tesla ', '')} — só ${product.stockPares} pares na fábrica (em "${cart.name}")`,
             cartId: cart.id,
+            productId: product.id,
             timeframe: product.stockPares < 30 ? 'hoje' : '15dias',
           })
         }
@@ -618,7 +670,10 @@ export interface PedidoStatusBadge {
 // esperando o lojista revisar (bola com o lojista — tom de atenção, mesmo azul já usado no
 // bulkrow.review de MeusCarrinhos pra "Ana sugeriu X pedido(s)"). `representativeName` (normalmente
 // `cart.representative`) entra no rótulo pra ficar concreto ("Aguardando Ana") em vez de genérico.
-export function pedidoStatusBadge(pedido: Pedido, representativeName: string): PedidoStatusBadge {
+// `viewerIsRep` (set/2026, ver `sugerirReposicao`) existe porque o "modo loja" deixa a própria Ana
+// ver essa mesma tela sobre um carrinho dela — "Aguardando você" só faz sentido pro lojista ler;
+// pra Ana, de quem é a vez é o oposto do que o texto pensado pro lojista diz.
+export function pedidoStatusBadge(pedido: Pedido, representativeName: string, viewerIsRep = false): PedidoStatusBadge {
   // "Com a Tesla" (não "Confirmado" nem "Enviado") — pago já saiu da mão do lojista e da
   // representante, mas ainda tem processo interno de fábrica antes de virar produção de verdade
   // (ver trackingSteps em data.ts: confirmado → em produção → enviado → entregue). "Confirmado"
@@ -628,10 +683,16 @@ export function pedidoStatusBadge(pedido: Pedido, representativeName: string): P
   if (pedido.status === 'pago') return { label: 'Com a Tesla', tone: 'positive' }
   // Aprovado pelo representante (set/2026, ver aprovarPedido) — pronto pra pagar, mas ainda não é
   // "Com a Tesla" (isso só acontece depois do pagamento de verdade, ver Payment.tsx).
-  if (pedido.status === 'aprovado') return { label: `Aprovado por ${representativeName} — pronto pra pagar`, tone: 'positive' }
+  if (pedido.status === 'aprovado') {
+    return viewerIsRep
+      ? { label: 'Aprovado — aguardando pagamento do lojista', tone: 'positive' }
+      : { label: `Aprovado por ${representativeName} — pronto pra pagar`, tone: 'positive' }
+  }
   if (pedido.status === 'aguardando') {
-    if (pedido.suggestedBy === 'representante') return { label: 'Aguardando você — revisar', tone: 'info' }
-    return { label: `Aguardando ${representativeName}`, tone: 'neutral' }
+    if (pedido.suggestedBy === 'representante') {
+      return viewerIsRep ? { label: 'Aguardando o lojista — revisar', tone: 'neutral' } : { label: 'Aguardando você — revisar', tone: 'info' }
+    }
+    return viewerIsRep ? { label: 'Aguardando você — revisar', tone: 'info' } : { label: `Aguardando ${representativeName}`, tone: 'neutral' }
   }
   if (pedido.status === 'rascunho' && pedidoPares(pedido) >= GRADE_MINIMA_PARES) return { label: 'Pronto pra enviar', tone: 'positive' }
   return { label: 'Rascunho', tone: 'neutral' }
