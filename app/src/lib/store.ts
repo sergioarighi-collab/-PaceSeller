@@ -658,6 +658,22 @@ export function lojistaSinais(lojista: Lojista): LojistaSinal[] {
   return sinais
 }
 
+// Peso de cada sinal pra ranquear a carteira (set/2026) — pedido aguardando aprovação é o mais
+// urgente (trava uma venda), depois estoque (o produto pode acabar antes de agir), depois visita
+// (importante, mas sem prazo tão apertado). Não é ciência exata, é só pra ordenar de forma que o
+// que mais importa apareça primeiro. Exportado daqui (não só local do Radar) porque a tela de
+// escolher loja antes do Catálogo (`LojistaGate.tsx`) precisa do mesmo critério pra decidir qual
+// sinal mostrar em cada card — ver `topLojistaSinal`.
+export const PESO_SINAL: Record<LojistaSinal['kind'], number> = { revisao: 3, estoque: 2, visita: 1 }
+
+// O sinal de maior peso de uma loja, ou `undefined` se ela estiver em dia — mesmo cálculo que o
+// Radar já fazia inline (`ranqueada`), extraído pra ser compartilhado com `LojistaGate.tsx` (set/
+// 2026): as duas telas mostram o mesmo card colorido por loja, só que o Radar ranqueia a carteira
+// inteira por isso e a Gate só precisa do sinal de cada card individualmente.
+export function topLojistaSinal(lojista: Lojista): LojistaSinal | undefined {
+  return [...lojistaSinais(lojista)].sort((a, b) => PESO_SINAL[b.kind] - PESO_SINAL[a.kind])[0]
+}
+
 export interface PedidoStatusBadge {
   label: string
   tone: 'neutral' | 'info' | 'positive'

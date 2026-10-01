@@ -350,6 +350,14 @@
   .radar-card.tone-info .radar-cta{background:var(--info);}
   .radar-empty{font-size:12.5px;color:var(--text-secondary);margin-top:auto;padding-top:16px;}
 
+  /* `LojistaGate.tsx` (set/2026) reaproveita o card do Radar acima, mas o clique no card inteiro só
+     escolhe a loja — não executa a ação do sinal (ver distinção no comentário do componente). Por
+     isso o CTA não é a pílula colorida de `.radar-cta` (que sugere "isso dispara uma ação"), é texto
+     simples tipo link, igual ao `.radar-empty` de loja em dia, mas disponível pra qualquer tom. */
+  .gate-cta{margin-top:auto;align-self:flex-start;padding-top:16px;font-size:12.5px;font-weight:600;color:var(--text-primary);}
+  .gate-pick{cursor:pointer;transition:box-shadow .15s;}
+  .gate-pick:hover{box-shadow:0 4px 14px rgba(20,20,22,0.1);}
+
   /* Hierarquia entre filtro de loja (primário) e de período (secundário) no Radar do representante
      (set/2026) — mesmo `.chip`/`.tl-filters` da base, só com modificadores: loja fica maior e
      preenchida quando selecionada (como um filtro "de verdade"); período vira link de texto puro,

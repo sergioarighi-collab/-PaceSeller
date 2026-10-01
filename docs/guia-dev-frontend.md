@@ -1086,6 +1086,23 @@ Testar o fluxo de ponta a ponta (clicar no sinal → cair no carrinho recém-cri
 
 Via Playwright contra o preview buildado: clicar em "Sugerir reposição" no sinal de estoque da Radical Skate cria o carrinho "Reposição — Coil Denim" (36 pares, grade mínima batida) e navega direto pra ele, com `RepTopNav` mostrando "Atendendo: Radical Skate"; a tela mostra "Aguardando o lojista — revisar" (não "Aguardando você"); nem o botão "Ir para pagamento" nem a sidebar (toggle/"Falar com"/"Salvar rascunho") aparecem; "← Continuar comprando" continua ali. Fluxo "Revisar pedido" → `/carrinhos/giro-tg2` → "Aprovar pedido" → badge continua funcionando sem regressão.
 
+## `LojistaGate.tsx` vira cards coloridos (set/2026)
+
+Pedido do usuário: a tela de "qual loja você vai atender agora?" (mostrada ao clicar em "Catálogo" na nav sem uma loja ativa) era uma lista simples (`.optioncard`, emprestada do picker "Em qual carrinho?" do OrderDrawer) — "está ruim, não condiz com o que estamos criando". Testado visualmente antes via `addStyleTag`/DOM hackeado no preview (duas versões: grid neutro só com "N carrinhos abertos", e grid reaproveitando o card colorido do Radar) — a segunda foi a escolhida.
+
+- **Mesmo card do Radar, literalmente**: `.radar-grid`/`.radar-card`/`.radar-kicon`/`SinalIcon` (ver abaixo) — cada loja aparece com o tom (risco/info/positivo) e o ícone do seu sinal de maior peso, dado real, não um "N carrinhos abertos" genérico. Faz a tela de entrada parecer parte do mesmo produto do Radar, e de brinde já mostra pra Ana o porquê de cada loja antes dela decidir, mesmo chegando direto pela nav sem passar pelo Radar antes.
+- **Clique no card inteiro, não um CTA específico** — e isso é a diferença de propósito em relação ao Radar, discutida com o usuário antes de implementar: no Radar, clicar no sinal **executa a ação** daquele sinal (aprova pedido, monta e envia reposição — ver seção anterior). Aqui, clicar só **escolhe a loja e entra no catálogo livre** (`enterLojista` + navega pro `/catalogo`), sem executar nada — faz sentido serem telas separadas (não fundidas) porque um card com dois comportamentos de clique diferentes (corpo vs. CTA) seria confuso. CTA virou texto simples "Entrar na loja →" (`.gate-cta`, novo), não a pílula colorida `.radar-cta` do Radar — essa pílula visualmente diz "isso dispara uma ação", o que não é o caso aqui.
+- **`topLojistaSinal(lojista)`** (`store.ts`, novo): extrai o cálculo "sinal de maior peso dessa loja" que já existia inline no Radar (`ranqueada`) — usado pelos dois lugares agora. `PESO_SINAL` também virou export de `store.ts` (antes só existia local no Radar) pelo mesmo motivo.
+- **`SinalIcon`** virou componente próprio (`components/desktop/SinalIcon.tsx`) em vez de função local do Radar — mesma razão: duas telas, um ícone por tipo de sinal, sem duplicar o desenho.
+
+### "Trocar loja" aponta pra essa tela agora, não pro Radar
+
+Pedido do usuário: "temos que pensar em deixar um botão no catálogo que o usuário poderá voltar para essa tela e escolher outra loja". O botão já existia — "Trocar loja" no `RepTopNav`, visível em qualquer tela do "modo loja" (Catálogo incluso, já que o nav é global) — só que levava pro Radar (`/rep/radar`), o dashboard inteiro, quando o pedido real da Ana ali é mais específico: trocar de loja. Agora `exitLojista()` + navega pro `/catalogo`, que sem lojista ativa já mostra o `LojistaGate` — o mesmo gate que aparece na primeira entrada pela nav.
+
+### Testado
+
+Via Playwright contra o preview buildado: `/catalogo` sem lojista ativa mostra os 4 cards coloridos (mesmo tom/ícone/texto que apareceriam pros mesmos lojistas no Radar); clicar num card entra no Catálogo de verdade daquela loja (`RepTopNav` mostra "Atendendo: Loja Vertex"); "Trocar loja" a partir de dentro do Catálogo volta pro gate com os 4 cards de novo (não pro Radar). Fluxo completo do Radar (estoque → `sugerirReposicao`, revisão → aprovar) continua sem regressão depois da extração de `PESO_SINAL`/`SinalIcon`/`topLojistaSinal`.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

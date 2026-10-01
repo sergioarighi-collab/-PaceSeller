@@ -69,11 +69,16 @@ export function RepTopNav() {
             <span style={{ color: 'var(--text-secondary)' }}>
               Atendendo: <b style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{lojistaAtiva.name}</b>
             </span>
+            {/* Volta pra tela de escolher loja (`LojistaGate.tsx`), não pro Radar (set/2026, pedido
+                do usuário: "deixar um botão no catálogo que o usuário poderá voltar... e escolher
+                outra loja") — `/catalogo` sem lojista ativa já mostra essa tela (mesmo gate que
+                aparece ao clicar "Catálogo" na nav pela primeira vez), que é o que a Ana quer aqui:
+                trocar de loja, não voltar pro dashboard inteiro. */}
             <span
               style={{ color: 'var(--info)', fontWeight: 600, cursor: 'pointer' }}
               onClick={() => {
                 exitLojista()
-                navigate('/rep/radar')
+                navigate('/catalogo')
               }}
             >
               Trocar loja
