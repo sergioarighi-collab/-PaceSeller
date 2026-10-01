@@ -622,6 +622,41 @@ export const initialLojistas: Lojista[] = [
       },
     ],
   },
+  // Exemplo de loja sem nenhuma pendência (set/2026) — visitada recentemente, pedido já pago, sem
+  // item de estoque limitado. Dá pro Radar mostrar o estado "tudo em dia" de verdade na grade, não
+  // só os 3 tipos de sinal.
+  {
+    id: 'esporte-total',
+    name: 'Esporte Total',
+    city: 'Belo Horizonte, MG',
+    contactName: 'Fernanda Costa',
+    lastVisitLabel: 'há 5 dias',
+    daysSinceVisit: 5,
+    carrinhos: [
+      {
+        id: 'reposicao-hertz-black',
+        name: 'Reposição Hertz Black',
+        representative: 'Ana',
+        updatedAt: 'há 5 dias',
+        daysSinceActivity: 5,
+        repCanEdit: true,
+        autoSendOnGradeMinima: false,
+        pedido: {
+          id: '4910-1',
+          label: 'Pedido',
+          status: 'pago',
+          items: [{ productId: '2101-30', name: 'Tênis Tesla Hertz Black', qty: 10, grade: '38–41', value: 2700 }],
+          subtotal: 2700,
+          discount: 0,
+          total: 2700,
+          marginPct: 37,
+          paymentCondition: '30',
+          paymentSplit: [{ method: 'boleto', amount: 2700 }],
+          deliveryEstimateDays: 12,
+        },
+      },
+    ],
+  },
 ]
 
 // Dropdown de notificações do sino (WebTopNav) — gap mapeado em analise-ux-gaps-atrito-venda.md,

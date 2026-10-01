@@ -551,6 +551,8 @@ const SEM_VISITA_DIAS = 15
 // ainda limitado" (why-box), não gera alerta pra estoque regular que nunca cruza essa faixa.
 const ESTOQUE_BAIXO_PARES = 40
 
+export type SinalTimeframe = 'hoje' | '15dias' | '30dias'
+
 export interface LojistaSinal {
   kind: 'revisao' | 'visita' | 'estoque'
   tone: 'risk' | 'info'
@@ -559,6 +561,11 @@ export interface LojistaSinal {
   // linkar a ação direto pro pedido, em vez de só abrir a loja no catálogo. Ausente em 'visita',
   // que é um sinal da loja como um todo, não de um carrinho.
   cartId?: string
+  // Prazo pra agir, mesma ideia do filtro "Hoje/15 dias/30 dias" do Radar do lojista (set/2026) —
+  // calculado aqui, não escolhido à mão: 'revisao' trava uma venda, é sempre "hoje"; 'estoque' vira
+  // "hoje" só quando o estoque já está bem crítico (<30 pares); 'visita' escala com o tanto de dias
+  // sem visitar (mais tempo parado = mais urgente).
+  timeframe: SinalTimeframe
 }
 
 // Sinais de prioridade pro Radar do representante (set/2026): pedido aguardando aprovação da Ana,
@@ -571,7 +578,7 @@ export function lojistaSinais(lojista: Lojista): LojistaSinal[] {
   for (const cart of lojista.carrinhos) {
     const pedido = cart.pedido
     if (pedidoAguardandoAprovacaoRep(pedido)) {
-      sinais.push({ kind: 'revisao', tone: 'info', text: `"${cart.name}" está aguardando sua aprovação`, cartId: cart.id })
+      sinais.push({ kind: 'revisao', tone: 'info', text: `"${cart.name}" está aguardando sua aprovação`, cartId: cart.id, timeframe: 'hoje' })
     }
     if (pedido.status !== 'pago') {
       for (const item of pedido.items) {
@@ -582,13 +589,19 @@ export function lojistaSinais(lojista: Lojista): LojistaSinal[] {
             tone: 'risk',
             text: `${product.name.replace('Tênis Tesla ', '')} — só ${product.stockPares} pares na fábrica (em "${cart.name}")`,
             cartId: cart.id,
+            timeframe: product.stockPares < 30 ? 'hoje' : '15dias',
           })
         }
       }
     }
   }
   if (lojista.daysSinceVisit >= SEM_VISITA_DIAS) {
-    sinais.push({ kind: 'visita', tone: 'risk', text: `Sem visita ${lojista.lastVisitLabel}` })
+    sinais.push({
+      kind: 'visita',
+      tone: 'risk',
+      text: `Sem visita ${lojista.lastVisitLabel}`,
+      timeframe: lojista.daysSinceVisit >= 30 ? 'hoje' : lojista.daysSinceVisit >= 20 ? '15dias' : '30dias',
+    })
   }
   return sinais
 }

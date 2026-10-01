@@ -1,7 +1,8 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RepTopNav } from '../../components/desktop/RepTopNav'
 import { useAppStore, lojistaSinais } from '../../lib/store'
-import type { LojistaSinal } from '../../lib/store'
+import type { LojistaSinal, SinalTimeframe } from '../../lib/store'
 
 // Peso de cada sinal pra ranquear a carteira (set/2026) — pedido aguardando aprovação é o mais
 // urgente (trava uma venda), depois estoque (o produto pode acabar antes de agir), depois visita
@@ -10,29 +11,88 @@ import type { LojistaSinal } from '../../lib/store'
 // guia-dev-frontend.md.
 const PESO_SINAL: Record<LojistaSinal['kind'], number> = { revisao: 3, estoque: 2, visita: 1 }
 
-function pontuacao(sinais: LojistaSinal[]): number {
-  return sinais.reduce((sum, s) => sum + PESO_SINAL[s.kind], 0)
+const timeframeOrder: SinalTimeframe[] = ['hoje', '15dias', '30dias']
+const timeframeLabel: Record<SinalTimeframe, string> = {
+  hoje: 'Hoje',
+  '15dias': 'Em 15 dias',
+  '30dias': 'Nos próximos 30 dias',
+}
+
+// Mesmo conjunto de ícones de severidade do Radar do lojista (ToneIcon em screens/lojista/Radar.tsx
+// — "warning" é literalmente o mesmo path), só que um por TIPO de sinal (não só por tom), pra cada
+// um comunicar o que é sem precisar ler o texto: relógio = aguardando decisão, triângulo = estoque
+// em risco, calendário = tempo sem visita. Resolve também a dúvida do usuário sobre o "i" solto que
+// tinha antes — não era um ícone de verdade, era só a letra "i".
+function SinalIcon({ kind }: { kind: LojistaSinal['kind'] | 'empty' }) {
+  switch (kind) {
+    case 'revisao':
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 3" />
+        </svg>
+      )
+    case 'estoque':
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+        </svg>
+      )
+    case 'visita':
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M3 10h18M8 3v4M16 3v4" />
+        </svg>
+      )
+    default:
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+          <path d="M5 13l4 4L19 7" />
+        </svg>
+      )
+  }
+}
+
+const sinalCta: Record<LojistaSinal['kind'], string> = {
+  revisao: 'Revisar pedido',
+  estoque: 'Falar agora',
+  visita: 'Agendar visita',
 }
 
 // Radar do representante (set/2026) — pedido do usuário: precisa trazer a carteira INTEIRA (não só
-// quem tem pendência, diferente da versão anterior), ranqueada por prioridade, com insights e uma
-// ação de execução por sinal. Clicar numa ação já seleciona o lojista e entra direto no contexto
-// dele (ver `enterLojista` em store.ts) — "modo loja". Sem clicar em nada, o lojista só é escolhido
-// manualmente ao entrar no Catálogo pela nav (ver LojistaGate.tsx).
+// quem tem pendência), ranqueada por prioridade, em cards (não lista) com cor forte por severidade
+// (mesmo princípio do Radar do lojista — fundo colorido chama mais atenção que um ícone pequeno) e
+// um filtro por loja + por período (igual ao do lojista). Clicar na ação de um sinal já seleciona o
+// lojista e entra direto no contexto dele (ver `enterLojista` em store.ts) — "modo loja". Sem
+// clicar em nada, o lojista só é escolhido manualmente ao entrar no Catálogo pela nav (ver
+// LojistaGate.tsx).
 export function RepRadar() {
   const navigate = useNavigate()
   const lojistas = useAppStore((s) => s.lojistas)
   const enterLojista = useAppStore((s) => s.enterLojista)
+  const [lojistaFiltro, setLojistaFiltro] = useState<string | null>(null)
+  const [timeframeFiltro, setTimeframeFiltro] = useState<SinalTimeframe>('hoje')
 
+  // Cada card só mostra o sinal de maior peso daquela loja (os outros viram "+N outras
+  // pendências") — `topSinal`/`timeframe` do card vêm desse sinal específico, não de uma mistura
+  // dos vários sinais que a loja possa ter.
   const ranqueada = lojistas
-    .map((lojista) => ({ lojista, sinais: lojistaSinais(lojista) }))
-    .sort((a, b) => pontuacao(b.sinais) - pontuacao(a.sinais))
+    .map((lojista) => {
+      const sinais = [...lojistaSinais(lojista)].sort((a, b) => PESO_SINAL[b.kind] - PESO_SINAL[a.kind])
+      return { lojista, sinais, topSinal: sinais[0] as LojistaSinal | undefined }
+    })
+    .sort((a, b) => (b.topSinal ? PESO_SINAL[b.topSinal.kind] : 0) - (a.topSinal ? PESO_SINAL[a.topSinal.kind] : 0))
 
-  const comSinais = ranqueada.filter((x) => x.sinais.length > 0)
-  const totalSinais = comSinais.reduce((sum, x) => sum + x.sinais.length, 0)
-  const aguardandoCount = comSinais.reduce((sum, x) => sum + x.sinais.filter((s) => s.kind === 'revisao').length, 0)
-  const semVisitaCount = comSinais.reduce((sum, x) => sum + x.sinais.filter((s) => s.kind === 'visita').length, 0)
-  const estoqueCount = comSinais.reduce((sum, x) => sum + x.sinais.filter((s) => s.kind === 'estoque').length, 0)
+  const comSinais = ranqueada.filter((x) => x.topSinal)
+  const porPeriodo = (tf: SinalTimeframe) => comSinais.filter((x) => x.topSinal!.timeframe === tf)
+
+  // Selecionar uma loja específica é um filtro mais forte que o período — faz sentido ela aparecer
+  // mesmo que o sinal principal dela não seja "de hoje", já que o pedido foi por ela especificamente.
+  const visiveis = ranqueada.filter((x) => {
+    if (lojistaFiltro) return x.lojista.id === lojistaFiltro
+    return !x.topSinal || x.topSinal.timeframe === timeframeFiltro
+  })
 
   function abrirLoja(lojistaId: string) {
     enterLojista(lojistaId)
@@ -55,83 +115,77 @@ export function RepRadar() {
       <div className="web-hero-band">
         <div className="whgreet">Bom dia, Ana</div>
         <h1>{comSinais.length > 0 ? `${comSinais.length} loja${comSinais.length > 1 ? 's' : ''} precisam de atenção` : 'Sua carteira está em dia'}</h1>
-        <div className="whsub">
-          {lojistas.length} lojas na carteira
-          {totalSinais > 0 ? ` · ${totalSinais} pendências priorizadas pra você agir hoje` : ', nenhuma pendência agora'}
-        </div>
+        <div className="whsub">{lojistas.length} lojas na carteira</div>
       </div>
 
       <div className="web-main">
-        <div className="stattiles">
-          <div className="tile">
-            <div className="tlabel">Aguardando aprovação</div>
-            <div className="tval" style={{ color: aguardandoCount > 0 ? 'var(--info)' : undefined }}>
-              {aguardandoCount}
-            </div>
+        <div className="tl-filters">
+          <div className={`chip ${!lojistaFiltro ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setLojistaFiltro(null)}>
+            Todas
           </div>
-          <div className="tile">
-            <div className="tlabel">Sem visita recente</div>
-            <div className="tval" style={{ color: semVisitaCount > 0 ? 'var(--risk)' : undefined }}>
-              {semVisitaCount}
+          {lojistas.map((l) => (
+            <div
+              key={l.id}
+              className={`chip ${lojistaFiltro === l.id ? 'selected' : ''}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setLojistaFiltro(l.id)}
+            >
+              {l.name}
             </div>
-          </div>
-          <div className="tile">
-            <div className="tlabel">Estoque limitado</div>
-            <div className="tval" style={{ color: estoqueCount > 0 ? 'var(--risk)' : undefined }}>
-              {estoqueCount}
+          ))}
+        </div>
+        <div className="tl-filters" style={{ marginTop: 10 }}>
+          {timeframeOrder.map((tf) => (
+            <div
+              key={tf}
+              className={`chip ${timeframeFiltro === tf && !lojistaFiltro ? 'selected' : ''}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                setLojistaFiltro(null)
+                setTimeframeFiltro(tf)
+              }}
+            >
+              {timeframeLabel[tf]} <span className="n">{porPeriodo(tf).length}</span>
             </div>
-          </div>
+          ))}
         </div>
 
-        <div className="cartlist" style={{ maxWidth: 900, marginTop: 20 }}>
-          {ranqueada.map(({ lojista, sinais }) => (
-            <div className="cart-card" key={lojista.id}>
-              <div className="cc-top">
-                <div>
-                  <div className="cc-name">{lojista.name}</div>
-                  <div className="cc-meta">
-                    {lojista.city} · {lojista.contactName}
-                  </div>
-                </div>
-                <div className="btn-secondary" style={{ width: 140, cursor: 'pointer' }} onClick={() => abrirLoja(lojista.id)}>
-                  Atender esta loja
-                </div>
+        <div className="radar-grid">
+          {visiveis.map(({ lojista, sinais, topSinal }) => (
+            <div className={`radar-card ${topSinal ? `tone-${topSinal.tone}` : 'tone-positive'}`} key={lojista.id}>
+              <div className="cc-name">{lojista.name}</div>
+              <div className="cc-meta">
+                {lojista.city} · {lojista.contactName}
               </div>
-
-              {sinais.length === 0 ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: 'var(--text-secondary)', marginTop: 12 }}>
-                  <span className="ck" style={{ background: 'var(--positive-dim)', color: 'var(--positive)' }}>
-                    ✓
-                  </span>
-                  Tudo em dia — nenhuma pendência agora
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
-                  {sinais.map((sinal, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: 'var(--text-primary)' }}>
-                        <span
-                          className="ck"
-                          style={{
-                            background: sinal.tone === 'risk' ? 'var(--risk-dim)' : 'var(--info-dim)',
-                            color: sinal.tone === 'risk' ? 'var(--risk)' : 'var(--info)',
-                          }}
-                        >
-                          {sinal.tone === 'risk' ? '!' : 'i'}
-                        </span>
-                        {sinal.text}
+              <div className="radar-kicon">
+                <SinalIcon kind={topSinal?.kind ?? 'empty'} />
+              </div>
+              <div className="radar-body">
+                {topSinal ? (
+                  <>
+                    <div className="radar-signal">{topSinal.text}</div>
+                    {sinais.length > 1 && (
+                      <div className="radar-more">
+                        + {sinais.length - 1} outra{sinais.length - 1 > 1 ? 's' : ''} pendência{sinais.length - 1 > 1 ? 's' : ''}
                       </div>
-                      <span
-                        className="miniaction"
-                        style={{ cursor: 'pointer', flexShrink: 0 }}
-                        onClick={() => executarSinal(lojista.id, sinal)}
-                      >
-                        {sinal.kind === 'revisao' ? 'Revisar pedido' : sinal.kind === 'estoque' ? 'Falar agora' : 'Agendar visita'} →
-                      </span>
+                    )}
+                    <span className="radar-cta" style={{ cursor: 'pointer' }} onClick={() => executarSinal(lojista.id, topSinal)}>
+                      {sinalCta[topSinal.kind]} →
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <div className="radar-signal">Tudo em dia — nenhuma pendência agora</div>
+                    <div
+                      className="radar-empty"
+                      style={{ cursor: 'pointer', color: 'var(--positive)', fontWeight: 600 }}
+                      onClick={() => abrirLoja(lojista.id)}
+                    >
+                      Atender esta loja →
                     </div>
-                  ))}
-                </div>
-              )}
+                  </>
+                )}
+              </div>
             </div>
           ))}
         </div>

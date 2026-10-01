@@ -1015,6 +1015,37 @@ Com isso, **as mesmas telas do lojista são reaproveitadas 100% pelo representan
 
 Fluxo completo via Playwright contra o preview buildado: login → Radar (3 lojas ranqueadas: Loja Vertex com 3 sinais primeiro, Radical Skate com 1, Casa Esporte com 1) → "Revisar pedido" no sinal da Loja Vertex → entra em modo loja (RepTopNav mostra "Atendendo: Loja Vertex") → cai direto no `CarrinhoDetail` do pedido certo (`/carrinhos/giro-tg2`) com "Aprovar pedido" no lugar de "Editar no drawer" → clicar aprova de verdade (badge muda pra "Aprovado por Ana — pronto pra pagar"). Testado também: entrar em "Catálogo" pela nav sem lojista escolhido mostra o `LojistaGate`; escolher uma loja lá entra no Catálogo de verdade (mesma tela do lojista) com o nav certo; adicionar um produto ao carrinho dentro do modo loja cria/atualiza o carrinho daquele lojista especificamente (verificado via navegação in-app, não por reload de página — reload zera todo o estado do Zustand, esperado, não é bug); "Trocar loja" sai do modo loja e volta pro Radar.
 
+## Radar em cards coloridos + filtro por loja/período (set/2026)
+
+Pedido do usuário: transformar cada loja do Radar num card (como já tinha sido feito pro lojista), com mais cor pra chamar atenção (mesmo princípio do Radar do lojista), tirar os KPIs do topo, e adicionar filtro por loja (default: todas) e por período (igual ao do lojista). Testado antes via `addStyleTag`/DOM hackeado no preview — ver histórico desta sessão.
+
+### Cards com fundo colorido por severidade
+
+`.radar-grid`/`.radar-card` (novo em `mockup.css`, não reaproveita `.cartlist`/`.cart-card` — ver comentário no CSS do porquê) — grid de **4 colunas**, cada card com o fundo inteiro na cor do tom do sinal principal (`var(--risk-dim)`/`var(--info-dim)`/`var(--positive-dim)`), mesmo princípio do `.web-icard` do Radar do lojista (fundo cheio chama mais atenção que só um ícone colorido).
+
+- **Ícones reais, um por tipo de sinal, não por tom**: usuário perguntou "por que o símbolo 'i'?" — resposta: não era um ícone de verdade, era só a letra "i" (gambiarra do rascunho inicial). Agora cada `kind` tem seu próprio SVG: relógio (`revisao` — aguardando uma decisão), triângulo de alerta (`estoque` — mesmo path do ToneIcon "warning" do lojista), calendário (`visita` — tempo sem visitar), check (sem pendência).
+- **Botão sempre alinhado embaixo**: `.radar-body{flex:1}` + `.radar-cta{margin-top:auto}` — como o grid CSS já estica os cards de uma linha pra mesma altura (comportamento padrão, não precisou de regra extra), o botão de ação fica na mesma posição vertical em todos os cards da fileira, não importa se um tem "+N outras pendências" e o outro não.
+- Cada card mostra só o **sinal de maior peso** daquela loja (mesmo `PESO_SINAL` de antes) — os outros viram "+N outras pendências", sem lista cheia dentro do card (ficaria poluído numa grade de 4 colunas).
+
+### Dois filtros, independentes mas com uma regra de precedência
+
+- **Por loja** (`tl-filters`, chips — mesmo componente visual do filtro de período do lojista): "Todas" (default) + uma chip por loja.
+- **Por período** (`Hoje` / `Em 15 dias` / `Nos próximos 30 dias`, default "Hoje" — igual ao Radar do lojista): cada sinal ganhou um campo `timeframe` (`SinalTimeframe`, `store.ts`), calculado a partir de dado real, não escolhido à mão:
+  - `revisao` → sempre `'hoje'` (trava uma venda).
+  - `estoque` → `'hoje'` se `stockPares < 30` (crítico), senão `'15dias'`.
+  - `visita` → escala com `daysSinceVisit`: ≥30 `'hoje'`, ≥20 `'15dias'`, senão `'30dias'`.
+  - O card é classificado pelo `timeframe` do seu sinal de maior peso (o mesmo que aparece na frente), não por uma mistura de todos os sinais da loja.
+- **Precedência**: escolher uma loja específica ignora o período selecionado (ela aparece de qualquer forma) — faz mais sentido um filtro "quero ver essa loja" ser mais forte que "quero ver só o que é de hoje". Lojas "tudo em dia" também ignoram o período (não têm uma pendência pra classificar em prazo nenhum) e aparecem sempre.
+- KPIs do topo (`.stattiles`) removidos — eram redundantes com os números que já aparecem nas próprias chips de período.
+
+### Mais um lojista de exemplo
+
+`data.ts` ganhou um 4º lojista mock, **Esporte Total** (Belo Horizonte, MG) — visitado há 5 dias, pedido já pago, sem item de estoque limitado: o exemplo "tudo em dia" que faltava pra ver os 4 estados possíveis na grade (pedido do usuário: "podemos trazer mais exemplo", já que só tínhamos 3 lojas e pouca variedade).
+
+### Testado
+
+Via Playwright contra o preview buildado: grade mostra os cards com cor/ícone certos (azul+relógio pra "aguardando aprovação", vermelho+triângulo pra estoque, verde+check pra "tudo em dia"); aba "Em 15 dias" mostra 0 (nenhuma loja tem o sinal principal nessa faixa agora); aba "Nos próximos 30 dias" traz Casa Esporte (visita há 18 dias) + Esporte Total (tudo em dia); clicar na chip "Casa Esporte" mostra ela mesmo fora da aba de período ativa (precedência loja > período); fluxo completo "Revisar pedido" → `/carrinhos/giro-tg2` → "Aprovar pedido" → badge muda pra "Aprovado por Ana — pronto pra pagar" continua funcionando sem regressão.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
