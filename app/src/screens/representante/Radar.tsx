@@ -2,8 +2,11 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RepTopNav } from '../../components/desktop/RepTopNav'
 import { SinalIcon } from '../../components/desktop/SinalIcon'
-import { useAppStore, lojistaSinais, PESO_SINAL } from '../../lib/store'
+import { useAppStore, lojistaSinais, PESO_SINAL, repStatusLabel, pedidoPares } from '../../lib/store'
 import type { LojistaSinal, SinalTimeframe } from '../../lib/store'
+import { GRADE_MINIMA_PARES } from '../../lib/types'
+
+type ViewMode = 'lojas' | 'carrinhos'
 
 const timeframeOrder: SinalTimeframe[] = ['hoje', '15dias', '30dias']
 const timeframeLabel: Record<SinalTimeframe, string> = {
@@ -32,6 +35,12 @@ export function RepRadar() {
   const sugerirReposicao = useAppStore((s) => s.sugerirReposicao)
   const [lojistaFiltro, setLojistaFiltro] = useState<string | null>(null)
   const [timeframeFiltro, setTimeframeFiltro] = useState<SinalTimeframe>('hoje')
+  // Visão "Lojas" (default) vs "Carrinhos" (set/2026, pedido do usuário: "trazer por filtros...
+  // mantemos os cards do radar original, mas trazemos um filtro por carrinhos dos lojistas") —
+  // mesmo grid/card, só muda a granularidade: um card por LOJA ou um card por CARRINHO. Não é uma
+  // tela nova nem funde com a Carteira — é um jeito de ver a mesma carteira com mais detalhe sem
+  // trocar de tela. Ver `carrinhosRanqueados` abaixo.
+  const [viewMode, setViewMode] = useState<ViewMode>('lojas')
 
   // Cada card só mostra o sinal de maior peso daquela loja (os outros viram "+N outras
   // pendências") — `topSinal`/`timeframe` do card vêm desse sinal específico, não de uma mistura
@@ -53,9 +62,33 @@ export function RepRadar() {
     return !x.topSinal || x.topSinal.timeframe === timeframeFiltro
   })
 
+  // Visão "Carrinhos": um card por carrinho (não por loja), carregando o sinal específico DAQUELE
+  // carrinho quando existir (revisão/estoque sempre nascem com `cartId` — ver `lojistaSinais`).
+  // Mesma regra de peso/precedência de filtro da visão "Lojas", só que no nível do carrinho em vez
+  // da loja — um carrinho sem sinal não é "menos carrinho", só não tem nada puxando a atenção da
+  // Ana agora (mesmo card "tudo em dia" que já existia, só que por carrinho).
+  const carrinhosRanqueados = lojistas
+    .flatMap((lojista) => {
+      const sinais = lojistaSinais(lojista)
+      return lojista.carrinhos.map((cart) => ({ lojista, cart, sinal: sinais.find((s) => s.cartId === cart.id) }))
+    })
+    .sort((a, b) => (b.sinal ? PESO_SINAL[b.sinal.kind] : 0) - (a.sinal ? PESO_SINAL[a.sinal.kind] : 0))
+
+  const carrinhosComSinal = carrinhosRanqueados.filter((x) => x.sinal)
+  const carrinhosPorPeriodo = (tf: SinalTimeframe) => carrinhosComSinal.filter((x) => x.sinal!.timeframe === tf)
+  const carrinhosVisiveis = carrinhosRanqueados.filter((x) => {
+    if (lojistaFiltro) return x.lojista.id === lojistaFiltro
+    return !x.sinal || x.sinal.timeframe === timeframeFiltro
+  })
+
   function abrirLoja(lojistaId: string) {
     enterLojista(lojistaId)
     navigate('/catalogo')
+  }
+
+  function abrirCarrinho(lojistaId: string, cartId: string) {
+    enterLojista(lojistaId)
+    navigate(`/carrinhos/${cartId}`)
   }
 
   // Cada sinal já executa a ação de verdade, não só abre uma tela pro representante fazer o resto
@@ -130,50 +163,103 @@ export function RepRadar() {
                 setTimeframeFiltro(tf)
               }}
             >
-              {timeframeLabel[tf]} <span className="n">{porPeriodo(tf).length}</span>
+              {timeframeLabel[tf]} <span className="n">{(viewMode === 'lojas' ? porPeriodo(tf) : carrinhosPorPeriodo(tf)).length}</span>
             </div>
           ))}
         </div>
 
-        <div className="radar-grid">
-          {visiveis.map(({ lojista, sinais, topSinal }) => (
-            <div className={`radar-card ${topSinal ? `tone-${topSinal.tone}` : 'tone-positive'}`} key={lojista.id}>
-              <div className="cc-name">{lojista.name}</div>
-              <div className="cc-meta">
-                {lojista.city} · {lojista.contactName}
-              </div>
-              <div className="radar-kicon">
-                <SinalIcon kind={topSinal?.kind ?? 'empty'} />
-              </div>
-              <div className="radar-body">
-                {topSinal ? (
-                  <>
-                    <div className="radar-signal">{topSinal.text}</div>
-                    {sinais.length > 1 && (
-                      <div className="radar-more">
-                        + {sinais.length - 1} outra{sinais.length - 1 > 1 ? 's' : ''} pendência{sinais.length - 1 > 1 ? 's' : ''}
-                      </div>
-                    )}
-                    <span className="radar-cta" style={{ cursor: 'pointer' }} onClick={() => executarSinal(lojista.id, topSinal)}>
-                      {sinalCta[topSinal.kind]} →
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <div className="radar-signal">Tudo em dia — nenhuma pendência agora</div>
-                    <div
-                      className="radar-empty"
-                      style={{ cursor: 'pointer', color: 'var(--positive)', fontWeight: 600 }}
-                      onClick={() => abrirLoja(lojista.id)}
-                    >
-                      Atender esta loja →
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
+        {/* Visão "Lojas" (1 card por loja, resume no sinal de maior peso) vs "Carrinhos" (1 card
+            por carrinho, cada um com o sinal específico dele, se tiver) — mesmos filtros de loja/
+            período acima valem pras duas, só muda o que populate o grid abaixo. */}
+        <div className="radar-viewtoggle">
+          <div className={`radar-viewchip ${viewMode === 'lojas' ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setViewMode('lojas')}>
+            Lojas
+          </div>
+          <div
+            className={`radar-viewchip ${viewMode === 'carrinhos' ? 'selected' : ''}`}
+            style={{ cursor: 'pointer' }}
+            onClick={() => setViewMode('carrinhos')}
+          >
+            Carrinhos
+          </div>
         </div>
+
+        {viewMode === 'lojas' ? (
+          <div className="radar-grid">
+            {visiveis.map(({ lojista, sinais, topSinal }) => (
+              <div className={`radar-card ${topSinal ? `tone-${topSinal.tone}` : 'tone-positive'}`} key={lojista.id}>
+                <div className="cc-name">{lojista.name}</div>
+                <div className="cc-meta">
+                  {lojista.city} · {lojista.contactName}
+                </div>
+                <div className="radar-kicon">
+                  <SinalIcon kind={topSinal?.kind ?? 'empty'} />
+                </div>
+                <div className="radar-body">
+                  {topSinal ? (
+                    <>
+                      <div className="radar-signal">{topSinal.text}</div>
+                      {sinais.length > 1 && (
+                        <div className="radar-more">
+                          + {sinais.length - 1} outra{sinais.length - 1 > 1 ? 's' : ''} pendência{sinais.length - 1 > 1 ? 's' : ''}
+                        </div>
+                      )}
+                      <span className="radar-cta" style={{ cursor: 'pointer' }} onClick={() => executarSinal(lojista.id, topSinal)}>
+                        {sinalCta[topSinal.kind]} →
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="radar-signal">Tudo em dia — nenhuma pendência agora</div>
+                      <div
+                        className="radar-empty"
+                        style={{ cursor: 'pointer', color: 'var(--positive)', fontWeight: 600 }}
+                        onClick={() => abrirLoja(lojista.id)}
+                      >
+                        Atender esta loja →
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="radar-grid">
+            {carrinhosVisiveis.map(({ lojista, cart, sinal }) => {
+              const status = repStatusLabel(cart.pedido)
+              const pares = pedidoPares(cart.pedido)
+              return (
+                <div className={`radar-card ${sinal ? `tone-${sinal.tone}` : 'tone-positive'}`} key={cart.id}>
+                  <div className="radar-card-owner">{lojista.name}</div>
+                  <div className="cc-name">{cart.name}</div>
+                  <div className="radar-kicon">
+                    <SinalIcon kind={sinal?.kind ?? 'empty'} />
+                  </div>
+                  <div className="radar-body">
+                    {sinal ? (
+                      <>
+                        <div className="radar-signal">{sinal.text}</div>
+                        <span className="radar-cta" style={{ cursor: 'pointer' }} onClick={() => executarSinal(lojista.id, sinal)}>
+                          {sinalCta[sinal.kind]} →
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <div className="radar-signal">
+                          {status.label} — {pares}/{GRADE_MINIMA_PARES} pares
+                        </div>
+                        <span className="gate-cta" style={{ cursor: 'pointer' }} onClick={() => abrirCarrinho(lojista.id, cart.id)}>
+                          Abrir →
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

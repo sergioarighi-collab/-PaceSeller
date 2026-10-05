@@ -2,21 +2,9 @@ import { useState } from 'react'
 import { RepTopNav } from '../../components/desktop/RepTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { Toast } from '../../components/desktop/Toast'
-import { useAppStore, pedidoPares, pedidoAguardandoAprovacaoRep } from '../../lib/store'
+import { useAppStore, pedidoPares, pedidoAguardandoAprovacaoRep, repStatusLabel } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
-import type { Pedido } from '../../lib/types'
 import { formatBRL } from '../../lib/format'
-
-// Status do pedido do ponto de vista do REPRESENTANTE — não dá pra reaproveitar
-// `pedidoStatusBadge` (store.ts) porque aquele rótulo é escrito pro lojista ("Aguardando Ana"
-// significa "a bola está com a Ana", visto por quem NÃO é a Ana). Pro representante, o mesmo
-// pedido precisa do rótulo oposto: "aguardando você" quando é a vez dele agir.
-function repStatusLabel(pedido: Pedido): { label: string; tone: 'neutral' | 'info' | 'positive' } {
-  if (pedido.status === 'pago') return { label: 'Com a Tesla', tone: 'positive' }
-  if (pedidoAguardandoAprovacaoRep(pedido)) return { label: 'Aguardando você', tone: 'info' }
-  if (pedido.status === 'aguardando') return { label: 'Aguardando o lojista', tone: 'neutral' }
-  return { label: 'Rascunho do lojista', tone: 'neutral' }
-}
 
 // Carteira de lojistas (set/2026) — primeira tela do fluxo desktop do representante, equivalente a
 // "Meus Carrinhos" do lojista, só que um nível acima: cada card é uma LOJA (ver `Lojista` em

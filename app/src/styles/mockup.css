@@ -358,6 +358,20 @@
   .gate-pick{cursor:pointer;transition:box-shadow .15s;}
   .gate-pick:hover{box-shadow:0 4px 14px rgba(20,20,22,0.1);}
 
+  /* Toggle "Lojas"/"Carrinhos" do Radar do representante (set/2026, pedido do usuário: "mantemos os
+     cards do radar original, mas trazemos um filtro por carrinhos") — pílula segmentada, mesmo
+     padrão visual de escolha binária já usado noutros lugares do app, não um `.chip`/`.tl-filters`
+     (esses já significam "filtro de loja/período" aqui dentro, um terceiro elemento igual confundiria
+     com um filtro a mais em vez de uma troca de modo de visualização). */
+  .radar-viewtoggle{display:flex;gap:6px;margin-top:18px;}
+  .radar-viewchip{font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:20px;color:var(--text-secondary);border:1px solid var(--border-strong);}
+  .radar-viewchip.selected{background:var(--black);color:#fff;border-color:var(--black);}
+
+  /* Visão "Carrinhos" (mesmo set/2026): cada card é 1 carrinho, não 1 loja — precisa dizer de qual
+     loja é, já que o nome do carrinho sozinho não entrega isso. Rótulo mono pequeno acima do nome,
+     mesmo padrão de "etiqueta pequena" já usado em `.radar-filterlabel`. */
+  .radar-card-owner{font-family:var(--mono);font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-tertiary);}
+
   /* Hierarquia entre filtro de loja (primário) e de período (secundário) no Radar do representante
      (set/2026) — mesmo `.chip`/`.tl-filters` da base, só com modificadores: loja fica maior e
      preenchida quando selecionada (como um filtro "de verdade"); período vira link de texto puro,

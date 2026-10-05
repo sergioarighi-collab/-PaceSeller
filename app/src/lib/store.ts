@@ -674,6 +674,18 @@ export function topLojistaSinal(lojista: Lojista): LojistaSinal | undefined {
   return [...lojistaSinais(lojista)].sort((a, b) => PESO_SINAL[b.kind] - PESO_SINAL[a.kind])[0]
 }
 
+// Status do pedido do ponto de vista do REPRESENTANTE — não dá pra reaproveitar `pedidoStatusBadge`
+// (mais abaixo) porque aquele rótulo é escrito pro lojista ("Aguardando Ana" significa "a bola está
+// com a Ana", visto por quem NÃO é a Ana). Pro representante, o mesmo pedido precisa do rótulo
+// oposto: "aguardando você" quando é a vez dele agir. Extraído de `Carteira.tsx` (set/2026) quando
+// o Radar passou a precisar do mesmo rótulo na visão "Carrinhos" (ver `RepRadar.tsx`).
+export function repStatusLabel(pedido: Pedido): PedidoStatusBadge {
+  if (pedido.status === 'pago') return { label: 'Com a Tesla', tone: 'positive' }
+  if (pedidoAguardandoAprovacaoRep(pedido)) return { label: 'Aguardando você', tone: 'info' }
+  if (pedido.status === 'aguardando') return { label: 'Aguardando o lojista', tone: 'neutral' }
+  return { label: 'Rascunho do lojista', tone: 'neutral' }
+}
+
 export interface PedidoStatusBadge {
   label: string
   tone: 'neutral' | 'info' | 'positive'

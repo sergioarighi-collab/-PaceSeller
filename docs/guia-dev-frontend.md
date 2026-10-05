@@ -1103,6 +1103,28 @@ Pedido do usuário: "temos que pensar em deixar um botão no catálogo que o usu
 
 Via Playwright contra o preview buildado: `/catalogo` sem lojista ativa mostra os 4 cards coloridos (mesmo tom/ícone/texto que apareceriam pros mesmos lojistas no Radar); clicar num card entra no Catálogo de verdade daquela loja (`RepTopNav` mostra "Atendendo: Loja Vertex"); "Trocar loja" a partir de dentro do Catálogo volta pro gate com os 4 cards de novo (não pro Radar). Fluxo completo do Radar (estoque → `sugerirReposicao`, revisão → aprovar) continua sem regressão depois da extração de `PESO_SINAL`/`SinalIcon`/`topLojistaSinal`.
 
+## Radar ganha toggle "Lojas"/"Carrinhos" (set/2026)
+
+Pedido do usuário: "temos que melhorar a carteira" — discutido primeiro fundir Radar+Carteira numa tela só (mockup feito e mostrado), mas o usuário preferiu um caminho mais contido: "mantemos os cards do radar original, mas trazemos um filtro... por carrinhos dos lojistas". Perguntado o que "carrinhos compartilhados" significaria nesse filtro, resposta: não precisa virar uma aba separada agora, a ideia geral (ver carrinhos, não só lojas) já cobre o que importa — `Carteira.tsx` continua existindo como tela própria, sem mudança nesta leva.
+
+### `viewMode: 'lojas' | 'carrinhos'` (`RepRadar.tsx`)
+
+Mesmo `.radar-grid`/`.radar-card` de sempre, só muda o que povoa o grid — um toggle novo (`.radar-viewtoggle`, pílula segmentada, não reaproveita `.tl-filters`/`.chip` porque esses já significam "filtro de loja/período" e um terceiro elemento igual ia ler como mais um filtro em vez de uma troca de modo de visualização):
+
+- **"Lojas"** (default): inalterado — 1 card por loja, resume no sinal de maior peso, igual já era.
+- **"Carrinhos"**: 1 card por carrinho, não por loja. `carrinhosRanqueados` (local ao componente, mesmo padrão de `ranqueada`) achata `lojistas.flatMap` e casa cada carrinho com o sinal que tiver `cartId` igual ao dele (`lojistaSinais(lojista).find(s => s.cartId === cart.id)`) — só `'revisao'`/`'estoque'` têm `cartId`, então `'visita'` (sinal da loja inteira) nunca aparece aqui, o que é o comportamento certo: não tem carrinho específico pra anexar. Ranqueado pelo mesmo `PESO_SINAL`. Card com sinal: mesma cor/ícone/CTA que já existia (`executarSinal` reaproveitado direto — mesma ação de verdade, não duplicada). Card sem sinal: tom positivo + check, corpo mostra `repStatusLabel(pedido)` (extraído de `Carteira.tsx` pra `store.ts` nesta leva, pelo mesmo motivo de sempre: as duas telas precisam do mesmo rótulo agora) + pares/grade mínima, CTA "Abrir →" (`.gate-cta`, o mesmo estilo de texto simples da Gate — não a pílula colorida `.radar-cta`, que sugere ação disparada; aqui é só abrir) leva direto pro `CarrinhoDetail` daquele carrinho (`enterLojista` + navega pro `/carrinhos/:cartId`).
+- Contadores da aba de período (`Hoje`/`15 dias`/`30 dias`) passam a refletir a visão ativa — contam lojas na visão "Lojas", carrinhos na visão "Carrinhos" — pra não mostrar um número que não bate com o que está na tela.
+- `.radar-card-owner` (novo): rótulo mono pequeno com o nome da loja acima do nome do carrinho — só aparece na visão "Carrinhos", já que ali o card não é mais "sobre" uma loja identificável só pelo título.
+
+### O que ficou de fora de propósito
+
+- A fusão completa Radar+Carteira (card vira painel grande com a lista inteira de carrinhos embutida) foi desenhada e mostrada, mas não implementada — o usuário preferiu o toggle aditivo em cima do card que já existia. O mockup fica registrado aqui caso a ideia volte: painel por loja, 1 coluna, carrinho com sinal anotado na própria linha (cor + ícone) em vez de resumido em "+N pendências".
+- Nenhuma mudança em `Carteira.tsx` além de importar `repStatusLabel` de `store.ts` em vez de definir local — a tela em si (stat tiles, "Abrir" com toast "em breve") não mudou nesta leva.
+
+### Testado
+
+Via Playwright contra o preview buildado: toggle "Carrinhos" muda o grid de 3 cards (por loja) pra 6 (por carrinho, sob o filtro "Hoje" ativo — o 7º carrinho, "Reposição Fusion", tem sinal de estoque em "15 dias" e fica de fora até trocar o filtro, mesma regra de precedência de sempre); clicar em "Sugerir reposição" num card de carrinho cria e envia o pedido de reposição igual já fazia na visão "Lojas"; clicar em "Abrir →" num carrinho sem sinal entra direto nele (`/carrinhos/colecao-inverno`); contadores de período mudam de `[2, 0, 1]` (lojas) pra `[2, 1, 0]` (carrinhos) ao trocar de visão.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
