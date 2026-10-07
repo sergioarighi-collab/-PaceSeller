@@ -1152,6 +1152,14 @@ Mapeamento de conteúdo pros 4 slots do `.web-icard` (ícone → eyebrow → h3 
 
 Via Playwright contra o preview buildado, nas 3 telas que usam o card (`RepRadar.tsx` visão Lojas, visão Carrinhos, `LojistaGate.tsx`): ícone aparece primeiro (antes do texto), eyebrow mono maiúsculo colorido por tom, CTA virou link de texto bold colorido (sem fundo/pílula) — comparado visualmente lado a lado com o Radar do lojista pra confirmar a mesma linguagem. Nenhuma regressão funcional: "Sugerir reposição" continua criando/enviando o carrinho, "Revisar pedido" continua abrindo o pedido certo, "Abrir →" continua entrando no carrinho certo, clicar num card inteiro da Gate continua escolhendo a loja e entrando no catálogo.
 
+### Gap aberto (não implementado): cards do mesmo tom ainda parecem muito iguais
+
+Depois de alinhar com o `.web-icard` do lojista, o usuário notou que cards do mesmo tom continuam difíceis de diferenciar à primeira vista — "ainda vejo pouca diferença entre os dois" (ação vs. ação, loja vs. loja). Mais visível na visão "Carrinhos": vários carrinhos "tudo em dia" (tone-positive) de lojas diferentes, ou vários da MESMA loja em sequência, ficam quase idênticos — só o título (nome do carrinho) muda.
+
+Mockup testado (DOM hackeado no preview, não implementado): avatar circular com iniciais da loja no canto do card + uma bolinha antes do CTA pra sinalizar "isso é uma ação de verdade" (não só "Abrir"). Resultado: o avatar ajudou de verdade na visão "Carrinhos" (agrupar visualmente os 3 cards da Radical Skate sem precisar reler o eyebrow pequeno toda vez), mas ficou redundante na visão "Lojas" (o título já É o nome da loja ali) e na `LojistaGate.tsx` (mesmo motivo). A bolinha do CTA não acrescentou nada — a cor do card já prediz sozinha se o CTA é ação real ou só "Abrir"/"Entrar na loja" (nos dados de hoje, "Abrir" só aparece em card verde/tone-positive).
+
+Combinado com o usuário: fica pra depois. Se retomar, começar pelo avatar só na visão "Carrinhos" (não nas outras duas) — era o ganho real validado — e não repetir a ideia da bolinha no CTA.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
