@@ -7,11 +7,13 @@ import { useAppStore, topLojistaSinal } from '../../lib/store'
 // (que já escolhe o lojista automaticamente via `enterLojista`), ele precisa escolher qual loja vai
 // atender antes de ver o catálogo. Pedido do usuário: a primeira versão (lista simples, reaproveitada
 // do picker "Em qual carrinho?" do OrderDrawer) "não condizia com o que estávamos criando" — virou o
-// mesmo card colorido por severidade que o Radar já usa (`.radar-grid`/`.radar-card`/`SinalIcon`,
-// ver `topLojistaSinal` em store.ts), pra entrar no catálogo já parecer parte do mesmo produto, e de
-// brinde mostrar pra Ana o porquê de cada loja antes mesmo dela decidir. Clicar no card inteiro só
-// escolhe a loja e entra no catálogo livre — diferente do Radar, aqui não executa a ação do sinal
-// (ver guia-dev-frontend.md pra essa distinção: Radar executa, Gate só escolhe).
+// mesmo card colorido por severidade que o Radar já usa (`.web-icard`/`SinalIcon`, o mesmo card do
+// Radar do LOJISTA, ver `topLojistaSinal` em store.ts), pra entrar no catálogo já parecer parte do
+// mesmo produto, e de brinde mostrar pra Ana o porquê de cada loja antes mesmo dela decidir. Clicar
+// no card inteiro só escolhe a loja e entra no catálogo livre — diferente do Radar, aqui não executa
+// a ação do sinal (ver guia-dev-frontend.md pra essa distinção: Radar executa, Gate só escolhe).
+// `.gate-pick` é o único acréscimo por cima do `.web-icard` padrão: o card inteiro é clicável aqui
+// (não só um link no rodapé), precisa de cursor/hover avisando isso.
 export function LojistaGate() {
   const navigate = useNavigate()
   const lojistas = useAppStore((s) => s.lojistas)
@@ -38,21 +40,19 @@ export function LojistaGate() {
             const topSinal = topLojistaSinal(lojista)
             return (
               <div
-                className={`radar-card gate-pick ${topSinal ? `tone-${topSinal.tone}` : 'tone-positive'}`}
+                className={`web-icard gate-pick ${topSinal ? `tone-${topSinal.tone}` : 'tone-positive'}`}
                 key={lojista.id}
                 onClick={() => escolherLoja(lojista.id)}
               >
-                <div className="cc-name">{lojista.name}</div>
-                <div className="cc-meta">
-                  {lojista.city} · {lojista.contactName}
-                </div>
-                <div className="radar-kicon">
+                <div className="kicon">
                   <SinalIcon kind={topSinal?.kind ?? 'empty'} />
                 </div>
-                <div className="radar-body">
-                  <div className="radar-signal">{topSinal ? topSinal.text : 'Tudo em dia — nenhuma pendência agora'}</div>
-                  <span className="gate-cta">Entrar na loja →</span>
+                <div className="eyebrow">
+                  {lojista.city} · {lojista.contactName}
                 </div>
+                <h3>{lojista.name}</h3>
+                <p>{topSinal ? topSinal.text : 'Tudo em dia — nenhuma pendência agora'}</p>
+                <div className="cta">Entrar na loja →</div>
               </div>
             )
           })}

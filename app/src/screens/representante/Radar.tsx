@@ -184,42 +184,31 @@ export function RepRadar() {
           </div>
         </div>
 
+        {/* Cards reaproveitam literalmente `.web-icard`/`.kicon`/`.eyebrow`/`.cta` do Radar do
+            lojista (set/2026, pedido do usuário: "o radar do rep deveria estar mais parecido com o
+            do lojista") — mesmo ritmo visual (ícone primeiro, depois um rótulo pequeno, título,
+            descrição, link de texto colorido no rodapé em vez da pílula sólida que existia antes).
+            `eyebrow` leva a info que só o representante precisa (de qual loja é — o lojista não
+            precisa disso, só tem uma loja), `h3`/`p` carregam o que o card é "sobre" e o sinal. */}
         {viewMode === 'lojas' ? (
           <div className="radar-grid">
             {visiveis.map(({ lojista, sinais, topSinal }) => (
-              <div className={`radar-card ${topSinal ? `tone-${topSinal.tone}` : 'tone-positive'}`} key={lojista.id}>
-                <div className="cc-name">{lojista.name}</div>
-                <div className="cc-meta">
-                  {lojista.city} · {lojista.contactName}
-                </div>
-                <div className="radar-kicon">
+              <div className={`web-icard ${topSinal ? `tone-${topSinal.tone}` : 'tone-positive'}`} key={lojista.id}>
+                <div className="kicon">
                   <SinalIcon kind={topSinal?.kind ?? 'empty'} />
                 </div>
-                <div className="radar-body">
-                  {topSinal ? (
-                    <>
-                      <div className="radar-signal">{topSinal.text}</div>
-                      {sinais.length > 1 && (
-                        <div className="radar-more">
-                          + {sinais.length - 1} outra{sinais.length - 1 > 1 ? 's' : ''} pendência{sinais.length - 1 > 1 ? 's' : ''}
-                        </div>
-                      )}
-                      <span className="radar-cta" style={{ cursor: 'pointer' }} onClick={() => executarSinal(lojista.id, topSinal)}>
-                        {sinalCta[topSinal.kind]} →
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <div className="radar-signal">Tudo em dia — nenhuma pendência agora</div>
-                      <div
-                        className="radar-empty"
-                        style={{ cursor: 'pointer', color: 'var(--positive)', fontWeight: 600 }}
-                        onClick={() => abrirLoja(lojista.id)}
-                      >
-                        Atender esta loja →
-                      </div>
-                    </>
-                  )}
+                <div className="eyebrow">
+                  {lojista.city} · {lojista.contactName}
+                </div>
+                <h3>{lojista.name}</h3>
+                <p>{topSinal ? topSinal.text : 'Tudo em dia — nenhuma pendência agora'}</p>
+                {topSinal && sinais.length > 1 && (
+                  <div className="radar-more">
+                    + {sinais.length - 1} outra{sinais.length - 1 > 1 ? 's' : ''} pendência{sinais.length - 1 > 1 ? 's' : ''}
+                  </div>
+                )}
+                <div className="cta" style={{ cursor: 'pointer' }} onClick={() => (topSinal ? executarSinal(lojista.id, topSinal) : abrirLoja(lojista.id))}>
+                  {topSinal ? sinalCta[topSinal.kind] : 'Atender esta loja'} →
                 </div>
               </div>
             ))}
@@ -230,30 +219,19 @@ export function RepRadar() {
               const status = repStatusLabel(cart.pedido)
               const pares = pedidoPares(cart.pedido)
               return (
-                <div className={`radar-card ${sinal ? `tone-${sinal.tone}` : 'tone-positive'}`} key={cart.id}>
-                  <div className="radar-card-owner">{lojista.name}</div>
-                  <div className="cc-name">{cart.name}</div>
-                  <div className="radar-kicon">
+                <div className={`web-icard ${sinal ? `tone-${sinal.tone}` : 'tone-positive'}`} key={cart.id}>
+                  <div className="kicon">
                     <SinalIcon kind={sinal?.kind ?? 'empty'} />
                   </div>
-                  <div className="radar-body">
-                    {sinal ? (
-                      <>
-                        <div className="radar-signal">{sinal.text}</div>
-                        <span className="radar-cta" style={{ cursor: 'pointer' }} onClick={() => executarSinal(lojista.id, sinal)}>
-                          {sinalCta[sinal.kind]} →
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="radar-signal">
-                          {status.label} — {pares}/{GRADE_MINIMA_PARES} pares
-                        </div>
-                        <span className="gate-cta" style={{ cursor: 'pointer' }} onClick={() => abrirCarrinho(lojista.id, cart.id)}>
-                          Abrir →
-                        </span>
-                      </>
-                    )}
+                  <div className="eyebrow">{lojista.name}</div>
+                  <h3>{cart.name}</h3>
+                  <p>{sinal ? sinal.text : `${status.label} — ${pares}/${GRADE_MINIMA_PARES} pares`}</p>
+                  <div
+                    className="cta"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => (sinal ? executarSinal(lojista.id, sinal) : abrirCarrinho(lojista.id, cart.id))}
+                  >
+                    {sinal ? sinalCta[sinal.kind] : 'Abrir'} →
                   </div>
                 </div>
               )

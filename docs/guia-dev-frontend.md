@@ -1125,6 +1125,33 @@ Mesmo `.radar-grid`/`.radar-card` de sempre, só muda o que povoa o grid — um 
 
 Via Playwright contra o preview buildado: toggle "Carrinhos" muda o grid de 3 cards (por loja) pra 6 (por carrinho, sob o filtro "Hoje" ativo — o 7º carrinho, "Reposição Fusion", tem sinal de estoque em "15 dias" e fica de fora até trocar o filtro, mesma regra de precedência de sempre); clicar em "Sugerir reposição" num card de carrinho cria e envia o pedido de reposição igual já fazia na visão "Lojas"; clicar em "Abrir →" num carrinho sem sinal entra direto nele (`/carrinhos/colecao-inverno`); contadores de período mudam de `[2, 0, 1]` (lojas) pra `[2, 1, 0]` (carrinhos) ao trocar de visão.
 
+## Cards do Radar do representante passam a reaproveitar `.web-icard` do lojista (set/2026)
+
+Pedido do usuário: "o radar do rep deveria estar mais parecido com o do lojista em relação ao layout" — confirmado com um "tem bastante contraste" ao comparar os dois lado a lado. O motivo raiz: `.radar-card` (criado do zero nesta mesma leva de trabalho, ver "Radar vira a carteira inteira") tinha o MESMO princípio (fundo colorido por severidade) mas uma estrutura bem diferente do `.web-icard` do lojista — ícone depois do nome em vez de antes, CTA em pílula sólida colorida em vez de link de texto, sem o rótulo pequeno (eyebrow) acima do título. Duas classes CSS quase-iguais mantidas em paralelo, divergindo aos poucos — exatamente o tipo de duplicação que esse projeto tenta evitar.
+
+### A correção: parar de duplicar, reaproveitar a classe de verdade
+
+`RepRadar.tsx` (as duas visões, "Lojas" e "Carrinhos") e `LojistaGate.tsx` passaram a usar `.web-icard`/`.kicon`/`.eyebrow`/`h3`/`p`/`.cta` — literalmente as mesmas classes do Radar do lojista (`screens/lojista/Radar.tsx`), não uma cópia equivalente. `.radar-card`/`.radar-kicon`/`.radar-body`/`.radar-signal`/`.radar-cta`/`.radar-empty`/`.radar-card-owner`/`.gate-cta` saíram do CSS (ficaram sem uso). O que sobrou como próprio do representante: `.radar-grid` (grade de 4 colunas — igual a `.grid4`, mas já tinha `margin-top` embutido, não ganhava nada sendo renomeada), `.radar-more` ("+N outras pendências", sem equivalente no lojista), `.gate-pick` (cursor/hover do card inteiro clicável só na Gate), `.radar-viewtoggle`/`.radar-viewchip` e os filtros `.radar-filter-primary`/`.radar-filter-secondary` (o lojista só tem período, não precisa de filtro de loja).
+
+Mapeamento de conteúdo pros 4 slots do `.web-icard` (ícone → eyebrow → h3 → p), igual nos 3 lugares que o usam:
+
+| | `.kicon` | `.eyebrow` | `h3` | `p` |
+|---|---|---|---|---|
+| Radar, visão Lojas | ícone do sinal | cidade · contato | nome da loja | texto do sinal (ou "Tudo em dia") |
+| Radar, visão Carrinhos | ícone do sinal | nome da loja | nome do carrinho | texto do sinal (ou status + pares) |
+| `LojistaGate.tsx` | ícone do sinal | cidade · contato | nome da loja | texto do sinal (ou "Tudo em dia") |
+
+`eyebrow` é o único slot que muda o que carrega — é a informação que só o representante precisa pra se situar (de qual loja/carrinho se trata), já que o lojista tem uma única loja e não precisa de um identificador extra ali; o lojista usa esse mesmo espaço pra uma categoria do insight ("ESTOQUE BAIXO · 12 DIAS"). Decisão consciente de não inventar uma categoria equivalente pro representante só pra preencher o slot — a cor/ícone já comunica a severidade, repetir como categoria textual seria redundante.
+
+### O que ficou de fora de propósito
+
+- Não foi padronizado o `<DesktopPage>` wrapper (o lojista usa, o representante continua com uma `<div>` própria) — são visualmente idênticos (`min-height:100vh` + `background:var(--bg-app)`), a diferença real é que `DesktopPage` também renderiza o `<OrderDrawer/>` global, que as telas de Radar/Carteira/Gate do representante não precisam (não são telas de catálogo).
+- Não foi adicionado um "Destaque da semana" (banner de imagem) equivalente ao do Radar do lojista — é conteúdo editorial específico de produto, fora do escopo do pedido (que era sobre o card em si, não a página inteira).
+
+### Testado
+
+Via Playwright contra o preview buildado, nas 3 telas que usam o card (`RepRadar.tsx` visão Lojas, visão Carrinhos, `LojistaGate.tsx`): ícone aparece primeiro (antes do texto), eyebrow mono maiúsculo colorido por tom, CTA virou link de texto bold colorido (sem fundo/pílula) — comparado visualmente lado a lado com o Radar do lojista pra confirmar a mesma linguagem. Nenhuma regressão funcional: "Sugerir reposição" continua criando/enviando o carrinho, "Revisar pedido" continua abrindo o pedido certo, "Abrir →" continua entrando no carrinho certo, clicar num card inteiro da Gate continua escolhendo a loja e entrando no catálogo.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
