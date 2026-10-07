@@ -1160,6 +1160,33 @@ Mockup testado (DOM hackeado no preview, não implementado): avatar circular com
 
 Combinado com o usuário: fica pra depois. Se retomar, começar pelo avatar só na visão "Carrinhos" (não nas outras duas) — era o ganho real validado — e não repetir a ideia da bolinha no CTA.
 
+## Novo sinal: carrinho parado (set/2026, adaptado do material "Radar Integrado pro Varejista")
+
+O usuário trouxe um material de estratégia de produto (PDF) sobre como o Radar deveria evoluir pro LOJISTA — motor único, 5 "naturezas" de insight (proativo/preventivo/corretivo/oportunidade/informativo), 3 camadas de dado (T1 Pace / T2 estoque da loja / T3 rede), ~70 insights possíveis espalhados por 6 superfícies, com regras de proteção contra virar ruído (ex: "um insight por contexto", "o interesse do varejista vem antes do da marca"). Pedido: adaptar pro representante — que atende N lojistas, não 1 —, sem inflar o Radar dela de insights, e pensando a integração entre ela e o lojista acontecendo pelo CARRINHO.
+
+A análise completa (giro estrutural "um motor, N casas, poucas superfícies"; por que o Radar da Ana já só mostra corretivo/preventivo, não oportunidade/informativo; por que o carrinho já É o mecanismo de integração, não precisa de canal novo) ficou só na conversa, não virou um documento à parte — ver o histórico da sessão se precisar recuperar o raciocínio completo. Resultado prático: usuário pediu pra ir direto numa peça concreta, a mais barata de implementar — um 4º tipo de sinal.
+
+### `kind: 'parado'` (`lojistaSinais`, `store.ts`)
+
+Adaptado do insight do material "carrinho aberto há muito tempo" (natureza Proativo no original). Usa um campo que já existia no tipo `Carrinho` e nunca tinha sido lido por lógica nenhuma: `daysSinceActivity`.
+
+- **Condição**: `pedido.status !== 'pago' && !pedidoAguardandoAprovacaoRep(pedido) && cart.daysSinceActivity >= PARADO_DIAS` (5 dias — mesma ordem de grandeza do próprio exemplo do material, "aberto há 6 dias"). As duas primeiras condições existem especificamente pra não duplicar aviso: pago já está resolvido; um carrinho `aguardando` aprovação da Ana já vira sinal `'revisao'` (é a vez dela agir, não "esfriou") — sobra exatamente o que faltava cobrir: rascunho do lojista esfriando, sugestão da Ana sem resposta (`suggestedBy: 'representante'`), ou já aprovado mas ainda não pago.
+- **Peso**: `PESO_SINAL.parado = 1`, empatado com `'visita'` — mesma categoria "importante mas sem prazo apertado", perde pra `'revisao'` (3) e `'estoque'` (2) quando competem no mesmo carrinho/loja.
+- **Ação real** (`executarSinal`, `RepRadar.tsx`): mesmo destino de `'revisao'` — entra direto no carrinho específico (`enterLojista` + `/carrinhos/:cartId`). Não precisa de uma ação de sistema nova, só de a Ana ir olhar. CTA: "Retomar carrinho".
+- **Ícone**: duas barras verticais (pausa), novo em `SinalIcon.tsx`.
+
+### Bug exposto: visão "Carrinhos" não pegava o sinal de maior peso
+
+Testar isso expôs que `carrinhosRanqueados` (`RepRadar.tsx`) usava `sinais.find(...)` — o PRIMEIRO sinal daquele carrinho, não o de maior peso — enquanto a visão "Lojas" já fazia `.sort()` antes de pegar o `[0]`. Funcionava por coincidência até agora (nenhum carrinho tinha 2 tipos de sinal ao mesmo tempo); com `'parado'` isso passou a acontecer de verdade (um carrinho pode estar com estoque baixo E parado ao mesmo tempo). Corrigido pra ordenar por `PESO_SINAL` igual à visão "Lojas", mesmo critério nos dois lugares agora.
+
+### Por que nenhum card hoje mostra "parado" como sinal principal
+
+Verificado e documentado com honestidade: nos 3 lojistas de exemplo com carrinho elegível (`status !== 'pago'` e não aguardando a Ana), os dois que teriam `daysSinceActivity` alto o bastante ("Reposição Fusion", "Coil Verão") têm produto **premium** no pedido, que já dispara `'estoque'` (peso 2 > `parado`, peso 1) — e o único rascunho "limpo" (Coleção Inverno) tem uma narrativa de comentário recente da Ana ("há 40 min") que contradiria ficar "parado há N dias". Em vez de forçar um exemplo mexendo num carrinho com contexto já estabelecido (ou inflar o mock com mais um carrinho só pra isso — contra o pedido explícito de não acumular informação), a lógica ficou implementada e testada sem um card "vencedor" visível no estado atual — mesmo padrão já usado antes com `Pedido.status: 'aprovado'`, que ficou pronto antes de ter uma ação de verdade o acionando.
+
+### Testado
+
+Via Playwright contra o preview buildado: confirmado por inspeção de código que a condição evita duplicar com `'revisao'`/`'pago'`; confirmado que o sinal dispara de verdade bumpando temporariamente `daysSinceActivity` de "Reposição Fusion" pra 6 — o contador "+N outras pendências" da Loja Vertex foi de "+2" pra "+3" (prova que o sinal foi gerado e contado, mesmo perdendo o card pro `'estoque'` do mesmo carrinho) — e revertido antes do commit (sem mudança em `data.ts`). `tsc`/build limpos. Regressão: toggle Lojas/Carrinhos, contadores de período, e a ação "Sugerir reposição" continuam funcionando sem mudança de comportamento.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

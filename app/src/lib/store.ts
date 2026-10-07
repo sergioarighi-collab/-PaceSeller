@@ -597,15 +597,19 @@ const SEM_VISITA_DIAS = 15
 // regular (60–239) — captura só os itens que a própria ficha do produto já chama de "estoque
 // ainda limitado" (why-box), não gera alerta pra estoque regular que nunca cruza essa faixa.
 const ESTOQUE_BAIXO_PARES = 40
+// Carrinho sem atividade há esse tanto de dias (set/2026, adaptado do inventário "Radar Integrado
+// pro Varejista" — insight "carrinho aberto há muito tempo") — mesma ordem de grandeza do exemplo
+// do material ("aberto há 6 dias").
+const PARADO_DIAS = 5
 
 export type SinalTimeframe = 'hoje' | '15dias' | '30dias'
 
 export interface LojistaSinal {
-  kind: 'revisao' | 'visita' | 'estoque'
+  kind: 'revisao' | 'visita' | 'estoque' | 'parado'
   tone: 'risk' | 'info'
   text: string
-  // Presente em 'revisao'/'estoque' (nascem de um carrinho específico) — o Radar usa isso pra
-  // linkar a ação direto pro pedido, em vez de só abrir a loja no catálogo. Ausente em 'visita',
+  // Presente em 'revisao'/'estoque'/'parado' (nascem de um carrinho específico) — o Radar usa isso
+  // pra linkar a ação direto pro pedido, em vez de só abrir a loja no catálogo. Ausente em 'visita',
   // que é um sinal da loja como um todo, não de um carrinho.
   cartId?: string
   // Presente só em 'estoque' — o produto específico que está acabando, pra `executarSinal` (Radar)
@@ -646,6 +650,21 @@ export function lojistaSinais(lojista: Lojista): LojistaSinal[] {
         }
       }
     }
+    // Carrinho aberto sem atividade há um tempo (set/2026, adaptado do inventário — "carrinho
+    // aberto há muito tempo"). Só entra quando NENHUM outro sinal já explica esse carrinho: pago
+    // está fechado/resolvido; `pedidoAguardandoAprovacaoRep` (bola com a Ana, já virou 'revisao'
+    // acima) teria o mesmo carrinho gerando dois avisos sobre a mesma coisa. Sobra exatamente o que
+    // falta cobrir: rascunho do lojista esfriando, sugestão da Ana sem resposta (`suggestedBy:
+    // 'representante'`), ou já aprovado mas o lojista ainda não pagou.
+    if (pedido.status !== 'pago' && !pedidoAguardandoAprovacaoRep(pedido) && cart.daysSinceActivity >= PARADO_DIAS) {
+      sinais.push({
+        kind: 'parado',
+        tone: 'info',
+        text: `"${cart.name}" parado há ${cart.daysSinceActivity} dias sem atividade`,
+        cartId: cart.id,
+        timeframe: cart.daysSinceActivity >= 14 ? 'hoje' : cart.daysSinceActivity >= 9 ? '15dias' : '30dias',
+      })
+    }
   }
   if (lojista.daysSinceVisit >= SEM_VISITA_DIAS) {
     sinais.push({
@@ -659,12 +678,13 @@ export function lojistaSinais(lojista: Lojista): LojistaSinal[] {
 }
 
 // Peso de cada sinal pra ranquear a carteira (set/2026) — pedido aguardando aprovação é o mais
-// urgente (trava uma venda), depois estoque (o produto pode acabar antes de agir), depois visita
-// (importante, mas sem prazo tão apertado). Não é ciência exata, é só pra ordenar de forma que o
-// que mais importa apareça primeiro. Exportado daqui (não só local do Radar) porque a tela de
-// escolher loja antes do Catálogo (`LojistaGate.tsx`) precisa do mesmo critério pra decidir qual
-// sinal mostrar em cada card — ver `topLojistaSinal`.
-export const PESO_SINAL: Record<LojistaSinal['kind'], number> = { revisao: 3, estoque: 2, visita: 1 }
+// urgente (trava uma venda), depois estoque (o produto pode acabar antes de agir), depois visita e
+// carrinho parado (importantes, mas sem prazo tão apertado — ficam empatados, são as duas naturezas
+// mais "proativas/preventivas" do sinal, nenhuma trava nada agora). Não é ciência exata, é só pra
+// ordenar de forma que o que mais importa apareça primeiro. Exportado daqui (não só local do Radar)
+// porque a tela de escolher loja antes do Catálogo (`LojistaGate.tsx`) precisa do mesmo critério pra
+// decidir qual sinal mostrar em cada card — ver `topLojistaSinal`.
+export const PESO_SINAL: Record<LojistaSinal['kind'], number> = { revisao: 3, estoque: 2, visita: 1, parado: 1 }
 
 // O sinal de maior peso de uma loja, ou `undefined` se ela estiver em dia — mesmo cálculo que o
 // Radar já fazia inline (`ranqueada`), extraído pra ser compartilhado com `LojistaGate.tsx` (set/

@@ -19,6 +19,7 @@ const sinalCta: Record<LojistaSinal['kind'], string> = {
   revisao: 'Revisar pedido',
   estoque: 'Sugerir reposição',
   visita: 'Agendar visita',
+  parado: 'Retomar carrinho',
 }
 
 // Radar do representante (set/2026) — pedido do usuário: precisa trazer a carteira INTEIRA (não só
@@ -63,14 +64,19 @@ export function RepRadar() {
   })
 
   // Visão "Carrinhos": um card por carrinho (não por loja), carregando o sinal específico DAQUELE
-  // carrinho quando existir (revisão/estoque sempre nascem com `cartId` — ver `lojistaSinais`).
-  // Mesma regra de peso/precedência de filtro da visão "Lojas", só que no nível do carrinho em vez
-  // da loja — um carrinho sem sinal não é "menos carrinho", só não tem nada puxando a atenção da
-  // Ana agora (mesmo card "tudo em dia" que já existia, só que por carrinho).
+  // carrinho quando existir (revisão/estoque/parado sempre nascem com `cartId` — ver
+  // `lojistaSinais`). Mesma regra de peso/precedência de filtro da visão "Lojas", só que no nível
+  // do carrinho em vez da loja — um carrinho sem sinal não é "menos carrinho", só não tem nada
+  // puxando a atenção da Ana agora (mesmo card "tudo em dia" que já existia, só que por carrinho).
+  // Pega o de MAIOR peso quando o carrinho tem mais de um sinal (ex: estoque baixo + parado ao
+  // mesmo tempo) — mesmo critério da visão "Lojas", não só o primeiro que aparecer.
   const carrinhosRanqueados = lojistas
     .flatMap((lojista) => {
       const sinais = lojistaSinais(lojista)
-      return lojista.carrinhos.map((cart) => ({ lojista, cart, sinal: sinais.find((s) => s.cartId === cart.id) }))
+      return lojista.carrinhos.map((cart) => {
+        const doCarrinho = sinais.filter((s) => s.cartId === cart.id).sort((a, b) => PESO_SINAL[b.kind] - PESO_SINAL[a.kind])
+        return { lojista, cart, sinal: doCarrinho[0] as LojistaSinal | undefined }
+      })
     })
     .sort((a, b) => (b.sinal ? PESO_SINAL[b.sinal.kind] : 0) - (a.sinal ? PESO_SINAL[a.sinal.kind] : 0))
 
@@ -99,11 +105,13 @@ export function RepRadar() {
   // - 'estoque': joga o produto num carrinho novo e já encaminha pro lojista (`sugerirReposicao`
   //   em store.ts — mesmo par `status: 'aguardando'` + `suggestedBy: 'representante'` que o lado do
   //   lojista já sabia exibir), e abre esse carrinho pra confirmar o que foi enviado.
+  // - 'parado' (adaptado do inventário "Radar Integrado pro Varejista"): mesmo destino de 'revisao'
+  //   — o carrinho já existe, só precisa de uma olhada/empurrão, não de uma ação de sistema nova.
   // - 'visita': não tem um carrinho/produto por trás, é um sinal sobre a loja como um todo — não dá
   //   pra "executar" sozinho, então abre a loja no catálogo pra o representante decidir o que levar.
   function executarSinal(lojistaId: string, sinal: LojistaSinal) {
     enterLojista(lojistaId)
-    if (sinal.kind === 'revisao' && sinal.cartId) {
+    if ((sinal.kind === 'revisao' || sinal.kind === 'parado') && sinal.cartId) {
       navigate(`/carrinhos/${sinal.cartId}`)
       return
     }
