@@ -10,9 +10,11 @@ import { Toast } from './Toast'
 // representante ainda).
 // "Catálogo" aponta pra rota /catalogo (a mesma do lojista, reaproveitada — ver "modo loja" em
 // guia-dev-frontend.md), não uma rota própria do representante.
+// "Carteira" saiu do nav (set/2026) — virou a visão "Carrinhos" dentro do próprio Radar (ver
+// guia-dev-frontend.md, "Carteira vira a visão Carrinhos do Radar"), não precisa mais de tela/rota
+// própria.
 const navItems = [
   { to: '/rep/radar', label: 'Radar', enabled: true },
-  { to: '/rep/carteira', label: 'Carteira', enabled: true },
   { to: '/catalogo', label: 'Catálogo', enabled: true },
 ]
 

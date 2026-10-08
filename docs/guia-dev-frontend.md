@@ -1205,6 +1205,26 @@ Como `tone` é lido genericamente (`tone-${sinal.tone}`) em `RepRadar.tsx` (as d
 
 Via Playwright contra o preview buildado: bumpado temporariamente `daysSinceActivity` da "Coleção Inverno" (único carrinho elegível sem conflito de produto premium, ver seção anterior) pra 20 e revertido depois (sem mudança em `data.ts`) — confirmado visualmente o card com ícone de carrinho âmbar, "Retomar carrinho →" na cor certa, ao lado dos cards de estoque (vermelho, carrinho) e tudo-em-dia (verde, carrinho) na mesma grade — bate com a opção B aprovada. `tsc`/build limpos, ação "Retomar carrinho" navega pro carrinho certo.
 
+## Carteira vira a visão "Carrinhos" do Radar (set/2026) — tela antiga removida
+
+Pedido do usuário: "juntamos o módulo carteira no radar". Com a visão "Carrinhos" já madura (1 card por carrinho, com sinal real + ação, ver seções anteriores), `Carteira.tsx` (tela separada, rota `/rep/carteira` — ver seção "Tela: Carteira de lojistas", agora histórica/superseded) virou redundante: mesma informação (todos os carrinhos da carteira, por loja), só que sem sinal/cor/ação de verdade, com "Abrir" preso num toast "em breve" desde que foi criada.
+
+### O que saiu
+
+- `screens/representante/Carteira.tsx` — deletado (não ficou como código morto; mesmo padrão já usado antes pra `Client`/`User`/`clients` órfãos).
+- Rota `/rep/carteira` (`App.tsx`) e item "Carteira" do nav (`RepTopNav.tsx`) — removidos. `AppShell.tsx` (componente de layout mobile legado, só usado por `Loyalty.tsx` do lojista — o nav do representante nunca passou por ele de verdade) também teve a entrada tirada, por consistência.
+- Breadcrumb do representante em `CarrinhoDetail.tsx`: era `Radar / Carteira / {nome do carrinho}`, virou `Radar / {nome do carrinho}` (2 níveis, não 3 — não tem mais uma tela intermediária pra linkar).
+
+### O que a visão "Carrinhos" ganhou pra cobrir o que só a Carteira tinha
+
+A Carteira mostrava o **valor (R$)** de cada pedido, que os cards do Radar não tinham. Adicionado como uma linha pequena (mono, cinza, abaixo da descrição) em todo card da visão "Carrinhos" — única informação que não tinha equivalente, as outras (status, "Abrir") já existiam.
+
+**Descartado de propósito, não esquecido**: os stat tiles do topo (lojas/pedidos/aguardando você/em andamento — já era um gap documentado, redundante com os próprios cards) e a barra de progresso da grade mínima (`.pgrade`/`.bar`) — o texto "54/36 pares" já comunica a mesma coisa sem precisar de uma barra visual por card. Nenhum dos dois tinha ação por trás, e o princípio desta leva toda (lembrete do usuário: "não quero que fique muita informação que depois, tanto o lojista quanto o rep, se percam") pesou contra trazer os dois de volta só porque existiam antes.
+
+### Testado
+
+Via Playwright contra o preview buildado: nav do representante mostra só "Radar"/"Catálogo" (sem "Carteira"); `/rep/carteira` não casa com rota nenhuma (tela em branco, como esperado pra uma rota removida); valor em R$ aparece em todo card da visão "Carrinhos"; breadcrumb dentro de um carrinho (navegação in-app, não reload de página) mostra `Radar / {nome do carrinho}`, 2 níveis. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

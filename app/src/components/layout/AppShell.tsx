@@ -12,7 +12,6 @@ const lojistaNav = [
 
 const repNav = [
   { to: '/rep/radar', label: 'Radar', icon: RadarIcon },
-  { to: '/rep/carteira', label: 'Carteira', icon: ClientsIcon },
   { to: '/catalogo', label: 'Catálogo', icon: CatalogIcon },
   { to: '/pedidos', label: 'Pedidos', icon: OrdersIcon },
 ]

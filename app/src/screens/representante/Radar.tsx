@@ -6,6 +6,7 @@ import { CartIcon } from '../../components/desktop/CartIcon'
 import { useAppStore, lojistaSinais, PESO_SINAL, repStatusLabel, pedidoPares } from '../../lib/store'
 import type { LojistaSinal, SinalTimeframe } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
+import { formatBRL } from '../../lib/format'
 
 type ViewMode = 'lojas' | 'carrinhos'
 
@@ -235,6 +236,13 @@ export function RepRadar() {
                   <div className="eyebrow">{lojista.name}</div>
                   <h3>{cart.name}</h3>
                   <p>{sinal ? sinal.text : `${status.label} — ${pares}/${GRADE_MINIMA_PARES} pares`}</p>
+                  {/* Valor do pedido (set/2026) — única informação da extinta Carteira.tsx que não
+                      tinha equivalente aqui; o resto (status, "Abrir") já existia. Ver guia-dev-
+                      frontend.md ("Carteira vira a visão Carrinhos do Radar") pro que foi descartado
+                      de propósito (stat tiles, barra de grade mínima). */}
+                  <div style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--text-tertiary)', marginTop: 4 }}>
+                    {formatBRL(cart.pedido.total)}
+                  </div>
                   <div
                     className="cta"
                     style={{ cursor: 'pointer' }}
