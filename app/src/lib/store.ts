@@ -606,7 +606,10 @@ export type SinalTimeframe = 'hoje' | '15dias' | '30dias'
 
 export interface LojistaSinal {
   kind: 'revisao' | 'visita' | 'estoque' | 'parado'
-  tone: 'risk' | 'info'
+  // 'warn' é só do 'parado' (set/2026) — 'info' já era usado por 'revisao' ("aguardando aprovação"),
+  // e as duas situações são bem diferentes (uma precisa da Ana agora, a outra só esfriou) pra
+  // dividirem a mesma cor no ícone de carrinho da visão "Carrinhos" (ver CartIcon/.tone-warn).
+  tone: 'risk' | 'info' | 'warn'
   text: string
   // Presente em 'revisao'/'estoque'/'parado' (nascem de um carrinho específico) — o Radar usa isso
   // pra linkar a ação direto pro pedido, em vez de só abrir a loja no catálogo. Ausente em 'visita',
@@ -659,7 +662,7 @@ export function lojistaSinais(lojista: Lojista): LojistaSinal[] {
     if (pedido.status !== 'pago' && !pedidoAguardandoAprovacaoRep(pedido) && cart.daysSinceActivity >= PARADO_DIAS) {
       sinais.push({
         kind: 'parado',
-        tone: 'info',
+        tone: 'warn',
         text: `"${cart.name}" parado há ${cart.daysSinceActivity} dias sem atividade`,
         cartId: cart.id,
         timeframe: cart.daysSinceActivity >= 14 ? 'hoje' : cart.daysSinceActivity >= 9 ? '15dias' : '30dias',

@@ -1187,6 +1187,24 @@ Verificado e documentado com honestidade: nos 3 lojistas de exemplo com carrinho
 
 Via Playwright contra o preview buildado: confirmado por inspeção de código que a condição evita duplicar com `'revisao'`/`'pago'`; confirmado que o sinal dispara de verdade bumpando temporariamente `daysSinceActivity` de "Reposição Fusion" pra 6 — o contador "+N outras pendências" da Loja Vertex foi de "+2" pra "+3" (prova que o sinal foi gerado e contado, mesmo perdendo o card pro `'estoque'` do mesmo carrinho) — e revertido antes do commit (sem mudança em `data.ts`). `tsc`/build limpos. Regressão: toggle Lojas/Carrinhos, contadores de período, e a ação "Sugerir reposição" continuam funcionando sem mudança de comportamento.
 
+## Ícone de carrinho + 4ª cor na visão "Carrinhos" (set/2026)
+
+Pedido do usuário: "na aba carrinhos dentro do radar, podemos trazer ícones de carrinhos, no lugar dos itens atuais, e cada um deles em cores diferentes para representar uma situação específica". Testado via mockup (DOM hackeado no preview, duas opções mostradas) antes de implementar: opção A reaproveitava as 3 cores que já existiam (`risk`/`info`/`positive`) — só que `'revisao'` e `'parado'` dividiam a mesma cor azul (`info`), já que as duas eram a mesma `tone` até então. Opção B (escolhida) acrescenta uma 4ª cor exclusiva pro `'parado'`.
+
+### `CartIcon` (`components/desktop/CartIcon.tsx`, novo)
+
+Ícone de carrinho de compras, forma fixa — ao contrário do `SinalIcon` (que varia o DESENHO por tipo de sinal: relógio/triângulo/calendário/pausa/check), aqui o desenho é sempre o mesmo carrinho; quem comunica a situação é só a cor do `.kicon`/`.web-icard` ao redor. Usado só na visão "Carrinhos" do `RepRadar.tsx` — "Lojas" e `LojistaGate.tsx` continuam com `SinalIcon` (lá o card representa uma LOJA, não um carrinho, o ícone de carrinho não faria sentido).
+
+### `tone: 'warn'` (novo, `LojistaSinal`, `store.ts`)
+
+`LojistaSinal.tone` virou `'risk' | 'info' | 'warn'` (era só `'risk' | 'info'`) — o sinal `'parado'` passou de `tone: 'info'` pra `tone: 'warn'`. Motivo: `'info'` já era a cor de `'revisao'` ("aguardando sua aprovação", uma situação que trava uma decisão da Ana AGORA) — `'parado'` é uma situação bem mais branda (só esfriou), não devia competir visualmente pela mesma cor. Token novo em `mockup.css`: `--warn` (âmbar `#C97A1E`) / `--warn-dim`, e o bloco `.web-icard.tone-warn` espelhando exatamente os de `tone-risk`/`tone-info`/`tone-positive` (fundo, `.kicon`, `.eyebrow`, `.cta`).
+
+Como `tone` é lido genericamente (`tone-${sinal.tone}`) em `RepRadar.tsx` (as duas visões) e `LojistaGate.tsx`, a cor âmbar também aparece nesses lugares sempre que `'parado'` for o sinal de maior peso de uma loja — não só na visão "Carrinhos". Consistência deliberada: a mesma situação tem a mesma cor em qualquer lugar que apareça, não só onde o pedido mirou.
+
+### Testado
+
+Via Playwright contra o preview buildado: bumpado temporariamente `daysSinceActivity` da "Coleção Inverno" (único carrinho elegível sem conflito de produto premium, ver seção anterior) pra 20 e revertido depois (sem mudança em `data.ts`) — confirmado visualmente o card com ícone de carrinho âmbar, "Retomar carrinho →" na cor certa, ao lado dos cards de estoque (vermelho, carrinho) e tudo-em-dia (verde, carrinho) na mesma grade — bate com a opção B aprovada. `tsc`/build limpos, ação "Retomar carrinho" navega pro carrinho certo.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

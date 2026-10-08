@@ -19,6 +19,11 @@
     --risk-dim:#FBEAE9;
     --info:#3060C4;
     --info-dim:#EBF0FB;
+    /* 'parado' (carrinho sem atividade, set/2026) — precisa de cor própria, separada de --info
+       (já usado por 'revisao'/"aguardando aprovação"): são situações bem diferentes (uma trava uma
+       decisão da Ana agora, a outra só esfriou) pra dividirem a mesma cor na visão "Carrinhos". */
+    --warn:#C97A1E;
+    --warn-dim:#FFF3E0;
     --display:'Space Grotesk',sans-serif;
     --body:'IBM Plex Sans',sans-serif;
     --mono:'IBM Plex Mono',monospace;
@@ -599,6 +604,15 @@
   .web-icard.tone-positive .eyebrow{color:var(--positive);}
   .web-icard.tone-positive p{color:var(--text-secondary);}
   .web-icard.tone-positive .cta{color:var(--positive);}
+
+  /* 'warn' (set/2026) — só usado pelo sinal 'parado' do representante (carrinho sem atividade), o
+     lojista não tem esse tom. Cor própria (âmbar) separada de --info pra não repetir a cor de
+     'revisao'/"aguardando aprovação" — ver nota em LojistaSinal.tone (store.ts). */
+  .web-icard.tone-warn{background:var(--warn-dim);}
+  .web-icard.tone-warn .kicon{background:var(--warn);color:#fff;}
+  .web-icard.tone-warn .eyebrow{color:var(--warn);}
+  .web-icard.tone-warn p{color:var(--text-secondary);}
+  .web-icard.tone-warn .cta{color:var(--warn);}
 
   .cta{font-weight:700;margin-top:auto;padding-top:16px;display:flex;align-items:center;gap:6px;}
 

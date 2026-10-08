@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RepTopNav } from '../../components/desktop/RepTopNav'
 import { SinalIcon } from '../../components/desktop/SinalIcon'
+import { CartIcon } from '../../components/desktop/CartIcon'
 import { useAppStore, lojistaSinais, PESO_SINAL, repStatusLabel, pedidoPares } from '../../lib/store'
 import type { LojistaSinal, SinalTimeframe } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
@@ -229,7 +230,7 @@ export function RepRadar() {
               return (
                 <div className={`web-icard ${sinal ? `tone-${sinal.tone}` : 'tone-positive'}`} key={cart.id}>
                   <div className="kicon">
-                    <SinalIcon kind={sinal?.kind ?? 'empty'} />
+                    <CartIcon />
                   </div>
                   <div className="eyebrow">{lojista.name}</div>
                   <h3>{cart.name}</h3>
