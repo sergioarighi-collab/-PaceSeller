@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Persona, Carrinho, Pedido, PedidoItem, NotificationItem, Lojista } from './types'
+import type { Persona, Carrinho, Pedido, PedidoItem, NotificationItem, Lojista, Product } from './types'
 import { GRADE_MINIMA_PARES } from './types'
 import { products, initialCarrinhos, initialLojistas, initialNotifications, combos } from './data'
 import { comboPrice, distributeSizesExact, suggestedGradeQty } from './productLines'
@@ -162,6 +162,15 @@ interface AppState {
    * produto não existir.
    */
   sugerirReposicao: (productId: string) => string | null
+  /**
+   * Oportunidade de carteira (set/2026, adaptado do material de referência — natureza
+   * "Oportunidade", só que no nível da CARTEIRA inteira, não de uma loja só: ver
+   * `carteiraOportunidade`). Sugere o mesmo produto pra VÁRIOS lojistas de uma vez, mas cada um
+   * recebe seu próprio carrinho independente — sem estado compartilhado entre eles, mesmo
+   * `sugerirReposicao` só que chamado uma vez por lojista. Não depende de "modo loja" (a Ana está
+   * no Radar, sem nenhum lojista ativo, quando clica nisso) — escreve direto em `lojistas`.
+   */
+  sugerirParaCarteira: (productId: string, lojistaIds: string[]) => void
 
   /** Notificações do sino (WebTopNav) — comentário do representante, mudança de status, insight
    * do Radar. Gap mapeado desde `analise-ux-gaps-atrito-venda.md`, implementado ago/2026. */
@@ -170,6 +179,44 @@ interface AppState {
   toggleNotifications: () => void
   closeNotifications: () => void
   markAllNotificationsRead: () => void
+}
+
+// Monta o Carrinho de reposição sugerida pela representante pra um produto — extraído de
+// `sugerirReposicao` (set/2026) quando `sugerirParaCarteira` passou a precisar do mesmo carrinho,
+// só que um por lojista em vez de um só. `idSuffix` garante ids únicos quando chamado em sequência
+// rápida pra vários lojistas (ex: `.map` do `sugerirParaCarteira` — `Date.now()` sozinho podia
+// colidir entre duas chamadas no mesmo milissegundo); `sugerirReposicao` (chamada única) não precisa
+// disso.
+function buildReposicaoCarrinho(product: Product, idSuffix?: string): Carrinho {
+  const key = idSuffix ? `${Date.now()}-${idSuffix}` : `${Date.now()}`
+  const { qty } = suggestedGradeQty(product)
+  const value = product.priceFactory * qty
+  const pdvTotal = product.pricePdv * qty
+  const marginPct = pdvTotal > 0 ? Math.round(((pdvTotal - value) / pdvTotal) * 100) : 0
+  const item: PedidoItem = { productId: product.id, name: product.name, qty, grade: gradeRangeLabel(product.suggestedSizes), value }
+  const pedido: Pedido = {
+    id: `pedido-${key}`,
+    label: 'Pedido',
+    status: 'aguardando',
+    items: [item],
+    subtotal: value,
+    discount: 0,
+    total: value,
+    marginPct,
+    paymentCondition: '30',
+    deliveryEstimateDays: 15,
+    suggestedBy: 'representante',
+  }
+  return {
+    id: `carrinho-${key}`,
+    name: `Reposição — ${product.name.replace('Tênis Tesla ', '')}`,
+    representative: 'Ana',
+    updatedAt: 'agora',
+    daysSinceActivity: 0,
+    repCanEdit: true,
+    autoSendOnGradeMinima: false,
+    pedido,
+  }
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -488,36 +535,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     const s = get()
     const product = products.find((p) => p.id === productId)
     if (!product) return null
-    const { qty } = suggestedGradeQty(product)
-    const value = product.priceFactory * qty
-    const pdvTotal = product.pricePdv * qty
-    const marginPct = pdvTotal > 0 ? Math.round(((pdvTotal - value) / pdvTotal) * 100) : 0
-    const item: PedidoItem = { productId: product.id, name: product.name, qty, grade: gradeRangeLabel(product.suggestedSizes), value }
-    const pedido: Pedido = {
-      id: `pedido-${Date.now()}`,
-      label: 'Pedido',
-      status: 'aguardando',
-      items: [item],
-      subtotal: value,
-      discount: 0,
-      total: value,
-      marginPct,
-      paymentCondition: '30',
-      deliveryEstimateDays: 15,
-      suggestedBy: 'representante',
-    }
-    const novoCarrinho: Carrinho = {
-      id: `carrinho-${Date.now()}`,
-      name: `Reposição — ${product.name.replace('Tênis Tesla ', '')}`,
-      representative: 'Ana',
-      updatedAt: 'agora',
-      daysSinceActivity: 0,
-      repCanEdit: true,
-      autoSendOnGradeMinima: false,
-      pedido,
-    }
+    const novoCarrinho = buildReposicaoCarrinho(product)
     set({ carrinhos: [...s.carrinhos, novoCarrinho] })
     return novoCarrinho.id
+  },
+  sugerirParaCarteira: (productId, lojistaIds) => {
+    const s = get()
+    const product = products.find((p) => p.id === productId)
+    if (!product) return
+    set({
+      lojistas: s.lojistas.map((l) =>
+        lojistaIds.includes(l.id) ? { ...l, carrinhos: [...l.carrinhos, buildReposicaoCarrinho(product, l.id)] } : l,
+      ),
+    })
   },
 
   notifications: initialNotifications,
@@ -695,6 +725,37 @@ export const PESO_SINAL: Record<LojistaSinal['kind'], number> = { revisao: 3, es
 // inteira por isso e a Gate só precisa do sinal de cada card individualmente.
 export function topLojistaSinal(lojista: Lojista): LojistaSinal | undefined {
   return [...lojistaSinais(lojista)].sort((a, b) => PESO_SINAL[b.kind] - PESO_SINAL[a.kind])[0]
+}
+
+// Corte mínimo de crescimento pra um produto virar "oportunidade de carteira" — mesmo princípio dos
+// outros sinais (só entra com dado real por trás, não é chute): sem isso, qualquer produto com
+// crescimento positivo viraria uma "oportunidade", mesmo que marginal.
+const OPORTUNIDADE_GROWTH_MIN = 20
+// Precisa de pelo menos 2 lojistas sem o produto pra justificar "oportunidade de carteira" — com 1
+// só é melhor cobrir pelo sinal normal (estoque/revisão) daquela loja especificamente, não um banner
+// à parte sobre a carteira inteira.
+const OPORTUNIDADE_LOJISTAS_MIN = 2
+
+export interface CarteiraOportunidade {
+  product: Product
+  lojistasSemProduto: Lojista[]
+}
+
+// Oportunidade de carteira (set/2026, adaptado do material de referência — natureza "Oportunidade",
+// nível carteira inteira, não de uma loja só): o produto de maior crescimento que pelo menos 2
+// lojistas ainda não têm em nenhum carrinho (qualquer status — se já compraram ou já estão
+// comprando, não é mais uma "oportunidade perdida"). Só o de maior crescimento que bate o critério,
+// não uma lista — mesmo princípio de "um insight por contexto" do material, pra não virar
+// propaganda. `undefined` quando nenhum produto bate os dois critérios (corte de crescimento +
+// mínimo de lojistas) — a carteira simplesmente não tem uma oportunidade clara agora.
+export function carteiraOportunidade(lojistas: Lojista[]): CarteiraOportunidade | undefined {
+  const porCrescimento = [...products].sort((a, b) => b.growthPct - a.growthPct)
+  for (const product of porCrescimento) {
+    if (product.growthPct < OPORTUNIDADE_GROWTH_MIN) break
+    const lojistasSemProduto = lojistas.filter((l) => !l.carrinhos.some((c) => c.pedido.items.some((i) => i.productId === product.id)))
+    if (lojistasSemProduto.length >= OPORTUNIDADE_LOJISTAS_MIN) return { product, lojistasSemProduto }
+  }
+  return undefined
 }
 
 // Status do pedido do ponto de vista do REPRESENTANTE — não dá pra reaproveitar `pedidoStatusBadge`

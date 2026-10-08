@@ -1235,6 +1235,32 @@ Usuário: "ainda não existe o modelo de regras diferentes para lojas, mas poder
 
 Não implementado agora (sem pedido concreto pra isso ainda) — só a decisão registrada.
 
+## Oportunidade de carteira: mesmo produto sugerido pra várias lojas de uma vez (set/2026)
+
+Pedido do usuário: "poderemos pensar em criar carrinhos avulsos e encaminhar pra diferentes lojista" — discutido o risco de um carrinho só compartilhado entre lojas (estado sincronizado, aceite/recusa cruzado, contagem de estoque em duplicidade) e descartado em favor de "sugestões inteligentes de carrinhos específicos para lojistas específicos": a Ana dispara UMA ação, mas cada lojista contemplado recebe seu PRÓPRIO carrinho independente — zero estado compartilhado entre eles. Mockup testado e aprovado antes de implementar (banner preto, mesma natureza "Oportunidade" do material de referência).
+
+### `carteiraOportunidade(lojistas)` (`store.ts`, novo)
+
+Escolhe o produto de **maior crescimento** (`Product.growthPct`) que pelo menos 2 lojistas ainda não têm em nenhum carrinho (qualquer status — se já compraram ou já estão comprando, não é mais "oportunidade perdida"). Dois cortes pra não virar chute nem propaganda, mesmo princípio dos outros sinais:
+- `OPORTUNIDADE_GROWTH_MIN = 20` — só considera produto com crescimento de verdade.
+- `OPORTUNIDADE_LOJISTAS_MIN = 2` — com só 1 lojista sem o produto, já tem o sinal de `'estoque'`/catálogo normal cobrindo; não precisa de um banner à parte sobre a carteira inteira.
+
+Retorna só **o de maior crescimento que bate os dois critérios**, não uma lista — um insight por vez, igual ao resto do Radar.
+
+### `sugerirParaCarteira(productId, lojistaIds)` (`store.ts`, novo)
+
+Reaproveita a mesma construção de carrinho de `sugerirReposicao` — extraída pra uma função module-level, `buildReposicaoCarrinho(product, idSuffix?)` — só que roda uma vez por lojista da lista, escrevendo direto em `lojistas` (não passa por `enterLojista`/`modo loja`, porque a Ana está no Radar sem nenhuma loja ativa quando clica nisso). Cada lojista ganha um carrinho próprio, `suggestedBy: 'representante'` + `status: 'aguardando'`, igual ao caso de 1 loja só.
+
+### UI (`RepRadar.tsx`)
+
+Banner de largura total acima da grade (aparece nas duas visões, Lojas e Carrinhos — é ortogonal ao toggle), reaproveitando `.web-icard.tone-black` (mesma cor que o Radar do lojista usa pra "oportunidade"), só com layout em linha (`.opp-banner`, modificador que vira `flex-direction:row`) em vez de empilhado. Mostra o produto, quantas/quais lojas ainda não têm, e "Sugerir pras N lojas →". Depois de clicar, soma um toast de confirmação (`Toast`, mesmo componente já usado noutras telas) listando quem recebeu.
+
+**Autorresolução, sem estado de "dispensado"**: `oportunidade` é recalculada a cada render a partir de `lojistas`, não guardada em `useState`. Depois de sugerir, os lojistas contemplados passam a ter o produto num carrinho, então `carteiraOportunidade` simplesmente para de achar 2+ lojistas sem ele — o banner some sozinho. Testado e confirmado um efeito colateral interessante (não é bug): como o cálculo sempre pega o produto de MAIOR crescimento disponível, resolver uma oportunidade pode revelar a PRÓXIMA (outro produto, outro conjunto de lojas) imediatamente — a Ana pode clicar em sequência se quiser, ou simplesmente ignorar o banner (nunca força interação).
+
+### Testado
+
+Via Playwright contra o preview buildado: banner mostra "Tênis Tesla Fusion Black Red" (maior `growthPct` do catálogo, 34) com Radical Skate/Casa Esporte/Esporte Total como candidatas (únicas sem o produto — Loja Vertex já tinha); clicar em "Sugerir pras 3 lojas" cria 3 carrinhos reais e independentes (confirmado abrindo a visão "Carrinhos" filtrada por Esporte Total — carrinho "Reposição — Fusion Black Red" lá, com o sinal de estoque certo, já que esse produto também é premium e tem pouco estoque); toast confirma os 3 nomes; banner muda sozinho pro próximo produto elegível ("Hertz Art Black Purple") sem nenhuma ação manual de "dispensar". `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

@@ -614,6 +614,15 @@
   .web-icard.tone-warn p{color:var(--text-secondary);}
   .web-icard.tone-warn .cta{color:var(--warn);}
 
+  /* Banner de oportunidade de carteira (set/2026) — largura total, fora da grade, reaproveita a cor
+     tone-black de sempre (mesma natureza "Oportunidade" do Radar do lojista), só com o conteúdo em
+     linha (ícone → texto → CTA) em vez de empilhado como o resto dos `.web-icard`. */
+  .web-icard.opp-banner{flex-direction:row;align-items:center;gap:20px;}
+  .web-icard.opp-banner .eyebrow{margin-top:0;}
+  .opp-lojas{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+  .opp-lojapill{font-size:11px;background:rgba(255,255,255,.12);padding:4px 9px;border-radius:20px;color:rgba(255,255,255,.85);}
+  .opp-cta{margin-left:auto;background:#fff;color:var(--text-primary);font-size:12.5px;font-weight:700;padding:10px 16px;border-radius:5px;white-space:nowrap;cursor:pointer;flex-shrink:0;}
+
   .cta{font-weight:700;margin-top:auto;padding-top:16px;display:flex;align-items:center;gap:6px;}
 
   /* ===== CATALOGO DESKTOP ===== */

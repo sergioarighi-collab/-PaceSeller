@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { RepTopNav } from '../../components/desktop/RepTopNav'
 import { SinalIcon } from '../../components/desktop/SinalIcon'
 import { CartIcon } from '../../components/desktop/CartIcon'
-import { useAppStore, lojistaSinais, PESO_SINAL, repStatusLabel, pedidoPares } from '../../lib/store'
+import { Toast } from '../../components/desktop/Toast'
+import { useAppStore, lojistaSinais, PESO_SINAL, repStatusLabel, pedidoPares, carteiraOportunidade } from '../../lib/store'
 import type { LojistaSinal, SinalTimeframe } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { formatBRL } from '../../lib/format'
@@ -36,8 +37,24 @@ export function RepRadar() {
   const lojistas = useAppStore((s) => s.lojistas)
   const enterLojista = useAppStore((s) => s.enterLojista)
   const sugerirReposicao = useAppStore((s) => s.sugerirReposicao)
+  const sugerirParaCarteira = useAppStore((s) => s.sugerirParaCarteira)
   const [lojistaFiltro, setLojistaFiltro] = useState<string | null>(null)
   const [timeframeFiltro, setTimeframeFiltro] = useState<SinalTimeframe>('hoje')
+  const [oportunidadeToast, setOportunidadeToast] = useState<string | null>(null)
+
+  // Oportunidade de carteira (set/2026, pedido do usuário: "sugestões inteligentes de carrinhos
+  // específicos para lojistas específicos") — recalculada a cada render a partir de `lojistas`, não
+  // guardada em estado: depois de sugerir, os lojistas contemplados passam a ter o produto num
+  // carrinho, então `carteiraOportunidade` naturalmente para de achar os 2+ sem o produto e o
+  // banner some sozinho — não precisa de um "dispensado" manual.
+  const oportunidade = carteiraOportunidade(lojistas)
+
+  function sugerirOportunidadeParaCarteira() {
+    if (!oportunidade) return
+    const nomes = oportunidade.lojistasSemProduto.map((l) => l.name)
+    sugerirParaCarteira(oportunidade.product.id, oportunidade.lojistasSemProduto.map((l) => l.id))
+    setOportunidadeToast(`Enviado pra ${nomes.join(', ')}`)
+  }
   // Visão "Lojas" (default) vs "Carrinhos" (set/2026, pedido do usuário: "trazer por filtros...
   // mantemos os cards do radar original, mas trazemos um filtro por carrinhos dos lojistas") —
   // mesmo grid/card, só muda a granularidade: um card por LOJA ou um card por CARRINHO. Não é uma
@@ -194,6 +211,41 @@ export function RepRadar() {
           </div>
         </div>
 
+        {/* Oportunidade de carteira (set/2026) — banner de largura total, fora da grade de cards
+            (não compete com Lojas/Carrinhos, aparece nas duas visões). Reaproveita a cor tone-black
+            do Radar do lojista (mesma natureza "Oportunidade"), só em layout horizontal (ver
+            .opp-banner em mockup.css). Um só por vez (o produto de maior crescimento que bate o
+            critério — ver carteiraOportunidade em store.ts), não uma lista, pra não virar
+            propaganda. Some sozinho depois de sugerir: os lojistas contemplados passam a ter o
+            produto, então `carteiraOportunidade` para de encontrá-los como "sem produto". */}
+        {oportunidade && (
+          <div className="web-icard tone-black opp-banner">
+            <div className="kicon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l2.9 6.9 7.4.6-5.6 4.9 1.7 7.3L12 17.9 5.6 21.7l1.7-7.3-5.6-4.9 7.4-.6L12 2z" />
+              </svg>
+            </div>
+            <div>
+              <div className="eyebrow">Oportunidade na carteira</div>
+              <h3>{oportunidade.product.name}</h3>
+              <p>
+                Alta demanda — {oportunidade.lojistasSemProduto.length} loja{oportunidade.lojistasSemProduto.length > 1 ? 's' : ''} da sua carteira
+                ainda não {oportunidade.lojistasSemProduto.length > 1 ? 'têm' : 'tem'} esse produto
+              </p>
+              <div className="opp-lojas">
+                {oportunidade.lojistasSemProduto.map((l) => (
+                  <span className="opp-lojapill" key={l.id}>
+                    {l.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="opp-cta" onClick={sugerirOportunidadeParaCarteira}>
+              Sugerir pras {oportunidade.lojistasSemProduto.length} lojas →
+            </div>
+          </div>
+        )}
+
         {/* Cards reaproveitam literalmente `.web-icard`/`.kicon`/`.eyebrow`/`.cta` do Radar do
             lojista (set/2026, pedido do usuário: "o radar do rep deveria estar mais parecido com o
             do lojista") — mesmo ritmo visual (ícone primeiro, depois um rótulo pequeno, título,
@@ -256,6 +308,10 @@ export function RepRadar() {
           </div>
         )}
       </div>
+
+      {oportunidadeToast && (
+        <Toast title="Reposição sugerida" sub={oportunidadeToast} onClose={() => setOportunidadeToast(null)} />
+      )}
     </div>
   )
 }
