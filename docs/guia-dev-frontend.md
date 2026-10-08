@@ -1225,6 +1225,16 @@ A Carteira mostrava o **valor (R$)** de cada pedido, que os cards do Radar não 
 
 Via Playwright contra o preview buildado: nav do representante mostra só "Radar"/"Catálogo" (sem "Carteira"); `/rep/carteira` não casa com rota nenhuma (tela em branco, como esperado pra uma rota removida); valor em R$ aparece em todo card da visão "Carrinhos"; breadcrumb dentro de um carrinho (navegação in-app, não reload de página) mostra `Radar / {nome do carrinho}`, 2 níveis. `tsc`/build limpos.
 
+## Decisão arquitetural: por que escolher a loja é um "corte" completo, não um filtro
+
+Usuário confirmou e explicou o "porquê" por trás de uma decisão já tomada (não pediu feature nova) — vale registrar pra quem mexer nisso depois não reabrir a discussão.
+
+Hoje o catálogo (produtos, preços, grade mínima de 36 pares — `GRADE_MINIMA_PARES` em `types.ts`, condições de pagamento) é **global**, igual pra toda loja — `Catalog.tsx` não tem nenhuma condicional olhando qual loja está ativa, só pro carrinho (confirmado: `grep "activeLojistaId"` em `Catalog.tsx` não retorna nada). O que já varia por loja é só o **carrinho/histórico** — via `enterLojista` (store.ts), que troca `carrinhos` pra apontar só pros carrinhos daquela loja e zera o drawer.
+
+Usuário: "ainda não existe o modelo de regras diferentes para lojas, mas poderemos ter futuramente, mudando produtos e até condições de pagamento, por isso que escolher a loja antes é necessário, para evitar trabalho no back." Ou seja — a escolha de loja (`LojistaGate`/ações do Radar, sempre via `enterLojista`) não é só uma conveniência de UI hoje, é a decisão que viabiliza regras por loja no futuro sem reescrever a arquitetura: o representante sempre entra num contexto de UMA loja só, nunca precisa que o Catálogo resolva "qual regra vale aqui" entre várias ao mesmo tempo — isso já fica decidido no momento da escolha. Quando regras por loja existirem de verdade (produto diferente por loja, condição de pagamento específica), elas entram como mais um campo em `Lojista` (`types.ts`) que o Catálogo lê a partir do `activeLojistaId` já resolvido, sem precisar de um filtro dinâmico dentro da tela.
+
+Não implementado agora (sem pedido concreto pra isso ainda) — só a decisão registrada.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
