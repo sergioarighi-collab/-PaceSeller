@@ -1261,6 +1261,25 @@ Banner de largura total acima da grade (aparece nas duas visões, Lojas e Carrin
 
 Via Playwright contra o preview buildado: banner mostra "Tênis Tesla Fusion Black Red" (maior `growthPct` do catálogo, 34) com Radical Skate/Casa Esporte/Esporte Total como candidatas (únicas sem o produto — Loja Vertex já tinha); clicar em "Sugerir pras 3 lojas" cria 3 carrinhos reais e independentes (confirmado abrindo a visão "Carrinhos" filtrada por Esporte Total — carrinho "Reposição — Fusion Black Red" lá, com o sinal de estoque certo, já que esse produto também é premium e tem pouco estoque); toast confirma os 3 nomes; banner muda sozinho pro próximo produto elegível ("Hertz Art Black Purple") sem nenhuma ação manual de "dispensar". `tsc`/build limpos.
 
+## Gap fechado: carrinho montado à mão pela representante agora é marcado e enviado
+
+Gap documentado na seção "Oportunidade de carteira" (e antes, na conversa sobre "carrinhos avulsos"): quando a Ana entra numa loja e monta um carrinho livremente pelo catálogo (sem passar por `sugerirReposicao`/`sugerirParaCarteira`), `commitCartToCarrinho` criava um carrinho novo igual a qualquer outro — `status: 'rascunho'`, sem `suggestedBy`. Pro lojista, isso era indistinguível de algo que ele mesmo tinha começado a montar; não tinha como saber que foi a Ana.
+
+### A correção (`commitCartToCarrinho`, `store.ts`)
+
+Só no branch de **carrinho novo** (não no de editar um pedido existente, nem no de somar itens num carrinho que já tinha dono/histórico — esses dois ficam de fora de propósito, são situações diferentes e mais ambíguas): se `s.persona === 'representante'` no momento do commit, o pedido já nasce `status: 'aguardando'` + `suggestedBy: 'representante'` — mesmo par de campos que `sugerirReposicao`/`sugerirParaCarteira` já usavam pro caso automático. Como ela só chega nesse fluxo dentro do "modo loja" (`comLojistaSelecionada` em `App.tsx` garante isso), checar `persona` é suficiente, não precisa checar `activeLojistaId` separado.
+
+Toda a UI que depende desse par de campos (`pedidoStatusBadge`, `pedidoAguardandoAprovacaoRep`, o badge "Aguardando você"/"Aguardando o lojista" conforme quem olha) já existia e funcionou sem nenhuma mudança — o carrinho criado por esse caminho agora só preenche os mesmos campos que o resto do sistema já sabe interpretar.
+
+### Testado
+
+Via Playwright contra o preview buildado: logada como representante, entrou em "Casa Esporte" pelo Catálogo, adicionou um produto (Coil Denim) e fechou o carrinho — o `CarrinhoDetail` resultante mostra **"Aguardando o lojista — revisar"** (não "Rascunho"). Regressão: logada como lojista (persona normal), o mesmo fluxo (adicionar produto, fechar carrinho) continua criando um **"Rascunho"** comum, com "Editar no drawer"/"Ir para pagamento" — comportamento inalterado. `tsc`/build limpos.
+
+### O que ainda fica de fora (gaps menores, não resolvidos agora)
+
+- Somar itens num carrinho que já existe (branch de merge de `commitCartToCarrinho`) não ganhou o mesmo tratamento — se a Ana "continuar comprando" dentro de um carrinho que já era do lojista, o status/`suggestedBy` dele não mudam. Decisão deliberada: misturar autoria nesse caso é mais ambíguo (de quem é o carrinho afinal?) e não tinha pedido concreto cobrindo isso.
+- Visão do LOJISTA sobre esse carrinho específico não foi verificada ao vivo nesta leva — depende da limitação já documentada de `lojistas`/`carrinhos` serem cópias independentes da mesma seed (sem backend real). A lógica (`pedidoStatusBadge`) já é a mesma usada e testada pro exemplo seed "Coil Verão", então o comportamento é o mesmo por construção, só não foi reclicado ao vivo pra esse carrinho específico.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

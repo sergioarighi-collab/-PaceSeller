@@ -457,10 +457,19 @@ export const useAppStore = create<AppState>((set, get) => ({
     // rascunho. Não existe hoje nenhum jeito do lojista ligar/desligar isso pela UI (o rótulo que
     // exibia esse estado em MeusCarrinhos.tsx foi removido em set/2026 por não levar a nenhuma
     // ação — ver guia-dev-frontend.md) — o campo só varia hoje via dado mock em data.ts.
+    //
+    // Exceção (set/2026, fechando um gap documentado): quando é a REPRESENTANTE montando esse
+    // carrinho novo (ela só chega aqui dentro do "modo loja", catálogo/drawer reaproveitados —
+    // `comLojistaSelecionada` em App.tsx garante isso), ele já nasce marcado e enviado — mesmo par
+    // `suggestedBy: 'representante'` + `status: 'aguardando'` que `sugerirReposicao`/
+    // `sugerirParaCarteira` já usam pro caso automático. Sem isso, um carrinho montado à mão pela
+    // Ana virava um rascunho comum, indistinguível de algo que o próprio lojista começou — o
+    // lojista não tinha como saber que foi ela quem montou.
+    const montadoPelaRep = s.persona === 'representante'
     const novoPedido: Pedido = {
       id: `pedido-${Date.now()}`,
       label: 'Pedido',
-      status: 'rascunho',
+      status: montadoPelaRep ? 'aguardando' : 'rascunho',
       items: allItems,
       subtotal: totalValue,
       discount: 0,
@@ -468,6 +477,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       marginPct,
       paymentCondition: '30',
       deliveryEstimateDays: 15,
+      ...(montadoPelaRep ? { suggestedBy: 'representante' as const } : {}),
     }
     const novoCarrinho: Carrinho = {
       id: `carrinho-${Date.now()}`,
