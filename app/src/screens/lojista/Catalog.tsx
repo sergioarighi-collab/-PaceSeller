@@ -147,6 +147,9 @@ export function Catalog() {
   const [priceFilter, setPriceFilter] = useState<string | null>(null)
   const [sizeFilter, setSizeFilter] = useState<string | null>(null)
   const [collectionFilter, setCollectionFilter] = useState<string | null>(null)
+  // Qual chip-com-menu da barra de filtros está aberto (Coleção ou Numeração) — só um por vez,
+  // igual padrão de dropdown único já usado noutras telas (ex: `menuOpen` do avatar no topnav).
+  const [openDropdown, setOpenDropdown] = useState<'colecao' | 'numeracao' | null>(null)
   const [query, setQuery] = useState('')
   // Aba "Combos sugeridos" (set/2026) — testado antes via injeção no Playwright (tab bar
   // improvisada trocando display de blocos reais) e aprovado. Antes os combos ficavam sempre
@@ -344,10 +347,24 @@ export function Catalog() {
 
           {!context && (
             <div className="cattabs">
-              <div className={`cattab ${catalogTab === 'produtos' ? 'active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setCatalogTab('produtos')}>
+              <div
+                className={`cattab ${catalogTab === 'produtos' ? 'active' : ''}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  setCatalogTab('produtos')
+                  setOpenDropdown(null)
+                }}
+              >
                 Produtos
               </div>
-              <div className={`cattab ${catalogTab === 'combos' ? 'active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setCatalogTab('combos')}>
+              <div
+                className={`cattab ${catalogTab === 'combos' ? 'active' : ''}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  setCatalogTab('combos')
+                  setOpenDropdown(null)
+                }}
+              >
                 Combos sugeridos ({combos.length})
               </div>
             </div>
@@ -394,6 +411,50 @@ export function Catalog() {
                   </div>
                 ))}
                 <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--border)' }} />
+                {/* Coleção/Numeração viraram chip-com-menu (set/2026, redesign dos filtros — ver
+                    guia-dev-frontend.md) em vez de dois blocos empilhados abaixo da barra: testado
+                    em mockup contra uma opção que escondia tudo atrás de um botão "Mais filtros"
+                    (opção B), descartada pelo usuário por exigir "sempre mais um clique" pros
+                    filtros de categoria/preço que ficam sempre visíveis — aqui só os dois grupos
+                    que já eram blocos grandes (lista de coleção, grade de numeração) saem da barra,
+                    o resto continua clicável direto. */}
+                <div
+                  className={`chip ${collectionFilter ? 'selected' : ''}`}
+                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, position: 'relative', zIndex: 10 }}
+                  onClick={() => setOpenDropdown(openDropdown === 'colecao' ? null : 'colecao')}
+                >
+                  Coleção
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.6"
+                    style={{ transform: openDropdown === 'colecao' ? 'rotate(180deg)' : undefined }}
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </div>
+                <div
+                  className={`chip ${sizeFilter ? 'selected' : ''}`}
+                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, position: 'relative', zIndex: 10 }}
+                  onClick={() => setOpenDropdown(openDropdown === 'numeracao' ? null : 'numeracao')}
+                >
+                  Numeração
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.6"
+                    style={{ transform: openDropdown === 'numeracao' ? 'rotate(180deg)' : undefined }}
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </div>
+                <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--border)' }} />
                 {(Object.keys(contextConfig) as ContextKey[]).map((key) => (
                   <div
                     key={key}
@@ -414,40 +475,45 @@ export function Catalog() {
             {context && <div className="chip">Boa margem</div>}
           </div>
 
-          {!context && catalogTab === 'produtos' && (
-            <div className="gradebox" style={{ margin: '14px 0 0' }}>
-              <div className="title">Coleção</div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {collectionFilters.map((c) => (
-                  <div
-                    key={c}
-                    className={`chip ${collectionFilter === c ? 'selected' : ''}`}
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => setCollectionFilter(collectionFilter === c ? null : c)}
-                  >
-                    {collectionTitle[c]}
-                  </div>
-                ))}
+          {!context && catalogTab === 'produtos' && openDropdown && (
+            <>
+              <div style={{ position: 'fixed', inset: 0, zIndex: 9 }} onClick={() => setOpenDropdown(null)} />
+              <div className="gradebox filterdropdown" style={{ margin: '10px 0 0', position: 'relative', zIndex: 10 }}>
+                {openDropdown === 'colecao' ? (
+                  <>
+                    <div className="title">Coleção</div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {collectionFilters.map((c) => (
+                        <div
+                          key={c}
+                          className={`chip ${collectionFilter === c ? 'selected' : ''}`}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => setCollectionFilter(collectionFilter === c ? null : c)}
+                        >
+                          {collectionTitle[c]}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="title">Numeração</div>
+                    <div className="sizerow">
+                      {sizeFilters.map((size) => (
+                        <div
+                          key={size}
+                          className={`sizechip ${sizeFilter === size ? 'selected' : ''}`}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => setSizeFilter(sizeFilter === size ? null : size)}
+                        >
+                          {size}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
-            </div>
-          )}
-
-          {!context && catalogTab === 'produtos' && (
-            <div className="gradebox" style={{ margin: '14px 0 0' }}>
-              <div className="title">Numeração</div>
-              <div className="sizerow">
-                {sizeFilters.map((size) => (
-                  <div
-                    key={size}
-                    className={`sizechip ${sizeFilter === size ? 'selected' : ''}`}
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => setSizeFilter(sizeFilter === size ? null : size)}
-                  >
-                    {size}
-                  </div>
-                ))}
-              </div>
-            </div>
+            </>
           )}
 
           {(context || catalogTab === 'produtos') && (

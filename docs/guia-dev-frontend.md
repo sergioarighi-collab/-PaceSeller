@@ -1317,6 +1317,35 @@ Usuário: "temos que mudar o layout das lojas que escolho entrar... podemos pens
 
 Via Playwright contra o preview buildado, fluxo real (login representante → `/rep/radar` → clicar "Catálogo" → cai na Gate, sem `page.goto` direto pra não resetar o store): as 4 linhas renderizam com os valores corretos (Radical Skate R$ 2.140,00, Loja Vertex R$ 0,00 — "nenhuma compra este mês", Casa Esporte R$ 6.598,00, Esporte Total R$ 2.700,00), batendo com os pedidos `pago` de cada loja no mock. Clicar numa linha chama `enterLojista` e navega pro Catálogo normalmente (comportamento inalterado). `tsc`/build limpos.
 
+## Redesign dos filtros do Catálogo: Coleção/Numeração viram chip-com-menu (set/2026)
+
+Usuário: "em relação ao catálogo vc teria alguma outra sugestão para a diagramação dos filtros? Gosto deles aparecendo, mas parece que ficaram jogados?" — a barra de filtros (`Catalog.tsx`) tinha a `.filterbar` (busca + chips de categoria + preço + contexto) seguida de **dois blocos empilhados separados** (`.gradebox`), um pra "Coleção" e outro pra "Numeração", cada um com seu próprio título e fileira de chips — 3 blocos de alturas diferentes, um embaixo do outro.
+
+Essa tela é a mesma pro lojista e pro representante (ver "modo loja" — `Catalog.tsx` é 100% reaproveitado), então a mudança vale pras duas personas.
+
+### Duas direções testadas (mockup antes de implementar)
+
+- **Opção A** — tudo numa barra só: Coleção e Numeração saem dos blocos empilhados e viram chips com um menu (▾) que abre um painel, igual o resto dos filtros já funciona por clique.
+- **Opção B** — esconder atrás de um botão: só busca + os 4 chips de categoria ficam sempre visíveis; o resto (preço, coleção, numeração, benchmark) entra num painel "Mais filtros" fechado por padrão.
+
+Usuário escolheu a **A**: "o problema é que a opção B temos que sempre ter mais um clique." A B exigia abrir "Mais filtros" só pra chegar nos chips de preço/benchmark que hoje já são 1 clique direto — a A resolve o "jogado" sem adicionar esse clique extra pros filtros que já ficavam na própria barra.
+
+### Implementação (`Catalog.tsx`)
+
+- Novo estado `openDropdown: 'colecao' | 'numeracao' | null` — só um menu aberto por vez, mesmo padrão já usado no `menuOpen` do avatar (`RepTopNav`/`WebTopNav`).
+- Os dois `.gradebox` empilhados viraram dois chips na própria `.filterbar` ("Coleção ▾"/"Numeração ▾", seta gira 180° quando aberto; `.chip.selected` quando o grupo já tem um filtro aplicado, mesmo critério visual dos outros chips). Clicar alterna `openDropdown`.
+- O painel (conteúdo igual ao que já existia — lista de chips de coleção ou grade de numeração, sem mudar a lógica de filtro) é renderizado condicionalmente logo abaixo da `.filterbar`, com um overlay full-screen (`position:fixed;inset:0`, mesmo padrão do `avatar-menu`) que fecha ao clicar fora.
+- **Detalhe de z-index**: os dois chips-gatilho (`Coleção`/`Numeração`) precisaram de `position:relative;zIndex:10` — sem isso, o overlay (zIndex 9) cobre o próprio chip quando o painel já está aberto, e um segundo clique nele pra alternar (fechar o mesmo painel, ou abrir o outro direto) era capturado pelo overlay em vez do chip. Funcionalmente ainda fechava (o overlay faz a mesma coisa), mas trocar de um filtro pro outro em sequência exigia 2 cliques em vez de 1. Com o z-index nos chips, os dois casos funcionam num clique só.
+- Trocar de aba (Produtos/Combos) fecha qualquer painel aberto (`setOpenDropdown(null)` nos dois `onClick` de `.cattab`), pra não sobrar um painel de Coleção pendurado numa aba que não tem produtos.
+
+### CSS (`mockup.css`)
+
+`.filterdropdown`, novo modificador aplicado junto com `.gradebox` (`className="gradebox filterdropdown"`) — só adiciona borda/fundo/sombra pra parecer um menu flutuante, sem mexer na classe `.gradebox` base (que também é usada, sem essa aparência, pelo `GradeEditor.tsx`).
+
+### Testado
+
+Via Playwright contra o preview buildado, fluxo real (login → Radar → Catálogo): clicar em "Coleção" abre o painel, selecionar "Hertz" filtra a grade corretamente; clicar fora fecha; clicar em "Numeração" abre o painel de tamanhos; clicar de novo no mesmo chip fecha (toggle). `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
