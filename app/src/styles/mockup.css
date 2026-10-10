@@ -3,6 +3,10 @@
     --bg-app:#FFFFFF;
     --surface:#FFFFFF;
     --surface-2:#F4F4F5;
+    /* Teste: cinza do card da foto de produto com 10% de amarelo (set/2026, pedido do usuário) —
+       `--surface-2` reduzido de azul em 10% (245→221 no canal B), não um token geral: só o fundo
+       da foto do produto usa isso, o resto do app continua no `--surface-2` neutro. */
+    --surface-2-warm:#F4F4DD;
     --surface-3:#E9E9EB;
     --border:#E2E2E5;
     --border-soft:#EBEBED;
@@ -760,7 +764,7 @@
      cortar de fato (nada é clipado, é só a foto preenchendo 100% da altura disponível). 240px
      deixa a proporção da caixa mais perto da foto (~1,77:1), devolvendo a margem vertical, e de
      quebra deixa o card como um todo menos "esticado" horizontalmente (outro pedido do usuário). */
-  .pcard-web .pw-thumb{height:240px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;}
+  .pcard-web .pw-thumb{height:240px;background:var(--surface-2-warm);display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0;}
   .pcard-web .pw-instock{position:absolute;top:12px;left:12px;background:var(--black);color:#fff;font-family:var(--mono);font-size:9.5px;text-transform:uppercase;padding:4px 8px;border-radius:3px;}
   .pcard-web .pw-body{padding:16px;display:flex;flex-direction:column;flex:1;}
   .pcard-web .pw-name{font-family:var(--display);font-size:15.5px;font-weight:700;color:var(--text-primary);}
@@ -791,7 +795,7 @@
   .pline-card{display:flex;flex-direction:column;min-width:0;}
   /* 4/5 (era 3/4) — foto menos vertical, acompanha a ida pra 4 colunas (ver `.catgrid-web` acima):
      coluna mais estreita + foto tão vertical quanto antes deixaria o card alto e fino demais. */
-  .pline-thumb{position:relative;aspect-ratio:4/5;background:var(--surface-2);display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:2px;}
+  .pline-thumb{position:relative;aspect-ratio:4/5;background:var(--surface-2-warm);display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:2px;}
   .pline-thumb img{width:100%;height:100%;object-fit:contain;}
   /* Sem preenchimento (set/2026, testado antes via addStyleTag no Playwright, incluindo sobre
      fotos de tênis preto e o selo de risco) — pedido do usuário achando as cores chapadas pesadas
