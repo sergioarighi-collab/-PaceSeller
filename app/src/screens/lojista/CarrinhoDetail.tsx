@@ -5,6 +5,7 @@ import { PersonaTopNav } from '../../components/desktop/PersonaTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { Toast } from '../../components/desktop/Toast'
 import { ConfirmModal } from '../../components/desktop/ConfirmModal'
+import { PaymentLinkModal } from '../../components/desktop/PaymentLinkModal'
 import { products, collectionTitle } from '../../lib/data'
 import { useAppStore, pedidoActionKind, pedidoPares, pedidoStatusBadge, pedidoAguardandoAprovacaoRep } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
@@ -49,6 +50,9 @@ export function CarrinhoDetail() {
   // (ver commitCartToCarrinho em store.ts) — avisa antes de deixar entrar, em vez de simplesmente
   // voltar o status sem avisar.
   const [confirmEditAguardando, setConfirmEditAguardando] = useState(false)
+  // Link de pagamento (set/2026, pedido do usuário: "após fechamento do carrinho, ele pode gerar
+  // um link e compartilhar com o lojista") — ver PaymentLinkModal.tsx.
+  const [showPaymentLinkModal, setShowPaymentLinkModal] = useState(false)
 
   function handleEditarNoDrawer() {
     if (pedido.status === 'aguardando' || pedido.status === 'aprovado') setConfirmEditAguardando(true)
@@ -225,8 +229,10 @@ export function CarrinhoDetail() {
               </span>
               {/* Pagar é ação do lojista, não da representante (ela só aprova — ver aprovarPedido em
                   store.ts) — sem isso, o "modo loja" deixava a Ana pagar pedido do próprio lojista
-                  sem querer, pela mesma tela reaproveitada. */}
-              {persona !== 'representante' && (
+                  sem querer, pela mesma tela reaproveitada. No lugar, ela gera um link pra mandar
+                  pro lojista pagar sozinho (set/2026, ver PaymentLinkModal.tsx) — só depois de
+                  aprovado (antes disso não tem o que pagar ainda) e com a grade batida. */}
+              {persona !== 'representante' ? (
                 <div
                   className={gradeOk ? 'btn-primary' : 'btn-secondary'}
                   style={{ width: 180, cursor: gradeOk ? 'pointer' : 'not-allowed', opacity: gradeOk ? 1 : 0.6 }}
@@ -234,6 +240,13 @@ export function CarrinhoDetail() {
                 >
                   Ir para pagamento
                 </div>
+              ) : (
+                pedido.status === 'aprovado' &&
+                gradeOk && (
+                  <div className="btn-primary" style={{ width: 200, cursor: 'pointer' }} onClick={() => setShowPaymentLinkModal(true)}>
+                    Gerar link de pagamento
+                  </div>
+                )
               )}
             </div>
             <div className={`grademin ${gradeOk ? 'ok' : 'warn'}`}>
@@ -387,6 +400,15 @@ export function CarrinhoDetail() {
             setConfirmEditAguardando(false)
             startEditPedido(cart.id, pedido.id)
           }}
+        />
+      )}
+
+      {showPaymentLinkModal && (
+        <PaymentLinkModal
+          link={`${window.location.origin}/carrinhos/${cart.id}/${pedido.id}/pagamento`}
+          cartName={cart.name}
+          total={formatBRL(pedido.total)}
+          onClose={() => setShowPaymentLinkModal(false)}
         />
       )}
     </DesktopPage>

@@ -1521,6 +1521,23 @@ Usuário: "quero uma linha tb no comentário com a resposta do cliente por exemp
 
 Via Playwright contra o preview buildado: abrir "Coleção Inverno" mostra as duas `.activitynote` em sequência — avatar "AN"/"Ana: separei a Hertz Rose..." seguido de "CA"/"Carlos: Fechado, pode deixar assim...". `tsc`/build limpos.
 
+## Link de pagamento pro representante compartilhar com o lojista (set/2026)
+
+Usuário: "e o pagamento, após fechamento do carrinho, ele pode gerar um link e compartilhar com o lojista. Estava pensando em como fazer isso e quero a tua ajuda." Pergunta exploratória — respondida com uma recomendação curta antes de implementar (ver histórico): botão "Gerar link de pagamento" só quando o pedido está pronto pra pagar, simulando a geração de um link compartilhável, sem a Ana precisar passar pelo `Payment.tsx` no lugar do cliente. Trade-off avisado de antemão: sem backend/sessão por usuário nesse protótipo, o link não abre de verdade num outro aparelho — é a mesma URL da tela de pagamento, útil como simulação da UX, não um fluxo ponta a ponta entre dois dispositivos. Usuário aprovou ("quero").
+
+### O gap que isso fecha
+
+`CarrinhoDetail.tsx` já tinha um comentário deliberado: "Pagar é ação do lojista, não da representante (ela só aprova)" — por isso o botão "Ir para pagamento" sempre foi escondido pra `persona === 'representante'` (`persona !== 'representante' &&`). Certo em não deixar a Ana pagar no lugar do lojista, mas isso deixava um buraco: pedido aprovado, grade batida, e **nenhuma ação visível** pra ela — só o badge de status, sem jeito de fazer o lojista avançar.
+
+### Implementação
+
+- `PaymentLinkModal.tsx` (novo componente, `components/desktop/`) — usa o `WebModal` genérico (mesmo de `ConfirmModal`). Mostra o link (a própria URL de `/carrinhos/:cartId/:pedidoId/pagamento`, montada com `window.location.origin`) num campo somente-leitura + botão "Copiar link" (`navigator.clipboard.writeText`, com fallback silencioso pro campo selecionável se o clipboard não estiver disponível — testado sem permissão de clipboard concedida: não quebra, só não atualiza o label; com permissão concedida, copia certo e o label vira "Link copiado ✓").
+- `CarrinhoDetail.tsx`: o slot que antes só tinha `persona !== 'representante' && (<Ir para pagamento/>)` virou um ternário — pro lojista, comportamento idêntico de antes; pra representante, `pedido.status === 'aprovado' && gradeOk` mostra "Gerar link de pagamento", que abre o `PaymentLinkModal`. Condição mais estrita que a do lojista de propósito (lá não checava status nenhum, só `gradeOk` — pré-existente, não mexido): só faz sentido gerar link depois que a Ana já aprovou o pedido (`aprovarPedido`), antes disso não tem o que pagar ainda.
+
+### Testado
+
+Via Playwright contra o preview buildado: no carrinho "Giro TG II" (aguardando aprovação da Ana), o botão não existe antes de aprovar; depois de clicar "Aprovar pedido", "Gerar link de pagamento" aparece; clicar abre o modal com o link certo (`/carrinhos/giro-tg2/4902-1/pagamento`); copiar com permissão de clipboard concedida de verdade copia o link (conferido lendo a área de transferência) e atualiza o botão. Regressão: logado como lojista, `CarrinhoDetail` continua mostrando "Ir para pagamento" normalmente, sem nenhuma mudança de comportamento. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
