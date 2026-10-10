@@ -32,7 +32,12 @@ const sinalCta: Record<LojistaSinal['kind'], string> = {
 // lojista e entra direto no contexto dele (ver `enterLojista` em store.ts) — "modo loja". Sem
 // clicar em nada, o lojista só é escolhido manualmente ao entrar no Catálogo pela nav (ver
 // LojistaGate.tsx).
-export function RepRadar() {
+// `defaultView` (set/2026) — permite abrir a página já na visão "Carrinhos" em vez de "Lojas",
+// usado pela rota `/rep/carrinhos` (nav própria no header, ver RepTopNav.tsx: "módulo de carrinho
+// do rep, lembrando a integração com o lojista" — já existia aqui dentro como a visão "Carrinhos",
+// só faltava um atalho direto; ver guia-dev-frontend.md). Mesmo componente/mesma lógica — só muda
+// o estado inicial do toggle, o usuário ainda pode alternar livremente depois de entrar.
+export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } = {}) {
   const navigate = useNavigate()
   const lojistas = useAppStore((s) => s.lojistas)
   const enterLojista = useAppStore((s) => s.enterLojista)
@@ -60,7 +65,7 @@ export function RepRadar() {
   // mesmo grid/card, só muda a granularidade: um card por LOJA ou um card por CARRINHO. Não é uma
   // tela nova nem funde com a Carteira — é um jeito de ver a mesma carteira com mais detalhe sem
   // trocar de tela. Ver `carrinhosRanqueados` abaixo.
-  const [viewMode, setViewMode] = useState<ViewMode>('lojas')
+  const [viewMode, setViewMode] = useState<ViewMode>(defaultView)
 
   // Cada card só mostra o sinal de maior peso daquela loja (os outros viram "+N outras
   // pendências") — `topSinal`/`timeframe` do card vêm desse sinal específico, não de uma mistura

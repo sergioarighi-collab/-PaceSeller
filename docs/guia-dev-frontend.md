@@ -1473,6 +1473,27 @@ Segundo screenshot, ainda com uma pegada creme nítida mesmo a 5% (reduzir só o
 
 Pedido seguinte do usuário, respondido sem nenhuma mudança de código: todo o trabalho desta sessão em cima do Catálogo (filtros numa barra só, busca na linha das abas, recorte real das fotos, cinza com 3% de amarelo) foi feito em `Catalog.tsx`/`mockup.css`/`ProductThumb.tsx` — os mesmos arquivos que o lojista usa, já que o Catálogo é 100% reaproveitado entre as duas personas (ver "modo loja": `comLojistaSelecionada` só intercepta `persona === 'representante'` sem loja ativa; pra `persona === 'lojista'` o `Catalog` renderiza direto, sem gate nenhum). Confirmado ao vivo via Playwright: login como lojista → onboarding (`profileCompleted` começa `false` numa sessão nova) → Radar → Catálogo — `getComputedStyle` do `.pline-thumb` retornou `rgb(244, 244, 238)`, exatamente `#F4F4EE`, igual ao representante.
 
+## "Carrinhos" volta pro header do representante (set/2026)
+
+Usuário: "quero um módulo de carrinho para o rep, lembrando da integração com o lojista. Se já está pronto falta eu colocar ele no header para ter acesso rápido." Resposta: o módulo já existia — é a visão "Carrinhos" dentro do Radar (ver "Carteira vira a visão Carrinhos do Radar", mais acima no guia), que já lista todo carrinho de toda loja da carteira, com valor, status/sinal e ação (abrir, revisar, sugerir reposição...) herdando a mesma integração lojista↔representante (`pedido.status`, `suggestedBy`, `pedidoStatusBadge`) que o resto do app já usa. Só faltava um atalho direto pelo header, em vez de precisar entrar no Radar e trocar o toggle manualmente toda vez.
+
+### Implementação
+
+- `RepRadar` (`Radar.tsx`) ganhou um prop opcional `defaultView?: ViewMode` (default `'lojas'`), usado só pra inicializar o `useState` do toggle — resto do componente/lógica intocado.
+- Nova rota `/rep/carrinhos` em `App.tsx`, mesmo componente `RepRadar`, só com `defaultView="carrinhos"`.
+- `RepTopNav.tsx`: novo item de nav "Carrinhos" entre "Radar" e "Catálogo", apontando pra `/rep/carrinhos`.
+- `CarrinhoDetail.tsx`: breadcrumb do representante ganhou o elo do meio — era `Radar / {nome do carrinho}`, virou `Radar / Carrinhos / {nome do carrinho}` (mesmo padrão de 3 níveis que o lojista já tinha com "Meus Carrinhos").
+
+### Bug pego em teste: toggle não respeitava `defaultView`
+
+Testado o fluxo real (clicar "Carrinhos" no header) e o toggle abria sempre em "Lojas", mesmo vindo de `/rep/carrinhos`. Causa: `/rep/radar` e `/rep/carrinhos` renderizam o **mesmo** componente (`RepRadar`) na mesma posição da árvore de rotas — o React (que só enxerga a árvore de elementos renderizados, não "rotas") trata isso como o mesmo componente recebendo novas props, não como uma troca de componente, então não remonta. Como `useState(defaultView)` só lê o valor inicial na montagem, navegar de uma rota pra outra não reinicializava o estado.
+
+**Correção**: `key="radar"`/`key="carrinhos"` diferentes nos dois `<Route element>` em `App.tsx` — força o React a tratar as duas instâncias como componentes distintos, remontando (e reavaliando `useState(defaultView)`) sempre que o usuário navega entre as duas rotas.
+
+### Testado
+
+Via Playwright contra o preview buildado: login representante → clicar "Carrinhos" no header → URL vira `/rep/carrinhos`, toggle já marca "Carrinhos" (confirmado via `getComputedStyle`/classe `selected`, não só visual), grade mostra carrinhos (não lojas) das 4 lojas da carteira; abrir um carrinho a partir daí funciona normal e o breadcrumb volta "Radar / Carrinhos / {nome}" com os dois links funcionando. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

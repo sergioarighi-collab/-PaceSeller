@@ -11,10 +11,13 @@ import { Toast } from './Toast'
 // "Catálogo" aponta pra rota /catalogo (a mesma do lojista, reaproveitada — ver "modo loja" em
 // guia-dev-frontend.md), não uma rota própria do representante.
 // "Carteira" saiu do nav (set/2026) — virou a visão "Carrinhos" dentro do próprio Radar (ver
-// guia-dev-frontend.md, "Carteira vira a visão Carrinhos do Radar"), não precisa mais de tela/rota
-// própria.
+// guia-dev-frontend.md, "Carteira vira a visão Carrinhos do Radar"). "Carrinhos" voltou pro nav
+// logo depois (set/2026, pedido do usuário: "módulo de carrinho pro rep... colocar ele no header
+// pra acesso rápido") — não é uma tela nova, só um atalho pra `/rep/carrinhos`, que é o mesmo
+// `RepRadar` já abrindo na visão "Carrinhos" (ver `defaultView` em `Radar.tsx`).
 const navItems = [
   { to: '/rep/radar', label: 'Radar', enabled: true },
+  { to: '/rep/carrinhos', label: 'Carrinhos', enabled: true },
   { to: '/catalogo', label: 'Catálogo', enabled: true },
 ]
 
