@@ -715,9 +715,13 @@
   .cattabs{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-top:16px;border-bottom:1px solid var(--border);}
   .cattabs-tabs{display:flex;gap:24px;}
   /* Busca mais discreta (set/2026, pedido do usuário: "a barra podemos diminuir, tá muito grande...
-     e ser mais sutil") — mesma largura fixa de antes, só padding/fonte menores (`.cattabs
-     .searchbox`/`.filterbar .searchbox` sobrescrevem o `.searchbox` base, que já é usado só aqui). */
-  .cattabs .searchbox{width:240px;padding:7px 10px;font-size:12.5px;margin-bottom:7px;}
+     e ser mais sutil") — padding/fonte menores (`.cattabs .searchbox`/`.filterbar .searchbox`
+     sobrescrevem o `.searchbox` base, que já é usado só aqui). Bug logo depois: `width:240px` sozinho
+     não segura o tamanho, porque o `.searchbox` base tem `flex:1` (`flex-basis:0%`, que ignora
+     `width`) — dentro do `.cattabs` (que tem espaço sobrando depois das abas), a busca esticava e
+     tomava toda a largura restante da linha, ficando um retângulo enorme do lado dos textos finos
+     "PRODUTOS"/"COMBOS SUGERIDOS". Precisa de `flex` (não só `width`) pra realmente não crescer. */
+  .cattabs .searchbox{flex:0 0 220px;padding:6px 10px;font-size:12.5px;margin-bottom:7px;}
   .cattab{font-family:var(--mono);font-size:12px;letter-spacing:.03em;text-transform:uppercase;padding:0 0 8px;color:var(--text-secondary);border-bottom:2px solid transparent;}
   .cattab.active{color:var(--text-primary);border-bottom-color:var(--text-primary);font-weight:600;}
   /* `flex-wrap:wrap` (set/2026, correção) — depois que Coleção/Numeração viraram chips dentro da

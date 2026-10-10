@@ -1390,6 +1390,16 @@ Na largura de tela testada (1360px), os chips agora cabem **numa linha só** de 
 
 Via Playwright contra o preview buildado: regressão completa (busca filtra e esconde na aba Combos, painéis de Coleção/Numeração abrem/fecham igual) sem nenhuma mudança de comportamento, só visual. `tsc`/build limpos.
 
+## Bug: busca gigante na linha das abas (set/2026)
+
+Usuário: "não ficou bom a barra da busca" → perguntado o quê especificamente, respondeu "tamanho/proporção". Causa: ao mover a busca pra dentro de `.cattabs` (ver seção "Busca sobe pra linha das abas"), o CSS só travou `width:240px` — mas `.searchbox` base tem `flex:1`, que é `flex-grow:1;flex-shrink:1;flex-basis:0%`, e `flex-basis:0%` **ignora** `width` como ponto de partida. Como `.cattabs` tem `justify-content:space-between` e as abas (`.cattabs-tabs`) não crescem, toda a largura sobrando da linha ia pro único item com `flex-grow`: a busca esticava e virava um retângulo enorme ao lado dos textos finos "PRODUTOS"/"COMBOS SUGERIDOS" — praticamente o mesmo bug de fundo da seção "busca sumiu" de antes (propriedade `flex` sobrepondo `width`), só que ao contrário (cresce demais em vez de encolher até sumir).
+
+**Correção**: `.cattabs .searchbox` trocou `width:240px` por `flex:0 0 220px` (não cresce, não encolhe, tamanho fixo de verdade) — mesma receita que `.filterbar .searchbox` já usava corretamente desde a correção anterior. Lição registrada: perto de `.searchbox`/`.chip`/qualquer coisa com `flex` herdado da base, uma sobrescrita de tamanho **tem que mexer em `flex`, não só em `width`**, senão o `flex-basis:0%` da base vence.
+
+### Testado
+
+Via Playwright: screenshot de perto confirma a busca proporcional aos textos ao lado agora; busca ainda filtra ("Coil" → 7 pra 1 linha de produto), painel "Coleção" ainda abre normal. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
