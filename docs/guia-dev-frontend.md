@@ -1461,13 +1461,13 @@ Implementação (script Python ad-hoc, não faz parte do app — rodado uma vez 
 
 Composições isoladas (`PIL`, fora do app) confirmando o recorte nos dois casos de risco antes de aplicar nas 39: tênis azul/jeans normal e tênis all-white (o caso que quebrava o threshold simples). Depois, via Playwright contra o preview buildado com o app de verdade: grade inteira renderizando sem nenhum halo/retângulo, card cinza de volta, zoom num card individual confirmando ausência de qualquer borda visível. `tsc`/build limpos.
 
-## Teste (ainda não aprovado): cinza do card com 10% de amarelo
+## Cinza do card com 3% de amarelo (set/2026, aprovado)
 
 Usuário: "vamos testar o cinza do card, quero acrescentar um leve amarelo no cinza, 10%". Novo token escopado `--surface-2-warm:#F4F4F5` com o canal azul reduzido em 10% (`245 → 221`) → `#F4F4DD`, aplicado só em `.pline-thumb`/`.pcard-web .pw-thumb` (não no `--surface-2` geral, que seria usado em chips/outras telas sem relação com isso).
 
 Usuário, depois de ver: "não ficou bom, voltamos para o cinza normal e acrescentamos 5% de amarelo" — reduzido pra 5% (`245 → 233`) → `#F4F4E9`.
 
-**Ainda não confirmado** — segundo screenshot mandado, ainda com uma pegada creme nítida mesmo a 5% (reduzir só o canal azul de um cinza já bem claro acentua o efeito visualmente mais do que a % sugere em teoria). Usuário: "vamos mudar de novo, voltar ao cinza normal e acrescentar 3% de amarelo só" — reduzido pra 3% (`245 → 238`) → `#F4F4EE`, resultado bem mais sutil, aguardando confirmação final. Se for ajustar de novo, é só mexer em `var(--surface-2-warm)` em `mockup.css` (perto do `:root`).
+Segundo screenshot, ainda com uma pegada creme nítida mesmo a 5% (reduzir só o canal azul de um cinza já bem claro acentua o efeito visualmente mais do que a % sugere em teoria). Usuário: "vamos mudar de novo, voltar ao cinza normal e acrescentar 3% de amarelo só" — reduzido pra 3% (`245 → 238`) → `#F4F4EE`. **Aprovado** ("ficou bem bom"). Valor final: `--surface-2-warm:#F4F4EE`.
 
 ## Regras de negócio confirmadas (não são chute)
 
