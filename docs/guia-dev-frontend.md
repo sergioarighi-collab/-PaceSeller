@@ -1538,6 +1538,35 @@ Usuário: "e o pagamento, após fechamento do carrinho, ele pode gerar um link e
 
 Via Playwright contra o preview buildado: no carrinho "Giro TG II" (aguardando aprovação da Ana), o botão não existe antes de aprovar; depois de clicar "Aprovar pedido", "Gerar link de pagamento" aparece; clicar abre o modal com o link certo (`/carrinhos/giro-tg2/4902-1/pagamento`); copiar com permissão de clipboard concedida de verdade copia o link (conferido lendo a área de transferência) e atualiza o botão. Regressão: logado como lojista, `CarrinhoDetail` continua mostrando "Ir para pagamento" normalmente, sem nenhuma mudança de comportamento. `tsc`/build limpos.
 
+## Carrinhos no header: escopo dinâmico por contexto (set/2026)
+
+Usuário levantou uma dúvida de UX, não um pedido direto: "no radar, temos o filtro carrinhos, e tb temos ele no header... eu não queria apenas duplicar o radar no header. Fique pensando se o melhor, não seria a gente vincular o carrinho do header ao lojista que já foi selecionado... Ou deixamos ele aberto, assim como na seleção da loja, antes de entrar no catálogo." Pedido explícito: "Quero que você me coloque opções como especialista em UX... fazendo o máximo para diminuir o atrito."
+
+### As opções levantadas (e a escolhida)
+
+- **A — portfólio sempre** (o que existia até aqui): "Carrinhos" no header sempre abre `/rep/carrinhos`, idêntico ao toggle "Carrinhos" dentro do Radar — exatamente a duplicação que incomodou o usuário.
+- **B — escopo automático pelo contexto** (escolhida): fora de modo loja, "Carrinhos" continua abrindo o portfólio inteiro; dentro de uma loja, abre os carrinhos só daquela loja.
+- **C — só existe dentro da loja**: mesmo critério já usado no ícone do drawer (só aparece em modo loja) — descartada por tirar o atalho de 1 clique pro portfólio quando ela não está em loja nenhuma.
+
+### Implementação
+
+- `RepTopNav.tsx`: `navItems` deixou de ser uma constante de módulo e virou calculado dentro do componente (precisa de `lojistaAtiva`) — o item "Carrinhos" aponta pra `/carrinhos` quando `lojistaAtiva` existe, `/rep/carrinhos` quando não.
+- **Achado que baratou a implementação**: `/carrinhos` já é a rota do `MeusCarrinhos.tsx` do lojista, que em modo loja já funciona sozinha escopada pra loja ativa (`s.carrinhos` é trocado por `enterLojista`) — não precisou de nenhuma tela nova nem filtro extra, só apontar o link pra lá.
+- `MeusCarrinhos.tsx` ganhou consciência de persona no cabeçalho, pra não ficar ambíguo (essa mesma tela também é "Meus carrinhos" do lojista, sem loja nenhuma pra nomear): título vira "Carrinhos de {loja}" (era sempre "Meus carrinhos"), subtítulo troca "com Ana, sua representante" por "{N} carrinhos abertos nessa loja" + um link de escape "← Ver carteira inteira" (volta pro portfólio), breadcrumb vira `Radar / Carrinhos / {loja}` (era `Radar / Meus Carrinhos`) — mesmo padrão de 3 níveis que o `CarrinhoDetail` já tinha ganhado antes.
+
+### Gap que isso expôs (e foi fechado na mesma leva): ações do lojista aparecendo pra quem não deveria agir
+
+Testando ao vivo, a tela escopada mostrava "Enviar pro representante" num carrinho — só que quem estava vendo era a própria representante. Perguntado como tratar, o usuário escolheu esconder essas ações pra ela, mesmo princípio que `CarrinhoDetail.tsx` já usava ("Ações do representante: só 'Aprovar pedido' existe de verdade por enquanto").
+
+- `pedidoAction()` (função que decide o link de ação de cada linha) ganhou um branch pra `persona === 'representante'`: só oferece "Acompanhar" (read-only) ou "Aprovar pedido" (quando é a vez dela — `pedidoAguardandoAprovacaoRep`, reaproveitando `aprovarPedido` do store, dando paridade com o que já existia em `CarrinhoDetail`). Qualquer outro caso retorna `null` — a linha mostra só o badge de status, sem link clicável. O render (`{action && (...)}`) passou a tolerar isso.
+- Bulk bar "Enviar pro representante" (ação do lojista sobre o próprio rascunho) só renderiza fora de modo loja/pra persona lojista.
+- Bulk bar "Ana sugeriu X pedido(s)... esperando **sua** revisão" tinha o pronome errado quando a própria Ana lia (ela não é quem revisa a própria sugestão, o lojista é) — vira "Você sugeriu X pedido(s)... esperando revisão **do lojista**", botão "Revisar sugestão" vira "Ver carrinho" (ela não vai revisar nada ali, só conferir).
+- Mesmo ajuste de pronome na linha de atividade do carrinho sem comentário: "Ana montou um pedido pra você revisar" → "Você montou esse pedido — aguardando o lojista revisar."
+
+### Testado
+
+Via Playwright contra o preview buildado: fora de modo loja, link do header tem `href="/rep/carrinhos"` e abre o portfólio com lojas variadas; dentro da Radical Skate, `href="/carrinhos"`, título "Carrinhos de Radical Skate", breadcrumb "Radar / Carrinhos / Radical Skate", link "Ver carteira inteira" volta pro portfólio. Depois do fechamento do gap: "Enviar pro representante" não aparece em lugar nenhum da tela escopada; bulk bar mostra "Você sugeriu... esperando revisão do lojista" / botão "Ver carrinho"; ações por linha mostram só "Acompanhar" (nenhum "Enviar"/"Editar no drawer" solto). Regressão: logada como lojista, `/carrinhos` continua mostrando "Meus carrinhos", "Enviar pro representante" e as ações "Enviar"/"Acompanhar"/"Revisar e aprovar" exatamente como antes. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

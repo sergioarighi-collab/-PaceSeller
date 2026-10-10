@@ -6,7 +6,16 @@ import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { ProductThumb } from '../../components/desktop/ProductThumb'
 import { ConfirmModal } from '../../components/desktop/ConfirmModal'
 import { Toast } from '../../components/desktop/Toast'
-import { useAppStore, cartSummary, comboSummary, resolveTargetCarrinhoId, pedidoPares, pedidoActionKind, pedidoStatusBadge } from '../../lib/store'
+import {
+  useAppStore,
+  cartSummary,
+  comboSummary,
+  resolveTargetCarrinhoId,
+  pedidoPares,
+  pedidoActionKind,
+  pedidoStatusBadge,
+  pedidoAguardandoAprovacaoRep,
+} from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import type { Carrinho, Pedido } from '../../lib/types'
 import { products } from '../../lib/data'
@@ -32,12 +41,19 @@ export function MeusCarrinhos() {
   const setActiveCarrinho = useAppStore((s) => s.setActiveCarrinho)
   const startEditPedido = useAppStore((s) => s.startEditPedido)
   const sendPedidoToRepresentante = useAppStore((s) => s.sendPedidoToRepresentante)
+  const aprovarPedido = useAppStore((s) => s.aprovarPedido)
   const openOrderDrawer = useAppStore((s) => s.openOrderDrawer)
   const cartItems = useAppStore((s) => s.cartItems)
   const cartCombos = useAppStore((s) => s.cartCombos)
   const activeCarrinhoId = useAppStore((s) => s.activeCarrinhoId)
   const editingPedido = useAppStore((s) => s.editingPedido)
   const persona = useAppStore((s) => s.persona)
+  // Quando o representante chega aqui em modo loja (set/2026, "Carrinhos no header: escopo
+  // dinâmico" — ver RepTopNav.tsx), precisa saber de qual loja são esses carrinhos pra não ficar
+  // ambíguo (essa mesma tela também é "Meus carrinhos" do lojista, sem nenhuma loja pra nomear).
+  const lojistas = useAppStore((s) => s.lojistas)
+  const activeLojistaId = useAppStore((s) => s.activeLojistaId)
+  const lojistaAtiva = lojistas.find((l) => l.id === activeLojistaId)
   const [filter, setFilter] = useState<(typeof filters)[number]>(filters[0])
   // "Editar no drawer" num pedido "Aguardando Ana" reabre a aprovação (ver commitCartToCarrinho em
   // store.ts) — avisa antes de deixar entrar. Guarda o carrinho pendente de confirmação (não um
@@ -94,7 +110,24 @@ export function MeusCarrinhos() {
   const readyToSend = carrinhos.filter((c) => c.pedido.status === 'rascunho' && pedidoPares(c.pedido) >= GRADE_MINIMA_PARES).map((c) => ({ c, p: c.pedido }))
   const awaitingReview = carrinhos.filter((c) => c.pedido.status === 'aguardando' && c.pedido.suggestedBy === 'representante').map((c) => ({ c, p: c.pedido }))
 
+  // Ciente de persona (set/2026, "Carrinhos no header: escopo dinâmico" tornou essa tela
+  // alcançável pela representante) — mesmo princípio já usado em `CarrinhoDetail.tsx`: do lado da
+  // Ana, as únicas ações de verdade são "Aprovar pedido" (quando é a vez dela) e "Acompanhar"
+  // (read-only). O resto ("Enviar", "Editar no drawer", "Revisar e aprovar" vendo o próprio pedido
+  // sugerido por ela) são ações do LOJISTA sobre o carrinho dele — mostrar isso pra Ana faria
+  // parecer que ela deveria "enviar pra si mesma" ou editar em nome dele, o que ainda não existe
+  // (ver nota em CarrinhoDetail.tsx). Sem ação disponível, retorna `null` — a linha só mostra o
+  // badge de status, sem link clicável.
   function pedidoAction(cart: Carrinho, pedido: Pedido) {
+    if (persona === 'representante') {
+      if (pedidoActionKind(pedido) === 'acompanhar') {
+        return { label: 'Acompanhar', tone: 'default' as const, onClick: () => navigate(`/carrinhos/${cart.id}/${pedido.id}/acompanhamento`) }
+      }
+      if (pedidoAguardandoAprovacaoRep(pedido)) {
+        return { label: 'Aprovar pedido', tone: 'primary' as const, onClick: () => aprovarPedido(cart.id) }
+      }
+      return null
+    }
     switch (pedidoActionKind(pedido)) {
       case 'acompanhar':
         return { label: 'Acompanhar', tone: 'default' as const, onClick: () => navigate(`/carrinhos/${cart.id}/${pedido.id}/acompanhamento`) }
@@ -113,13 +146,30 @@ export function MeusCarrinhos() {
   return (
     <DesktopPage>
       <PersonaTopNav />
-      <Breadcrumb items={[{ label: 'Radar', to: '/radar' }, { label: 'Meus Carrinhos' }]} />
+      <Breadcrumb
+        items={
+          persona === 'representante'
+            ? [{ label: 'Radar', to: '/rep/radar' }, { label: 'Carrinhos', to: '/rep/carrinhos' }, { label: lojistaAtiva?.name ?? '' }]
+            : [{ label: 'Radar', to: '/radar' }, { label: 'Meus Carrinhos' }]
+        }
+      />
       <div className="web-main" style={{ paddingTop: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--text-primary)' }}>Meus carrinhos</h1>
+            <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--text-primary)' }}>
+              {persona === 'representante' ? `Carrinhos de ${lojistaAtiva?.name ?? 'carregando...'}` : 'Meus carrinhos'}
+            </h1>
             <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
-              {carrinhos.length} carrinhos abertos · com Ana, sua representante
+              {persona === 'representante' ? (
+                <>
+                  {carrinhos.length} carrinhos abertos nessa loja ·{' '}
+                  <span style={{ color: 'var(--info)', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/rep/carrinhos')}>
+                    ← Ver carteira inteira
+                  </span>
+                </>
+              ) : (
+                <>{carrinhos.length} carrinhos abertos · com Ana, sua representante</>
+              )}
             </div>
           </div>
           <div
@@ -160,9 +210,13 @@ export function MeusCarrinhos() {
           </div>
         </div>
 
-        {(readyToSend.length > 0 || awaitingReview.length > 0) && (
+        {/* "Enviar pro representante" é ação do lojista sobre o próprio rascunho — escondida da
+            Ana quando ela vê essa lista em modo loja (set/2026, mesmo princípio do `pedidoAction`
+            acima: ver nota ali). O bloco "Ana sugeriu..." continua, só com o texto/botão ajustados
+            pra quem está lendo (ver logo abaixo). */}
+        {((persona !== 'representante' && readyToSend.length > 0) || awaitingReview.length > 0) && (
           <div className="bulkbar">
-            {readyToSend.length > 0 && (
+            {persona !== 'representante' && readyToSend.length > 0 && (
               <div className="bulkrow">
                 <div className="bicon">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4">
@@ -201,14 +255,14 @@ export function MeusCarrinhos() {
                 </div>
                 <div className="btext">
                   <b>
-                    Ana sugeriu {awaitingReview.length} pedido{awaitingReview.length > 1 ? 's' : ''} novo
-                    {awaitingReview.length > 1 ? 's' : ''}
+                    {persona === 'representante' ? 'Você sugeriu' : 'Ana sugeriu'} {awaitingReview.length} pedido
+                    {awaitingReview.length > 1 ? 's' : ''} novo{awaitingReview.length > 1 ? 's' : ''}
                   </b>{' '}
                   — {awaitingReview[0].c.name}, {awaitingReview[0].c.daysSinceActivity > 0 ? `parado há ${awaitingReview[0].c.daysSinceActivity} dias` : 'agora'}{' '}
-                  esperando sua revisão
+                  {persona === 'representante' ? 'esperando revisão do lojista' : 'esperando sua revisão'}
                 </div>
                 <div className="bbtn" onClick={() => navigate(`/carrinhos/${awaitingReview[0].c.id}`)}>
-                  Revisar sugestão
+                  {persona === 'representante' ? 'Ver carrinho' : 'Revisar sugestão'}
                 </div>
               </div>
             )}
@@ -279,9 +333,11 @@ export function MeusCarrinhos() {
                     </span>
                   </div>
                   <span className="pval">{formatBRL(pedido.total)}</span>
-                  <span className={`pact ${action.tone === 'primary' ? 'primary' : ''}`} onClick={action.onClick}>
-                    {action.label}
-                  </span>
+                  {action && (
+                    <span className={`pact ${action.tone === 'primary' ? 'primary' : ''}`} onClick={action.onClick}>
+                      {action.label}
+                    </span>
+                  )}
                 </div>
 
                 {isDraftTarget && (
@@ -313,6 +369,10 @@ export function MeusCarrinhos() {
                       {cart.lastComment ? (
                         <>
                           <b>{cart.lastComment.author}:</b> {cart.lastComment.text} <span className="rtime">{cart.lastComment.timeLabel}</span>
+                        </>
+                      ) : persona === 'representante' ? (
+                        <>
+                          <b>Você</b> montou esse pedido — aguardando o lojista revisar.
                         </>
                       ) : (
                         <>

@@ -14,17 +14,19 @@ import { Toast } from './Toast'
 // "Carteira" saiu do nav (set/2026) — virou a visão "Carrinhos" dentro do próprio Radar (ver
 // guia-dev-frontend.md, "Carteira vira a visão Carrinhos do Radar"). "Carrinhos" voltou pro nav
 // logo depois (set/2026, pedido do usuário: "módulo de carrinho pro rep... colocar ele no header
-// pra acesso rápido") — não é uma tela nova, só um atalho pra `/rep/carrinhos`, que é o mesmo
-// `RepRadar` já abrindo na visão "Carrinhos" (ver `defaultView` em `Radar.tsx`).
+// pra acesso rápido").
 // Ordem Radar → Catálogo → Carrinhos (set/2026, pedido do usuário) — "Carrinhos" nasceu entre
 // Radar e Catálogo, mas a ordem certa é a jornada: olhar a carteira (Radar), decidir o que vender
 // (Catálogo), só depois acompanhar o que já foi montado (Carrinhos).
-const navItems = [
-  { to: '/rep/radar', label: 'Radar', enabled: true },
-  { to: '/catalogo', label: 'Catálogo', enabled: true },
-  { to: '/rep/carrinhos', label: 'Carrinhos', enabled: true },
-]
-
+// Escopo dinâmico de "Carrinhos" (set/2026, usuário levantou a dúvida: "eu não queria apenas
+// duplicar o radar no header... não seria melhor vincular o carrinho do header ao lojista que já
+// foi selecionado?" — opção B escolhida entre as alternativas discutidas, ver guia-dev-frontend.md
+// "Carrinhos no header: escopo dinâmico por contexto"): fora de modo loja aponta pra
+// `/rep/carrinhos` (portfólio inteiro, mesmo `RepRadar` de sempre); dentro de uma loja aponta pra
+// `/carrinhos` — o mesmo `MeusCarrinhos.tsx` que o lojista usa, que já vem escopado sozinho pra loja
+// ativa (`s.carrinhos` é trocado por `enterLojista`, não precisa de nenhum filtro extra). Por isso
+// `navItems` virou função dentro do componente (precisa de `lojistaAtiva`), não mais constante do
+// módulo.
 export function RepTopNav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [comingSoon, setComingSoon] = useState<string | null>(null)
@@ -39,6 +41,11 @@ export function RepTopNav() {
   const { totalItems: itemsQty } = cartSummary(cartItems)
   const { totalItems: combosQty } = comboSummary(cartCombos)
   const bagCount = itemsQty + combosQty
+  const navItems = [
+    { to: '/rep/radar', label: 'Radar', enabled: true },
+    { to: '/catalogo', label: 'Catálogo', enabled: true },
+    { to: lojistaAtiva ? '/carrinhos' : '/rep/carrinhos', label: 'Carrinhos', enabled: true },
+  ]
 
   return (
     <div className="web-topnav">
