@@ -1421,6 +1421,16 @@ Usuário: "conseguimos tirar o fundo das imagens, dos tênis, para não ficar o 
 
 Via Playwright contra o preview buildado, screenshot de perto (card individual) confirmando nenhuma borda/retângulo visível ao redor do tênis — a foto se mistura direto no fundo cinza do card. `tsc`/build limpos.
 
+## Tira o quadrado cinza também: foto sem nenhum fundo visível (set/2026)
+
+Usuário, logo depois do multiply resolver o retângulo branco: "ainda consigo ver o fundo cinza da imagem do tênis, não conseguimos retirar o fundo?" — ambíguo (podia ser o quadrado cinza inteiro, ou um cinza "sujo" vazando pro próprio tênis via multiply), então perguntado direto: confirmou que era **o quadrado cinza inteiro** do `.pline-thumb`/`.pw-thumb`, não a mistura de cor. Ou seja: a pedido anterior ("fundo das fotos pra cinza") foi substituído por "nenhum fundo visível".
+
+**Correção**: `.pline-thumb`/`.pcard-web .pw-thumb` trocaram `background:var(--surface-2)` por `background:transparent`. Como `.catgrid-web` (o fundo atrás de tudo) já é branco desde a mudança anterior, e o `mix-blend-mode:multiply` do `ProductThumb.tsx` já cuidava do fundo branco "assado" no `.jpg`, o resultado final é o tênis flutuando direto sobre o branco da grade, sem nenhum quadro/caixa visível ao redor — o `mix-blend-mode` continua lá (não faz mal nenhum contra fundo branco, já era essencialmente um no-op nesse caso, mas segue sendo necessário pros fundos coloridos que `ProductThumb` ainda pode ter no futuro).
+
+### Testado
+
+Via Playwright contra o preview buildado: grade inteira sem nenhum retângulo/caixa ao redor das fotos. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
