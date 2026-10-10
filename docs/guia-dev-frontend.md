@@ -1370,6 +1370,26 @@ Usuário: "e se subirmos a busca para o lado direito? acima dos filtros, fazendo
 
 Via Playwright contra o preview buildado: buscar "Coil" filtra de 7 pra 1 linha de produto; limpar a busca volta pra 7; trocar pra aba Combos esconde a busca, voltar pra Produtos ela reaparece; o painel "Coleção" (chip-com-menu) continua abrindo normalmente com a busca no novo lugar. `tsc`/build limpos.
 
+## Barra de filtros menor e mais sutil (set/2026)
+
+Usuário, logo em seguida: "mas a barra podemos diminuir tá muito grande" + "e ser mais sutil". Mesmo com o `flex-wrap` já resolvendo o estouro de largura, os chips/espaçamentos continuavam no tamanho original — com Coleção/Numeração somados ao resto, a barra ocupava 2 linhas de chips "pesados" (borda + fundo em todos, não só nos selecionados) antes da grade de produtos.
+
+### O que mudou (`mockup.css`)
+
+- **Escopado a `.filterbar`/`.filterdropdown`, não a `.chip` base** — `.chip` é reaproveitado em telas bem diferentes (Payment.tsx, Radar, WizardStep1, MeusCarrinhos) onde o tamanho/peso atual continua sendo o certo; mexer na classe base quebraria todas elas.
+- `.filterbar .chip, .filterdropdown .chip{font-size:11px;padding:5px 10px}` (era `11.5px`/`7px 12px`).
+- **"Mais sutil"**: chip não-selecionado perdeu a borda (`border-color:transparent`), sobra só o fundo leve (`var(--surface-2)`, herdado da `.chip` base) pra indicar "isso é clicável" — a borda preta grossa do `.chip.selected` (também herdada, sem mudança) passou a ser o único contraste forte da barra, em vez de competir com bordas em todo mundo.
+- `.filterbar{gap:7px;margin-top:12px;row-gap:7px}` (era `12px`/`18px`/`10px`) e `.cattabs{margin-top:16px}`/`.cattab{padding-bottom:8px}` — ritmo vertical mais apertado no bloco inteiro acima da grade, não só nos chips.
+- Busca ficou um pouco menor também (`.cattabs .searchbox`/`.filterbar .searchbox` com `padding:7px 10px;font-size:12.5px`, era `10px 12px`/`13px`), pra acompanhar o resto do bloco em vez de ficar grande demais perto dos chips novos.
+
+### Resultado
+
+Na largura de tela testada (1360px), os chips agora cabem **numa linha só** de novo (antes da redução precisavam de 2, depois do redesign Coleção/Numeração) — o `flex-wrap` continua lá como rede de segurança pra telas mais estreitas ou catálogos com mais chips no futuro, só não é mais acionado no caso comum.
+
+### Testado
+
+Via Playwright contra o preview buildado: regressão completa (busca filtra e esconde na aba Combos, painéis de Coleção/Numeração abrem/fecham igual) sem nenhuma mudança de comportamento, só visual. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
