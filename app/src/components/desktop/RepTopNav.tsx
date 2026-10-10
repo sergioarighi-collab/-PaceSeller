@@ -15,10 +15,13 @@ import { Toast } from './Toast'
 // logo depois (set/2026, pedido do usuário: "módulo de carrinho pro rep... colocar ele no header
 // pra acesso rápido") — não é uma tela nova, só um atalho pra `/rep/carrinhos`, que é o mesmo
 // `RepRadar` já abrindo na visão "Carrinhos" (ver `defaultView` em `Radar.tsx`).
+// Ordem Radar → Catálogo → Carrinhos (set/2026, pedido do usuário) — "Carrinhos" nasceu entre
+// Radar e Catálogo, mas a ordem certa é a jornada: olhar a carteira (Radar), decidir o que vender
+// (Catálogo), só depois acompanhar o que já foi montado (Carrinhos).
 const navItems = [
   { to: '/rep/radar', label: 'Radar', enabled: true },
-  { to: '/rep/carrinhos', label: 'Carrinhos', enabled: true },
   { to: '/catalogo', label: 'Catálogo', enabled: true },
+  { to: '/rep/carrinhos', label: 'Carrinhos', enabled: true },
 ]
 
 export function RepTopNav() {

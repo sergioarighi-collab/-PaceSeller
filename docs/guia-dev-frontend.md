@@ -1494,6 +1494,8 @@ Testado o fluxo real (clicar "Carrinhos" no header) e o toggle abria sempre em "
 
 Via Playwright contra o preview buildado: login representante → clicar "Carrinhos" no header → URL vira `/rep/carrinhos`, toggle já marca "Carrinhos" (confirmado via `getComputedStyle`/classe `selected`, não só visual), grade mostra carrinhos (não lojas) das 4 lojas da carteira; abrir um carrinho a partir daí funciona normal e o breadcrumb volta "Radar / Carrinhos / {nome}" com os dois links funcionando. `tsc`/build limpos.
 
+Ordem corrigida logo depois (usuário: "a ordem do header é radar - catálogo - carrinho") — "Carrinhos" tinha nascido entre Radar e Catálogo; reordenado em `navItems` (`RepTopNav.tsx`) pra Radar → Catálogo → Carrinhos. Reconferido via Playwright, lendo o texto dos links na ordem do DOM.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
