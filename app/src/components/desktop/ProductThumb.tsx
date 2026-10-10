@@ -17,7 +17,16 @@ export function ProductThumb({
       <img
         src={src}
         alt={alt}
-        style={{ width: '100%', height: '100%', objectFit: 'contain', padding, boxSizing: 'border-box' }}
+        // `mixBlendMode:'multiply'` (set/2026, pedido do usuário: "conseguimos tirar o fundo das
+        // imagens... para não ficar o retângulo branco") — as fotos são .jpg com fundo de estúdio
+        // branco, sem canal alpha (não dá pra simplesmente "remover o fundo" sem reprocessar as 39
+        // imagens em `public/products/`). Multiply contra um fundo claro (ex: `.pline-thumb`, que
+        // virou cinza nesse mesmo pedido) faz o branco da foto se fundir no fundo do card — mesma
+        // técnica que `.pline-dot > img` (miniaturas de cor do carrossel) já usava em `mockup.css`,
+        // só que agora no componente compartilhado em vez de regra de CSS por tela. Contra um fundo
+        // branco de verdade o efeito é nulo (branco × branco = branco, visualmente idêntico a sem
+        // blend), então é seguro pros outros lugares que usam `ProductThumb` hoje.
+        style={{ width: '100%', height: '100%', objectFit: 'contain', padding, boxSizing: 'border-box', mixBlendMode: 'multiply' }}
         onError={(e) => {
           e.currentTarget.style.display = 'none'
           const fallback = e.currentTarget.nextElementSibling as HTMLElement | null

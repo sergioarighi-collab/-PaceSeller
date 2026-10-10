@@ -1402,6 +1402,25 @@ Ajuste fino logo depois ("ta pra aumentar um pouquinho mais"): `220px → 280px`
 
 Via Playwright: screenshot de perto confirma a busca proporcional aos textos ao lado agora; busca ainda filtra ("Coil" → 7 pra 1 linha de produto), painel "Coleção" ainda abre normal. `tsc`/build limpos.
 
+## Fundo da grade trocado (cinza → branco) e das fotos invertido (branco → cinza), sem retângulo branco nas imagens (set/2026)
+
+Usuário: "quero fazer outro teste no background do catálogo, trocar o cinza pelo branco e o fundo das fotos para cinza. Quero ver primeiro aqui" — testado direto no preview buildado, screenshot mandado no chat antes de qualquer commit (pedido explícito de "ver primeiro"). Aprovado ("ficou bem bom"), com um pedido extra na sequência.
+
+### O que mudou (`mockup.css`)
+
+- `.catgrid-web` (fundo atrás de todos os cards): `var(--surface-2)` (cinza) → `var(--surface)` (branco).
+- `.pline-thumb` (foto grande da grade normal de produtos) e `.pcard-web .pw-thumb` (foto nas visões de contexto — benchmark/reposição): `var(--surface)` (branco) → `var(--surface-2)` (cinza). Inverteu o par — antes era grade cinza/foto branca, agora é grade branca/foto cinza.
+
+### Pedido seguinte: tirar o retângulo branco da própria foto
+
+Usuário: "conseguimos tirar o fundo das imagens, dos tênis, para não ficar o retângulo branco da imagem" — com o fundo do card virando cinza, sobrava visível o fundo branco de estúdio **dentro** do próprio arquivo `.jpg` de cada produto (as 39 fotos em `public/products/` não são PNG com transparência, é fundo branco "assado" no pixel).
+
+**Solução**: `mix-blend-mode:'multiply'` no `<img>` do componente compartilhado `ProductThumb.tsx` (usado por toda foto de produto do catálogo — grade normal, visões de contexto, combos). Branco × qualquer cor = a própria cor, então o fundo branco da foto se funde no fundo do card (agora cinza) e "some", sobrando só o tênis — sem precisar reprocessar nenhuma das 39 imagens. Essa já era uma técnica usada no projeto (`.pline-dot > img` no carrossel de cores já tinha isso via CSS, documentado ali desde o redesenho do card de linha de produto); só não estava no componente principal da foto grande. Como multiply contra fundo branco de verdade é um no-op (branco × branco = branco, visualmente idêntico a sem blend), é seguro pros outros lugares que já usam `ProductThumb` hoje, mesmo os que ficaram em fundo branco.
+
+### Testado
+
+Via Playwright contra o preview buildado, screenshot de perto (card individual) confirmando nenhuma borda/retângulo visível ao redor do tênis — a foto se mistura direto no fundo cinza do card. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
