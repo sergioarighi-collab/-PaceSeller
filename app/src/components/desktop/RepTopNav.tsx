@@ -33,20 +33,6 @@ export function RepTopNav() {
         <span className="weblogo" style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 16, color: 'var(--text-primary)' }}>
           Tesla Skate
         </span>
-        <span
-          style={{
-            fontFamily: 'var(--mono)',
-            fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: '.05em',
-            color: 'var(--text-tertiary)',
-            border: '1px solid var(--border-strong)',
-            borderRadius: 4,
-            padding: '2px 6px',
-          }}
-        >
-          REPRESENTANTE
-        </span>
         <div className="navlinks">
           {navItems.map((item) =>
             item.enabled ? (
@@ -87,6 +73,24 @@ export function RepTopNav() {
             </span>
           </div>
         )}
+        {/* Movido do canto esquerdo pra cá (set/2026, pedido do usuário: "pode ficar em outro lugar
+            aquela indicação... talvez no canto direito") — interrompia o fluxo logo→nav do lado
+            esquerdo; aqui agrupa com a identidade de quem está logada (o menu do avatar já mostra
+            "Ana Silva · Representante" por completo, isso aqui é só o resumo sempre visível). */}
+        <span
+          style={{
+            fontFamily: 'var(--mono)',
+            fontSize: 10,
+            fontWeight: 700,
+            letterSpacing: '.05em',
+            color: 'var(--text-tertiary)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: 4,
+            padding: '2px 6px',
+          }}
+        >
+          REPRESENTANTE
+        </span>
         <div className="avatar-wrap">
           <div className="avatar-chip" style={{ cursor: 'pointer' }} onClick={() => setMenuOpen((o) => !o)}>
             AN

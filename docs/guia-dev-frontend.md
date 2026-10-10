@@ -1286,6 +1286,16 @@ Usuário reportou: "os filtros da seleção das lojas e carrinho, ficaram sobre 
 
 **Correção**: `.web-icard.opp-banner` ganhou `margin-top:20px`. Conferido de novo com `getBoundingClientRect`: toggle termina em `416.5`, banner começa em `436.5` — 20px, igual ao resto. `tsc`/build limpos.
 
+## Badge "REPRESENTANTE" muda de lado no header (set/2026)
+
+Usuário: "acho que pode ficar em outro lugar aquela indicação [de que está no perfil do representante]. Talvez no canto direito." Mockup testado (DOM hackeado no preview) antes de implementar.
+
+Estava em `.navleft`, entre o logo e os links de navegação (Radar/Catálogo) — interrompia o fluxo "marca → navegação". Movido pra `.navright` (`RepTopNav.tsx`), logo antes do `.avatar-wrap` — agrupa com a identidade de quem está logada em vez de competir com a navegação. O menu do avatar já mostra "Ana Silva · Representante" por extenso quando aberto; esse badge continua sendo só o resumo sempre visível, sem precisar abrir nada. `.navright` já tinha `gap: 22px` entre filhos, então o espaçamento em relação ao "Atendendo: {loja} · Trocar loja" (quando em modo loja) e ao avatar saiu correto sem CSS novo.
+
+### Testado
+
+Via Playwright contra o preview buildado, nos dois estados do `.navright`: sem loja ativa (`Tesla Skate · Radar · Catálogo` — `REPRESENTANTE` · `AN`) e com loja ativa (`Atendendo: Radical Skate · Trocar loja` — `REPRESENTANTE` · `AN`). `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
