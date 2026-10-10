@@ -707,7 +707,14 @@
      rolagem — fácil de nunca notar que existiam. Sublinhado em vez do estilo pill de
      `.cartswitcher .tab` (usado em Meus Carrinhos/drawer) — são conceitos diferentes: aqui é
      navegação entre 2 visões da mesma página, não um filtro de estado. */
-  .cattabs{display:flex;gap:24px;margin-top:20px;border-bottom:1px solid var(--border);}
+  /* `justify-content:space-between`/`align-items:flex-end` (set/2026, pedido do usuário: "subirmos
+     a busca pro lado direito, acima dos filtros, fazendo alinhamento com... Produtos e Combos
+     sugeridos") — a busca entrou como segundo filho de `.cattabs` (`.cattabs-tabs` de um lado, o
+     `.searchbox` do outro), `flex-end` pra alinhar pela base, já que as abas só têm padding embaixo
+     (sem padding em cima) e a busca é mais alta que o texto das abas. */
+  .cattabs{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-top:20px;border-bottom:1px solid var(--border);}
+  .cattabs-tabs{display:flex;gap:24px;}
+  .cattabs .searchbox{width:260px;margin-bottom:8px;}
   .cattab{font-family:var(--mono);font-size:12px;letter-spacing:.03em;text-transform:uppercase;padding:0 0 10px;color:var(--text-secondary);border-bottom:2px solid transparent;}
   .cattab.active{color:var(--text-primary);border-bottom-color:var(--text-primary);font-weight:600;}
   /* `flex-wrap:wrap` (set/2026, correção) — depois que Coleção/Numeração viraram chips dentro da

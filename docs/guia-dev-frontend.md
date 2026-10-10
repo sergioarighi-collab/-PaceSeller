@@ -1352,6 +1352,24 @@ Usuário, assim que viu a tela de verdade (não só o mockup): "ficou ruim. A bu
 
 **Correção** (`mockup.css`): `.filterbar` ganhou `flex-wrap:wrap` (chips quebram em quantas linhas precisar, em vez de forçar tudo numa só) e a busca virou `flex:0 0 280px` (largura fixa, não cresce nem encolhe mais — sempre visível e com o mesmo tamanho, na primeira posição da barra). Reconferido depois via Playwright: busca aparece inteira na 1ª linha, chips quebram pra uma 2ª linha quando não cabem, e o toggle dos painéis de Coleção/Numeração continua funcionando igual (nenhuma regressão). `tsc`/build limpos.
 
+## Busca sobe pra linha das abas Produtos/Combos (set/2026)
+
+Usuário: "e se subirmos a busca para o lado direito? acima dos filtros, fazendo alinhamento com os componentes Produtos e Combos sugeridos." Com a busca morando na `.filterbar` (mesmo depois da correção do wrap), ela competia visualmente com os chips de filtro logo abaixo do título. Pedido: tirar ela dali e alinhar na mesma linha de `.cattabs` (Produtos / Combos sugeridos), no lado direito.
+
+### Implementação (`Catalog.tsx`)
+
+- `.cattabs` virou um flex row com `justify-content:space-between`: as duas abas ficam dentro de um wrapper novo (`.cattabs-tabs`, só pra poder dar `justify-content` entre ele e a busca sem separar as próprias abas uma da outra), a busca é o segundo filho, à direita.
+- A busca só existe pra filtrar **produtos** (`query` não entra em `applyLineFilter`/combos — combos não são buscáveis), então só renderiza com `catalogTab === 'produtos'` — mesmo raciocínio que já escondia a `.filterbar` inteira na aba Combos. Testado: mudar pra Combos esconde a busca, voltar pra Produtos ela reaparece.
+- No modo "contexto" (`benchmark`/`reposição`, onde `.cattabs` nem renderiza), a busca continua dentro da `.filterbar`, como sempre foi — só saiu de lá no caminho normal do catálogo.
+
+### CSS (`mockup.css`)
+
+`.cattabs{justify-content:space-between;align-items:flex-end;...}` — `flex-end` porque as abas só têm padding embaixo (sem padding em cima) e a busca é mais alta que o texto delas; alinhar pela base deixa as duas coisas "na mesma linha" de verdade, não só tecnicamente na mesma `<div>`. `.cattabs-tabs{display:flex;gap:24px;}` e `.cattabs .searchbox{width:260px;margin-bottom:8px;}` (largura fixa + uma folga da borda inferior da `.cattabs`).
+
+### Testado
+
+Via Playwright contra o preview buildado: buscar "Coil" filtra de 7 pra 1 linha de produto; limpar a busca volta pra 7; trocar pra aba Combos esconde a busca, voltar pra Produtos ela reaparece; o painel "Coleção" (chip-com-menu) continua abrindo normalmente com a busca no novo lugar. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

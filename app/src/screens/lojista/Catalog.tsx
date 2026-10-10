@@ -347,42 +347,65 @@ export function Catalog() {
 
           {!context && (
             <div className="cattabs">
-              <div
-                className={`cattab ${catalogTab === 'produtos' ? 'active' : ''}`}
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
-                  setCatalogTab('produtos')
-                  setOpenDropdown(null)
-                }}
-              >
-                Produtos
+              <div className="cattabs-tabs">
+                <div
+                  className={`cattab ${catalogTab === 'produtos' ? 'active' : ''}`}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    setCatalogTab('produtos')
+                    setOpenDropdown(null)
+                  }}
+                >
+                  Produtos
+                </div>
+                <div
+                  className={`cattab ${catalogTab === 'combos' ? 'active' : ''}`}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    setCatalogTab('combos')
+                    setOpenDropdown(null)
+                  }}
+                >
+                  Combos sugeridos ({combos.length})
+                </div>
               </div>
-              <div
-                className={`cattab ${catalogTab === 'combos' ? 'active' : ''}`}
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
-                  setCatalogTab('combos')
-                  setOpenDropdown(null)
-                }}
-              >
-                Combos sugeridos ({combos.length})
-              </div>
+              {/* Busca subiu pra cá (set/2026, pedido do usuário: "subirmos a busca pro lado
+                  direito, acima dos filtros, fazendo alinhamento com Produtos e Combos sugeridos")
+                  — só existe pra buscar produtos (`query` não filtra combos, ver `applyLineFilter`),
+                  então só aparece com a aba Produtos ativa, igual o resto da `.filterbar` já ficava
+                  escondido nesse caso. */}
+              {catalogTab === 'produtos' && (
+                <div className="searchbox">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m21 21-4.3-4.3" />
+                  </svg>
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Buscar produtos"
+                    style={{ background: 'transparent', border: 'none', outline: 'none', width: '100%', font: 'inherit', color: 'inherit' }}
+                  />
+                </div>
+              )}
             </div>
           )}
 
           <div className="filterbar" style={!context && catalogTab !== 'produtos' ? { display: 'none' } : undefined}>
-            <div className="searchbox">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <circle cx="11" cy="11" r="7" />
-                <path d="m21 21-4.3-4.3" />
-              </svg>
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar produtos"
-                style={{ background: 'transparent', border: 'none', outline: 'none', width: '100%', font: 'inherit', color: 'inherit' }}
-              />
-            </div>
+            {context && (
+              <div className="searchbox">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Buscar produtos"
+                  style={{ background: 'transparent', border: 'none', outline: 'none', width: '100%', font: 'inherit', color: 'inherit' }}
+                />
+              </div>
+            )}
             {context ? (
               <div className="chip selected">{context.chip}</div>
             ) : (
