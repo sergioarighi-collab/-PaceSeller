@@ -1280,6 +1280,12 @@ Via Playwright contra o preview buildado: logada como representante, entrou em "
 - Somar itens num carrinho que já existe (branch de merge de `commitCartToCarrinho`) não ganhou o mesmo tratamento — se a Ana "continuar comprando" dentro de um carrinho que já era do lojista, o status/`suggestedBy` dele não mudam. Decisão deliberada: misturar autoria nesse caso é mais ambíguo (de quem é o carrinho afinal?) e não tinha pedido concreto cobrindo isso.
 - Visão do LOJISTA sobre esse carrinho específico não foi verificada ao vivo nesta leva — depende da limitação já documentada de `lojistas`/`carrinhos` serem cópias independentes da mesma seed (sem backend real). A lógica (`pedidoStatusBadge`) já é a mesma usada e testada pro exemplo seed "Coil Verão", então o comportamento é o mesmo por construção, só não foi reclicado ao vivo pra esse carrinho específico.
 
+## Bug: banner de oportunidade colado no toggle Lojas/Carrinhos (set/2026)
+
+Usuário reportou: "os filtros da seleção das lojas e carrinho, ficaram sobre o banner". Medido via `getBoundingClientRect` (não só olhando print — a diferença entre "colado" e "sobrepondo" é de poucos pixels, não dava pra confiar só no olho): `.opp-banner` não tinha `margin-top` próprio, então encostava direto no `.radar-viewtoggle` acima dele (0px de distância — toggle terminava em `416.5`, banner começava em `416.5`). O resto da tela usa 20px entre blocos (mesmo valor de `.radar-grid{margin-top:20px}`); só o banner tinha ficado sem.
+
+**Correção**: `.web-icard.opp-banner` ganhou `margin-top:20px`. Conferido de novo com `getBoundingClientRect`: toggle termina em `416.5`, banner começa em `436.5` — 20px, igual ao resto. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
