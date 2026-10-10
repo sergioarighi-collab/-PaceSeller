@@ -1469,6 +1469,10 @@ Usuário, depois de ver: "não ficou bom, voltamos para o cinza normal e acresce
 
 Segundo screenshot, ainda com uma pegada creme nítida mesmo a 5% (reduzir só o canal azul de um cinza já bem claro acentua o efeito visualmente mais do que a % sugere em teoria). Usuário: "vamos mudar de novo, voltar ao cinza normal e acrescentar 3% de amarelo só" — reduzido pra 3% (`245 → 238`) → `#F4F4EE`. **Aprovado** ("ficou bem bom"). Valor final: `--surface-2-warm:#F4F4EE`.
 
+### "Faça a mesma modificação no catálogo do lojista" — já estava feito
+
+Pedido seguinte do usuário, respondido sem nenhuma mudança de código: todo o trabalho desta sessão em cima do Catálogo (filtros numa barra só, busca na linha das abas, recorte real das fotos, cinza com 3% de amarelo) foi feito em `Catalog.tsx`/`mockup.css`/`ProductThumb.tsx` — os mesmos arquivos que o lojista usa, já que o Catálogo é 100% reaproveitado entre as duas personas (ver "modo loja": `comLojistaSelecionada` só intercepta `persona === 'representante'` sem loja ativa; pra `persona === 'lojista'` o `Catalog` renderiza direto, sem gate nenhum). Confirmado ao vivo via Playwright: login como lojista → onboarding (`profileCompleted` começa `false` numa sessão nova) → Radar → Catálogo — `getComputedStyle` do `.pline-thumb` retornou `rgb(244, 244, 238)`, exatamente `#F4F4EE`, igual ao representante.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
