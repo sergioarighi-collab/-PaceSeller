@@ -1296,6 +1296,27 @@ Estava em `.navleft`, entre o logo e os links de navegação (Radar/Catálogo) �
 
 Via Playwright contra o preview buildado, nos dois estados do `.navright`: sem loja ativa (`Tesla Skate · Radar · Catálogo` — `REPRESENTANTE` · `AN`) e com loja ativa (`Atendendo: Radical Skate · Trocar loja` — `REPRESENTANTE` · `AN`). `tsc`/build limpos.
 
+## Redesign da `LojistaGate.tsx`: de card colorido pra lista neutra com valor de compras (set/2026)
+
+Usuário: "temos que mudar o layout das lojas que escolho entrar... podemos pensar em outro layout, pois esse está muito parecido com o radar podendo confundir o usuário". Até aqui, a Gate (tela "Qual loja você vai atender agora?") reaproveitava literalmente o `.web-icard` colorido por severidade do Radar — mesma estrutura, mesmo `SinalIcon`, mesmo `topLojistaSinal` guiando a cor do card. Fazia sentido quando só existia essa tela, mas depois que o Radar ganhou o banner de oportunidade e a visão "Carrinhos" com ícones coloridos, a Gate virou "mais uma tela parecida com o Radar", confundindo "isso é pra agir" (Radar) com "isso é só pra escolher uma loja" (Gate).
+
+### O que mudou
+
+- **Layout**: de grade de cards (`.radar-grid`) pra uma lista de linhas horizontais num único cartão com divisórias (`.gate-list`/`.gate-row`, novo em `mockup.css`). Mockup testado em Playwright (HTML injetado no preview) e aprovado pelo usuário antes de mexer no código de verdade — ver histórico de mensagens.
+- **Sem cor por severidade**: a Gate não usa mais `tone-risk`/`tone-info`/`tone-warn`/`tone-positive` nem o texto do sinal (`topLojistaSinal(lojista).text`). Decisão deliberada: aqui não é sobre agir em cima de um sinal (isso é papel do Radar, que executa ação), é só sobre escolher a loja — repetir o motivo/sinal aqui também ia contra o pedido recorrente do usuário de "não quero que fique muita informação que... se percam". `topLojistaSinal` continua existindo e exportado (usado pelo Radar), só não é mais chamado pela Gate.
+- **Dado novo — "valor comprado no mês"**: pedido explícito do usuário. Implementado como `lojistaComprasMes(lojista)` (`store.ts`, ao lado de `topLojistaSinal`) — soma `pedido.total` de todo carrinho com `status === 'pago'` daquela loja. Não existe campo de data no mock pra filtrar "esse mês" de verdade; como todo `daysSinceActivity` da carteira mock é baixo (0–9 dias), somar todo pedido pago já corresponde ao mês corrente por coincidência dos dados — fica documentado como simplificação, não como comportamento garantido se o mock crescer com histórico mais antigo.
+- **"Selo de marca" por loja**: resposta a uma pergunta do usuário ("e se colocarmos uma imagem com a marca da loja?"). Não existe logo de verdade no mock (`Lojista` não tem campo de imagem), então foi inventado um quadrado colorido com as iniciais do nome (`LOGO_PALETTE`, 4 cores fixas cicladas por posição, em `LojistaGate.tsx`) — cor de identidade, não de severidade. Serve de placeholder visual; se o produto real tiver upload de logo da loja, é só trocar o conteúdo do `.gate-logo` por uma `<img>`, a estrutura/CSS já comporta.
+- **CTA**: primeira versão testada tinha "Entrar na loja →" por extenso ao lado do valor em R$ — usuário achou que competiam visualmente ("não gostei do 'entrar na loja' perto dos valores de vendas"). Trocado por só uma seta (`.gate-chevron`) separada por uma divisória vertical (`.gate-divider`) — padrão de item de lista clicável (tipo linha de configuração). A linha inteira continua sendo o alvo de clique (`onClick` no `.gate-row`, igual antes no `.gate-pick`); a seta só reforça visualmente.
+
+### O que foi tirado
+
+- `.gate-pick` (CSS) foi removido — não sobrou nenhum uso do `.web-icard` padrão na Gate.
+- `SinalIcon` não é mais importado por `LojistaGate.tsx` (continua em uso no Radar).
+
+### Testado
+
+Via Playwright contra o preview buildado, fluxo real (login representante → `/rep/radar` → clicar "Catálogo" → cai na Gate, sem `page.goto` direto pra não resetar o store): as 4 linhas renderizam com os valores corretos (Radical Skate R$ 2.140,00, Loja Vertex R$ 0,00 — "nenhuma compra este mês", Casa Esporte R$ 6.598,00, Esporte Total R$ 2.700,00), batendo com os pedidos `pago` de cada loja no mock. Clicar numa linha chama `enterLojista` e navega pro Catálogo normalmente (comportamento inalterado). `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

@@ -730,11 +730,21 @@ export function lojistaSinais(lojista: Lojista): LojistaSinal[] {
 export const PESO_SINAL: Record<LojistaSinal['kind'], number> = { revisao: 3, estoque: 2, visita: 1, parado: 1 }
 
 // O sinal de maior peso de uma loja, ou `undefined` se ela estiver em dia — mesmo cálculo que o
-// Radar já fazia inline (`ranqueada`), extraído pra ser compartilhado com `LojistaGate.tsx` (set/
-// 2026): as duas telas mostram o mesmo card colorido por loja, só que o Radar ranqueia a carteira
-// inteira por isso e a Gate só precisa do sinal de cada card individualmente.
+// Radar já fazia inline (`ranqueada`), extraído pra ser compartilhado com `LojistaGate.tsx`. Desde
+// o redesign da Gate (set/2026) ela não usa mais isso pra colorir o card (virou lista neutra, ver
+// nota em guia-dev-frontend.md), mas o Radar continua ranqueando a carteira inteira por isso.
 export function topLojistaSinal(lojista: Lojista): LojistaSinal | undefined {
   return [...lojistaSinais(lojista)].sort((a, b) => PESO_SINAL[b.kind] - PESO_SINAL[a.kind])[0]
+}
+
+// Soma dos pedidos já pagos de uma loja — usado pela `LojistaGate.tsx` (set/2026) como o dado de
+// "valor comprado este mês" que substituiu o sinal colorido na tela de escolha de loja. Só conta
+// pedido `pago` (não `aguardando`/`aprovado`/`rascunho`): é "comprado", não "em negociação". Não há
+// campo de data no mock pra filtrar por mês de verdade — como todo `daysSinceActivity` da carteira
+// mock é baixo (0–9 dias), somar todo pedido pago já corresponde ao mês corrente; se o mock crescer
+// com pedidos mais antigos, isso precisa de um filtro por data real.
+export function lojistaComprasMes(lojista: Lojista): number {
+  return lojista.carrinhos.reduce((sum, c) => (c.pedido.status === 'pago' ? sum + c.pedido.total : sum), 0)
 }
 
 // Corte mínimo de crescimento pra um produto virar "oportunidade de carteira" — mesmo princípio dos

@@ -333,16 +333,37 @@
      literalmente `.web-icard`/`.kicon`/`.eyebrow`/`.cta` do Radar do lojista, não uma classe própria
      (a versão anterior, `.radar-card`, tinha fundo colorido igual mas uma estrutura bem diferente:
      ícone depois do nome em vez de antes, CTA em pílula sólida em vez de link de texto — exatamente
-     o "contraste" apontado). `LojistaGate.tsx` reaproveita o mesmo card (ver `.gate-pick` abaixo).
-     `.radar-grid` continua com grade própria (4 colunas) em vez de `.grid4` porque já tinha
-     `margin-top` embutido e nenhum dos dois ganha nada sendo renomeado. */
+     o "contraste" apontado). `.radar-grid` continua com grade própria (4 colunas) em vez de
+     `.grid4` porque já tinha `margin-top` embutido e nenhum dos dois ganha nada sendo renomeado. */
   .radar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:20px;}
   .radar-more{font-size:11px;color:var(--text-secondary);margin-top:8px;}
 
-  /* O card inteiro é clicável na Gate (não só um link no rodapé, diferente do Radar) — precisa de
-     cursor/hover avisando isso por cima do `.web-icard` padrão. */
-  .gate-pick{cursor:pointer;transition:box-shadow .15s;}
-  .gate-pick:hover{box-shadow:0 4px 14px rgba(20,20,22,0.1);}
+  /* Lista da `LojistaGate.tsx` (redesign set/2026, pedido do usuário: o `.web-icard`/`.gate-pick`
+     antigo, colorido por severidade igual ao Radar, "está muito parecido com o radar podendo
+     confundir o usuário"). Linhas horizontais neutras (sem tone-risk/info/positive — aqui não é
+     sobre agir em cima de um sinal, é só escolher a loja) num único cartão com divisórias, não uma
+     grade de cards. Mockup testado e aprovado antes de implementar (ver guia-dev-frontend.md). */
+  .gate-list{margin-top:28px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--surface);}
+  .gate-row{display:flex;align-items:center;gap:16px;padding:16px 20px;cursor:pointer;transition:background .12s;}
+  .gate-row:not(:last-child){border-bottom:1px solid var(--border);}
+  .gate-row:hover{background:var(--surface-2);}
+  /* Selo de marca por loja — não existe logo de verdade no mock, ver `LOGO_PALETTE` em
+     `LojistaGate.tsx`: cor fixa por loja (não por severidade) só pra ajudar a reconhecer de relance. */
+  .gate-logo{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-size:13px;font-weight:700;letter-spacing:.02em;flex-shrink:0;}
+  .gate-info{flex:1;min-width:0;}
+  .gate-name{font-family:var(--display);font-size:15px;font-weight:600;color:var(--text-primary);}
+  .gate-meta{font-size:12px;color:var(--text-tertiary);margin-top:2px;}
+  /* "valor total de compras no mês" (pedido do usuário) — ver `lojistaComprasMes` em store.ts. */
+  .gate-stat{text-align:right;min-width:140px;}
+  .gate-valor{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text-primary);}
+  .gate-valor-sub{font-size:11px;color:var(--text-tertiary);margin-top:2px;}
+  /* Testado antes com "Entrar na loja →" por extenso ao lado do valor — usuário achou que competia
+     visualmente com o R$ ("não gostei do 'entrar na loja' perto dos valores de vendas"). Trocado por
+     só a seta, separada por uma divisória — padrão de item de lista clicável, a linha toda já é o
+     alvo de clique (`onClick` no `.gate-row`), a seta só reforça visualmente. */
+  .gate-divider{width:1px;align-self:stretch;background:var(--border);flex-shrink:0;}
+  .gate-chevron{width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);flex-shrink:0;}
 
   /* Toggle "Lojas"/"Carrinhos" do Radar do representante (set/2026, pedido do usuário: "mantemos os
      cards do radar original, mas trazemos um filtro por carrinhos") — pílula segmentada, mesmo
