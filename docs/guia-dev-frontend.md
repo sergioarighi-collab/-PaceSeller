@@ -1465,7 +1465,9 @@ Composições isoladas (`PIL`, fora do app) confirmando o recorte nos dois casos
 
 Usuário: "vamos testar o cinza do card, quero acrescentar um leve amarelo no cinza, 10%". Novo token escopado `--surface-2-warm:#F4F4F5` com o canal azul reduzido em 10% (`245 → 221`) → `#F4F4DD`, aplicado só em `.pline-thumb`/`.pcard-web .pw-thumb` (não no `--surface-2` geral, que seria usado em chips/outras telas sem relação com isso).
 
-**Ainda não confirmado** — visualmente ficou mais puxado pro creme/oliva do que um "leve" 10% sugere (sinalizado pro usuário junto com o screenshot). Se for reduzir a intensidade, é só ajustar o mesmo cálculo (`var(--surface-2-warm)` em `mockup.css`, perto do `:root`) pra uma fração menor do canal azul.
+Usuário, depois de ver: "não ficou bom, voltamos para o cinza normal e acrescentamos 5% de amarelo" — reduzido pra 5% (`245 → 233`) → `#F4F4E9`.
+
+**Ainda não confirmado** — segundo screenshot mandado, ainda com uma pegada creme nítida mesmo a 5% (reduzir só o canal azul de um cinza já bem claro acentua o efeito visualmente mais do que a % sugere em teoria). Se for reduzir mais, é só ajustar `var(--surface-2-warm)` em `mockup.css` (perto do `:root`) pra uma fração menor do canal azul.
 
 ## Regras de negócio confirmadas (não são chute)
 
