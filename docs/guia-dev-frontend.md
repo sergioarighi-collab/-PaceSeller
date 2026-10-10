@@ -1496,6 +1496,16 @@ Via Playwright contra o preview buildado: login representante → clicar "Carrin
 
 Ordem corrigida logo depois (usuário: "a ordem do header é radar - catálogo - carrinho") — "Carrinhos" tinha nascido entre Radar e Catálogo; reordenado em `navItems` (`RepTopNav.tsx`) pra Radar → Catálogo → Carrinhos. Reconferido via Playwright, lendo o texto dos links na ordem do DOM.
 
+### Ícone do drawer ("Seu pedido") também faltava no header
+
+Usuário: "faltou o acesso ao drawer no header igual ao lojista". O `WebTopNav` (lojista) sempre teve o ícone de sacola no canto direito, com badge de quantidade, abrindo/fechando o `OrderDrawer` via `toggleOrderDrawer`; o `RepTopNav` nunca teve — decisão original documentada no topo do arquivo ("sem ícone de sacola... só faz sentido depois de entrar numa loja"), só que ninguém tinha voltado lá pra adicionar o ícone depois que "entrar numa loja" virou um fluxo de verdade (`Catalog.tsx`, que já usa `<DesktopPage>` e por isso já monta o `<OrderDrawer/>` — só faltava um jeito de abri-lo pelo header, igual o lojista tem).
+
+**Implementação** (`RepTopNav.tsx`): mesmo ícone/badge/`onClick={toggleOrderDrawer}` do `WebTopNav`, copiado tal qual (mesmo SVG, mesmo `cartSummary`/`comboSummary` pra somar `cartItems`+`cartCombos`). Só uma diferença de condição: no lojista o ícone é incondicional (ele está sempre "na própria loja"); aqui fica dentro do mesmo `{lojistaAtiva && (...)}` que já mostra "Atendendo: {loja} · Trocar loja" — fora de modo loja não existe pedido em montagem nenhum pra mostrar (`enterLojista`/`exitLojista` sempre zeram `cartItems`/`cartCombos`), então o ícone nem aparece, em vez de aparecer sempre com badge 0.
+
+### Testado
+
+Via Playwright contra o preview buildado: fora de modo loja, o ícone não existe no DOM (não é só escondido via CSS); entrando numa loja ele aparece; adicionar 1 produto no Catálogo mostra badge "12" (grade sugerida); clicar no ícone abre o drawer de verdade, com o item, grade mínima (12/36 pares) e sugestões de mix — mesmo componente `OrderDrawer` que o lojista usa, sem nenhuma adaptação necessária. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

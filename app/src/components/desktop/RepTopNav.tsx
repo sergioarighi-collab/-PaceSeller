@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useAppStore } from '../../lib/store'
+import { useAppStore, cartSummary, comboSummary } from '../../lib/store'
 import { Toast } from './Toast'
 
 // Nav do representante (set/2026, primeiro passo do fluxo desktop dele — ver guia-dev-frontend.md).
-// Deliberadamente mais simples que o WebTopNav do lojista: sem ícone de sacola/pedido em montagem
-// próprio (o "Seu pedido" do drawer só faz sentido depois de entrar numa loja — ver OrderDrawer
-// dentro do próprio Catálogo) nem sino de notificação (não existe `notifications` do lado do
-// representante ainda).
+// Deliberadamente mais simples que o WebTopNav do lojista: sem sino de notificação (não existe
+// `notifications` do lado do representante ainda). O ícone de sacola/pedido em montagem (abaixo,
+// "Acesso ao drawer") só aparece em modo loja — fora disso não tem pedido em montagem nenhum pra
+// mostrar (ver `enterLojista`/`exitLojista` em store.ts: `cartItems`/`cartCombos` sempre zeram ao
+// trocar de loja ou sair dela).
 // "Catálogo" aponta pra rota /catalogo (a mesma do lojista, reaproveitada — ver "modo loja" em
 // guia-dev-frontend.md), não uma rota própria do representante.
 // "Carteira" saiu do nav (set/2026) — virou a visão "Carrinhos" dentro do próprio Radar (ver
@@ -31,7 +32,13 @@ export function RepTopNav() {
   const lojistas = useAppStore((s) => s.lojistas)
   const activeLojistaId = useAppStore((s) => s.activeLojistaId)
   const exitLojista = useAppStore((s) => s.exitLojista)
+  const toggleOrderDrawer = useAppStore((s) => s.toggleOrderDrawer)
+  const cartItems = useAppStore((s) => s.cartItems)
+  const cartCombos = useAppStore((s) => s.cartCombos)
   const lojistaAtiva = lojistas.find((l) => l.id === activeLojistaId)
+  const { totalItems: itemsQty } = cartSummary(cartItems)
+  const { totalItems: combosQty } = comboSummary(cartCombos)
+  const bagCount = itemsQty + combosQty
 
   return (
     <div className="web-topnav">
@@ -77,6 +84,42 @@ export function RepTopNav() {
             >
               Trocar loja
             </span>
+          </div>
+        )}
+        {/* Acesso ao drawer (set/2026, pedido do usuário: "faltou o acesso ao drawer no header
+            igual ao lojista") — mesmo ícone/badge do WebTopNav, mesmo `toggleOrderDrawer`. Só
+            aparece em modo loja (`lojistaAtiva`): fora de uma loja não existe pedido em montagem
+            (`cartItems`/`cartCombos` zeram ao entrar/sair — ver `enterLojista`/`exitLojista`), não
+            tem drawer nenhum pra abrir. O drawer em si (`<OrderDrawer/>`) já é montado pelo
+            `DesktopPage` dentro do Catálogo/Carrinho — só faltava o atalho pra abrir/fechar daqui. */}
+        {lojistaAtiva && (
+          <div className="navicon" style={{ cursor: 'pointer', position: 'relative' }} onClick={toggleOrderDrawer} title="Seu pedido">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M6 6h15l-1.5 9h-12L6 6Zm0 0-1-3H2" />
+              <circle cx="9" cy="20" r="1.4" fill="currentColor" stroke="none" />
+              <circle cx="17" cy="20" r="1.4" fill="currentColor" stroke="none" />
+            </svg>
+            {bagCount > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  minWidth: 16,
+                  height: 16,
+                  padding: '0 3px',
+                  borderRadius: 8,
+                  background: 'var(--info)',
+                  color: '#fff',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  lineHeight: '16px',
+                  textAlign: 'center',
+                }}
+              >
+                {bagCount}
+              </span>
+            )}
           </div>
         )}
         {/* Movido do canto esquerdo pra cá (set/2026, pedido do usuário: "pode ficar em outro lugar
