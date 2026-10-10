@@ -1346,6 +1346,12 @@ Usuário escolheu a **A**: "o problema é que a opção B temos que sempre ter m
 
 Via Playwright contra o preview buildado, fluxo real (login → Radar → Catálogo): clicar em "Coleção" abre o painel, selecionar "Hertz" filtra a grade corretamente; clicar fora fecha; clicar em "Numeração" abre o painel de tamanhos; clicar de novo no mesmo chip fecha (toggle). `tsc`/build limpos.
 
+### Bug logo em seguida: busca sumiu (set/2026)
+
+Usuário, assim que viu a tela de verdade (não só o mockup): "ficou ruim. A busca sumiu, temos que organizar melhor." Causa: `.filterbar{display:flex; ...}` sem `flex-wrap`, e `.filterbar .searchbox{flex:1;max-width:340px}` — ou seja, a busca tinha permissão de encolher (`flex:1` inclui `flex-shrink:1`). Com os 2 chips novos (Coleção/Numeração) somados ao resto, o conteúdo da barra passou a exceder a largura da tela; como a linha não quebrava, o flex tentou encolher os itens pra caber, e a busca — sendo a única com `flex-grow`/`flex-shrink` dessa magnitude — foi espremida quase a zero em vez dos chips (que têm texto `white-space:nowrap`, não encolhem de verdade) wrap.
+
+**Correção** (`mockup.css`): `.filterbar` ganhou `flex-wrap:wrap` (chips quebram em quantas linhas precisar, em vez de forçar tudo numa só) e a busca virou `flex:0 0 280px` (largura fixa, não cresce nem encolhe mais — sempre visível e com o mesmo tamanho, na primeira posição da barra). Reconferido depois via Playwright: busca aparece inteira na 1ª linha, chips quebram pra uma 2ª linha quando não cabem, e o toggle dos painéis de Coleção/Numeração continua funcionando igual (nenhuma regressão). `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
