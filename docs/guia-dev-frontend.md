@@ -1396,6 +1396,8 @@ Usuário: "não ficou bom a barra da busca" → perguntado o quê especificament
 
 **Correção**: `.cattabs .searchbox` trocou `width:240px` por `flex:0 0 220px` (não cresce, não encolhe, tamanho fixo de verdade) — mesma receita que `.filterbar .searchbox` já usava corretamente desde a correção anterior. Lição registrada: perto de `.searchbox`/`.chip`/qualquer coisa com `flex` herdado da base, uma sobrescrita de tamanho **tem que mexer em `flex`, não só em `width`**, senão o `flex-basis:0%` da base vence.
 
+Ajuste fino logo depois ("ta pra aumentar um pouquinho mais"): `220px → 280px`, mesma propriedade.
+
 ### Testado
 
 Via Playwright: screenshot de perto confirma a busca proporcional aos textos ao lado agora; busca ainda filtra ("Coil" → 7 pra 1 linha de produto), painel "Coleção" ainda abre normal. `tsc`/build limpos.

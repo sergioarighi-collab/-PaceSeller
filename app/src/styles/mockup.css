@@ -721,7 +721,7 @@
      `width`) — dentro do `.cattabs` (que tem espaço sobrando depois das abas), a busca esticava e
      tomava toda a largura restante da linha, ficando um retângulo enorme do lado dos textos finos
      "PRODUTOS"/"COMBOS SUGERIDOS". Precisa de `flex` (não só `width`) pra realmente não crescer. */
-  .cattabs .searchbox{flex:0 0 220px;padding:6px 10px;font-size:12.5px;margin-bottom:7px;}
+  .cattabs .searchbox{flex:0 0 280px;padding:6px 10px;font-size:12.5px;margin-bottom:7px;}
   .cattab{font-family:var(--mono);font-size:12px;letter-spacing:.03em;text-transform:uppercase;padding:0 0 8px;color:var(--text-secondary);border-bottom:2px solid transparent;}
   .cattab.active{color:var(--text-primary);border-bottom-color:var(--text-primary);font-weight:600;}
   /* `flex-wrap:wrap` (set/2026, correção) — depois que Coleção/Numeração viraram chips dentro da
