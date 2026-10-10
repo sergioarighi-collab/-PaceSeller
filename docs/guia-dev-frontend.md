@@ -1506,6 +1506,21 @@ Usuário: "faltou o acesso ao drawer no header igual ao lojista". O `WebTopNav` 
 
 Via Playwright contra o preview buildado: fora de modo loja, o ícone não existe no DOM (não é só escondido via CSS); entrando numa loja ele aparece; adicionar 1 produto no Catálogo mostra badge "12" (grade sugerida); clicar no ícone abre o drawer de verdade, com o item, grade mínima (12/36 pares) e sugestões de mix — mesmo componente `OrderDrawer` que o lojista usa, sem nenhuma adaptação necessária. `tsc`/build limpos.
 
+## Resposta do lojista no comentário do carrinho (set/2026)
+
+Usuário: "quero uma linha tb no comentário com a resposta do cliente por exemplo" — perguntado onde, confirmou que era dentro do `CarrinhoDetail` (não nos cards do Radar/Carrinhos). Hoje só existia `Carrinho.lastComment` (1 comentário, normalmente da Ana) renderizado como uma caixinha `.activitynote`; faltava o outro lado da conversa.
+
+### O que mudou
+
+- `Carrinho.clientReply?: { author, text, timeLabel }` (novo campo, `types.ts`) — mesma forma de `lastComment`, de propósito **não** virou um array de thread genérico: só cobre pergunta-da-Ana + resposta-do-lojista, que é o que a tela mostra agora. Se precisar de mais trocas de mensagem no futuro, aí sim compensa generalizar.
+- `CarrinhoDetail.tsx`: segunda `.activitynote` logo abaixo da primeira quando `cart.clientReply` existe, mesma estrutura visual.
+- **Bug lateral corrigido**: o avatar do comentário (`.aavatar`) era fixo `"AN"` — funcionava por coincidência porque o único exemplo até agora era sempre um comentário da Ana. Com a resposta do lojista aparecendo do lado, isso ficaria errado (mostraria "AN" pra resposta do Carlos também). Trocado por uma função `iniciais(name)` (mesmo critério já usado em `LojistaGate.tsx`, cópia local — não virou utilitário compartilhado só por isso, são 3 linhas) aplicada aos dois autores.
+- Exemplo em `data.ts`: carrinho "Coleção Inverno" (Radical Skate) ganhou `clientReply` do Carlos (contato dessa loja) respondendo o comentário existente da Ana.
+
+### Testado
+
+Via Playwright contra o preview buildado: abrir "Coleção Inverno" mostra as duas `.activitynote` em sequência — avatar "AN"/"Ana: separei a Hertz Rose..." seguido de "CA"/"Carlos: Fechado, pode deixar assim...". `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

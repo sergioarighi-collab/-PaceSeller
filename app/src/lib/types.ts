@@ -149,6 +149,11 @@ export interface Carrinho {
   // manual de "Enviar pro representante".
   autoSendOnGradeMinima: boolean
   lastComment?: { author: string; text: string; timeLabel: string }
+  // Resposta do lojista ao `lastComment` (set/2026, pedido do usuário: "uma linha tb no comentário
+  // com a resposta do cliente") — campo separado, não um array de thread genérico: só cobre o caso
+  // de 1 pergunta da Ana + 1 resposta do lojista, que é o que a tela mostra. Se precisar de mais de
+  // uma troca de mensagem no futuro, aí sim vale virar uma lista de verdade.
+  clientReply?: { author: string; text: string; timeLabel: string }
 }
 
 // Dropdown do sino no WebTopNav (ago/2026) — 3 tipos de evento mapeados desde

@@ -10,6 +10,14 @@ import { useAppStore, pedidoActionKind, pedidoPares, pedidoStatusBadge, pedidoAg
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { formatBRL } from '../../lib/format'
 
+// Iniciais a partir do nome do autor do comentário/resposta (mesmo critério de `LojistaGate.tsx`) —
+// antes o avatar do comentário era fixo "AN" (só funcionava pro comentário da Ana); com a resposta
+// do lojista aparecendo logo abaixo (set/2026), precisa calcular a partir de quem escreveu.
+function iniciais(name: string): string {
+  const palavras = name.trim().split(/\s+/)
+  return palavras.length === 1 ? palavras[0].slice(0, 2).toUpperCase() : (palavras[0][0] + palavras[1][0]).toUpperCase()
+}
+
 const conditionLabel: Record<string, string> = {
   '30': '30/60/90 dias',
   '60': '30/60/90 dias',
@@ -250,10 +258,24 @@ export function CarrinhoDetail() {
 
           {cart.lastComment && (
             <div className="activitynote">
-              <div className="aavatar">AN</div>
+              <div className="aavatar">{iniciais(cart.lastComment.author)}</div>
               <div className="atext">
                 <span className="aname">{cart.lastComment.author}:</span> {cart.lastComment.text}
                 <div className="atime">{cart.lastComment.timeLabel}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Resposta do lojista (set/2026, pedido do usuário: "uma linha tb no comentário com a
+              resposta do cliente") — mesma estrutura visual do comentário da Ana, logo abaixo,
+              formando uma mini-conversa de 2 linhas (pergunta + resposta), não uma thread genérica
+              (ver nota em `Carrinho.clientReply`, types.ts). */}
+          {cart.clientReply && (
+            <div className="activitynote">
+              <div className="aavatar">{iniciais(cart.clientReply.author)}</div>
+              <div className="atext">
+                <span className="aname">{cart.clientReply.author}:</span> {cart.clientReply.text}
+                <div className="atime">{cart.clientReply.timeLabel}</div>
               </div>
             </div>
           )}
