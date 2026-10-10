@@ -388,7 +388,7 @@ export const products: Product[] = raw.map((r) => {
     colorway: r.colorway,
     category: meta.category,
     line: meta.line,
-    image: `/products/${r.sku}.jpg`,
+    image: `/products/${r.sku}.png`,
     priceFactory,
     pricePdv,
     growthPct: r.growthPct,

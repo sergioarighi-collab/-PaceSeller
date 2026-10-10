@@ -1431,6 +1431,36 @@ Usuário, logo depois do multiply resolver o retângulo branco: "ainda consigo v
 
 Via Playwright contra o preview buildado: grade inteira sem nenhum retângulo/caixa ao redor das fotos. `tsc`/build limpos.
 
+## Recorte de verdade nas 39 fotos de produto + card cinza de volta (set/2026)
+
+**Isso substitui a decisão da seção anterior** ("Tira o quadrado cinza também") — depois de ver o resultado sem nenhum fundo, o usuário esclareceu o pedido de verdade: "entendeu o recorte que quero da imagem, apenas o tênis, sem o fundo, mas com o card cinza". Ou seja, o card cinza (`.pline-thumb`/`.pcard-web .pw-thumb`) volta a existir — o problema nunca foi o quadro cinza em si, era o fundo branco de estúdio ainda "grudado" na própria foto aparecendo contra ele.
+
+### Por que o `mix-blend-mode:multiply` (seção "Fundo trocado... sem retângulo branco") não bastava
+
+Medido pixel a pixel (`PIL`) numa foto (`1901-66.jpg`): o fundo "branco" do estúdio não é um branco plano (255,255,255) em toda parte — perto do tênis há uma sombra de contato suave, pixels tipo `(248,251,255)`, `(250,251,246)` etc., não puro branco. Contra fundo branco isso é imperceptível (`multiply` por branco ≈ idêntico), mas contra o card cinza essa sombra ficava visível como um halo acinzentado ao redor do tênis — exatamente o "fundo cinza" que o usuário continuava vendo mesmo depois do multiply.
+
+### Solução: recorte de verdade (flood-fill a partir da borda), não mais truque de CSS
+
+Um threshold de brilho simples (pixel "claro o suficiente" = transparente) foi testado primeiro e **descartado**: num tênis all-white (`1901-21.jpg`), partes de couro claro do próprio produto caem na mesma faixa de claridade do fundo, e o threshold comia o tênis junto (testado, ver captura comparativa descartada). Resolvido com **flood-fill conectado à borda** (`scipy.ndimage.label`, 4-conectividade): só vira transparente o pixel "claro" que está **conectado à borda da imagem** por um caminho contínuo de pixels claros — como o tênis nunca toca a borda e sempre tem alguma linha de costura/sombra mais escura separando ele do fundo (mesmo nas partes brancas), o flood-fill para nessa "parede" e não vaza pro interior do produto, mesmo que o interior seja tão claro quanto o fundo. Testado de novo no mesmo tênis all-white: preservou sola, cadarço e textura do couro perfeitamente.
+
+Implementação (script Python ad-hoc, não faz parte do app — rodado uma vez sobre `public/products/*.jpg`, gerando os `.png` que ficam versionados):
+1. `whiteness = min(R,G,B)` por pixel; threshold ~246.
+2. `scipy.ndimage.label` agrupa pixels "claros" conectados (4-conectividade).
+3. Qualquer componente conectado que toca a borda da imagem (topo/baixo/esquerda/direita) vira fundo → alpha 0.
+4. Uma pena leve (`gaussian_filter`, raio ~3px) só na faixa de fronteira entre fundo/produto, pra não deixar serrilhado.
+5. Salva como `.png` (preserva alpha; `.jpg` não tem canal alpha).
+
+### O que mudou no código
+
+- **39 arquivos novos** em `public/products/*.png` (os `.jpg` originais continuam lá, não foram apagados — só pararam de ser referenciados).
+- `data.ts`: `image: \`/products/${r.sku}.jpg\`` → `.png`.
+- `mockup.css`: `.pline-thumb`/`.pcard-web .pw-thumb` voltaram pra `background:var(--surface-2)` (cinza).
+- `ProductThumb.tsx`: removido o `mixBlendMode:'multiply'` inline (da seção anterior) — não serve mais pra nada agora que a transparência é de verdade (canal alpha), e multiply aplicado sobre uma foto já cortada só escureceria à toa o tênis contra o cinza do card. **`.pline-dot > img{mix-blend-mode:multiply}` em `mockup.css` (miniaturas de cor do carrossel) não foi mexido** — é uma regra própria, anterior a esta sessão, e continua redundante-mas-inofensiva agora que as mesmas imagens `.png` já vêm cortadas; não foi removida por estar fora do escopo do pedido.
+
+### Testado
+
+Composições isoladas (`PIL`, fora do app) confirmando o recorte nos dois casos de risco antes de aplicar nas 39: tênis azul/jeans normal e tênis all-white (o caso que quebrava o threshold simples). Depois, via Playwright contra o preview buildado com o app de verdade: grade inteira renderizando sem nenhum halo/retângulo, card cinza de volta, zoom num card individual confirmando ausência de qualquer borda visível. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
