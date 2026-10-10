@@ -5,10 +5,9 @@
     --surface-2:#F4F4F5;
     /* Cinza do card da foto de produto com um leve amarelo (set/2026, pedido do usuário) —
        `--surface-2` reduzido de azul, não um token geral: só o fundo da foto do produto usa isso,
-       o resto do app continua no `--surface-2` neutro. Primeiro teste foi 10% (245→221 no canal B,
-       `#F4F4DD`) — usuário achou forte demais ("não ficou bom"), reduzido pra 5% (245→233,
-       `#F4F4E9`). */
-    --surface-2-warm:#F4F4E9;
+       o resto do app continua no `--surface-2` neutro. Histórico: 10% (245→221, `#F4F4DD`) forte
+       demais; 5% (245→233, `#F4F4E9`) ainda com pegada creme nítida; agora 3% (245→238, `#F4F4EE`). */
+    --surface-2-warm:#F4F4EE;
     --surface-3:#E9E9EB;
     --border:#E2E2E5;
     --border-soft:#EBEBED;

@@ -1467,7 +1467,7 @@ Usuário: "vamos testar o cinza do card, quero acrescentar um leve amarelo no ci
 
 Usuário, depois de ver: "não ficou bom, voltamos para o cinza normal e acrescentamos 5% de amarelo" — reduzido pra 5% (`245 → 233`) → `#F4F4E9`.
 
-**Ainda não confirmado** — segundo screenshot mandado, ainda com uma pegada creme nítida mesmo a 5% (reduzir só o canal azul de um cinza já bem claro acentua o efeito visualmente mais do que a % sugere em teoria). Se for reduzir mais, é só ajustar `var(--surface-2-warm)` em `mockup.css` (perto do `:root`) pra uma fração menor do canal azul.
+**Ainda não confirmado** — segundo screenshot mandado, ainda com uma pegada creme nítida mesmo a 5% (reduzir só o canal azul de um cinza já bem claro acentua o efeito visualmente mais do que a % sugere em teoria). Usuário: "vamos mudar de novo, voltar ao cinza normal e acrescentar 3% de amarelo só" — reduzido pra 3% (`245 → 238`) → `#F4F4EE`, resultado bem mais sutil, aguardando confirmação final. Se for ajustar de novo, é só mexer em `var(--surface-2-warm)` em `mockup.css` (perto do `:root`).
 
 ## Regras de negócio confirmadas (não são chute)
 
