@@ -36,9 +36,21 @@ export function CarrinhoDetail() {
   const sendPedidoToRepresentante = useAppStore((s) => s.sendPedidoToRepresentante)
   const aprovarPedido = useAppStore((s) => s.aprovarPedido)
   const setRepCanEdit = useAppStore((s) => s.setRepCanEdit)
+  const renameCarrinho = useAppStore((s) => s.renameCarrinho)
   const persona = useAppStore((s) => s.persona)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
   const pedido = cart.pedido
+
+  // Renomear carrinho (set/2026, pedido do usuário: "poder renomear meus carrinhos tanto na visão
+  // rep quanto na visão lojista") — edição inline no título da sidebar, sem trava de persona (os
+  // dois lados podem sempre renomear). `editingName` guarda o texto em edição separado de
+  // `cart.name` pra poder cancelar (Esc) sem gravar nada.
+  const [editingName, setEditingName] = useState<string | null>(null)
+
+  function saveNameEdit() {
+    if (editingName !== null) renameCarrinho(cart.id, editingName)
+    setEditingName(null)
+  }
 
   function shopMoreForThisCarrinho() {
     setActiveCarrinho(cart.id)
@@ -340,7 +352,27 @@ export function CarrinhoDetail() {
         </div>
 
         <div className="web-sidebar">
-          <div className="stitle">Carrinho: {cart.name.toLowerCase()}</div>
+          {editingName !== null ? (
+            <input
+              autoFocus
+              className="stitle-edit"
+              value={editingName}
+              onChange={(e) => setEditingName(e.target.value)}
+              onBlur={saveNameEdit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.currentTarget.blur()
+                if (e.key === 'Escape') setEditingName(null)
+              }}
+            />
+          ) : (
+            <div className="stitle" style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => setEditingName(cart.name)}>
+              Carrinho: {cart.name.toLowerCase()}
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+              </svg>
+            </div>
+          )}
           <div className="stotal">{pares} pares</div>
           <div className="ssub">{formatBRL(pedido.total)}</div>
           <div className="bubble">

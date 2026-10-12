@@ -136,6 +136,12 @@ interface AppState {
 
   /** Toggle de permissão do lojista, por carrinho — simulado (ver `Carrinho.repCanEdit`). */
   setRepCanEdit: (carrinhoId: string, value: boolean) => void
+  /** Renomear um carrinho (set/2026, pedido do usuário: "poder renomear meus carrinhos tanto na
+   * visão rep quanto na visão lojista") — sem trava de persona nem de status, os dois lados podem
+   * sempre renomear (diferente de editar o pedido em si, que depende de quem montou/aprovou). Nome
+   * vazio não faz nada (não dá pra ficar sem nome — ver `CarrinhoDetail.tsx`, que já barra isso na
+   * UI antes de chamar). */
+  renameCarrinho: (carrinhoId: string, name: string) => void
   /**
    * Ação manual de "Enviar pro representante" — muda um Pedido rascunho pra "aguardando" sem
    * passar pelo drawer. Só age se a grade mínima (36 pares) já foi batida; senão não faz nada
@@ -525,6 +531,11 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   setRepCanEdit: (carrinhoId, value) =>
     set((s) => ({ carrinhos: s.carrinhos.map((c) => (c.id === carrinhoId ? { ...c, repCanEdit: value } : c)) })),
+  renameCarrinho: (carrinhoId, name) => {
+    const trimmed = name.trim()
+    if (!trimmed) return
+    set((s) => ({ carrinhos: s.carrinhos.map((c) => (c.id === carrinhoId ? { ...c, name: trimmed } : c)) }))
+  },
   sendPedidoToRepresentante: (carrinhoId, pedidoId) =>
     set((s) => ({
       carrinhos: s.carrinhos.map((c) => {

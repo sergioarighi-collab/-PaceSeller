@@ -1583,6 +1583,19 @@ Tanto o bloco de botões de pagamento (`.og-footer`, as duas variantes — lojis
 
 Via Playwright, fluxo real (login representante → Catálogo → Radical Skate → "Carrinhos" no header → abrir "Giro Hertz Black"): nem `.grademin` nem botão de pagamento aparecem, só o badge "Com a Tesla" e o subtotal. Regressão: um carrinho não pago ("Giro TG II") continua mostrando `.grademin` normalmente. `tsc`/build limpos.
 
+## Renomear carrinho, nas duas personas (set/2026)
+
+Usuário: "tenho que poder renomear meus carrinhos tanto na visão rep quanto na visao lojista". Como `CarrinhoDetail.tsx` é 100% compartilhado entre as duas personas (modo loja), implementado uma vez só, sem nenhum `if (persona)` — diferente da maioria das mudanças recentes neste guia, renomear não depende de quem é a vez nem de status do pedido: o nome é só uma etiqueta, não uma ação de negócio.
+
+### Implementação
+
+- `renameCarrinho(carrinhoId, name)` (novo, `store.ts`) — troca `Carrinho.name`, só isso. Nome vazio (depois de `trim()`) não faz nada, mesmo padrão defensivo de outras ações do store (não existe trava de UI impedindo string vazia à parte, a própria action já ignora).
+- `CarrinhoDetail.tsx`: o `.stitle` da sidebar ("Carrinho: {nome}") virou clicável (ícone de lápis), trocando pra um `<input>` inline (`editingName`, estado separado de `cart.name` pra poder cancelar sem gravar). `Enter` salva (via blur), `Esc` cancela e descarta o texto digitado, clicar fora (blur) salva. Só um ponto de entrada pra renomear (a sidebar do carrinho aberto) — a lista de carrinhos, os tabs do `.cartswitcher` e o breadcrumb não ganharam edição própria porque todos já leem `cart.name` do mesmo store: renomear na sidebar atualiza os três instantaneamente, sem precisar duplicar a UI de edição em cada lugar que mostra o nome.
+
+### Testado
+
+Via Playwright: como representante, renomeado "Coleção Inverno" → "Coleção Inverno — Prioridade" — sidebar, aba ativa do `.cartswitcher` e breadcrumb atualizam juntos; `Esc` numa tentativa seguinte de renomear não grava (nome continua o último salvo). Como lojista, renomeado um carrinho próprio também funciona. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
