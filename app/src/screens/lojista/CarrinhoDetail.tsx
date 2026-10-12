@@ -231,42 +231,55 @@ export function CarrinhoDetail() {
                   store.ts) — sem isso, o "modo loja" deixava a Ana pagar pedido do próprio lojista
                   sem querer, pela mesma tela reaproveitada. No lugar, ela gera um link pra mandar
                   pro lojista pagar sozinho (set/2026, ver PaymentLinkModal.tsx) — só depois de
-                  aprovado (antes disso não tem o que pagar ainda) e com a grade batida. */}
-              {persona !== 'representante' ? (
-                <div
-                  className={gradeOk ? 'btn-primary' : 'btn-secondary'}
-                  style={{ width: 180, cursor: gradeOk ? 'pointer' : 'not-allowed', opacity: gradeOk ? 1 : 0.6 }}
-                  onClick={() => gradeOk && navigate(`/carrinhos/${cart.id}/${pedido.id}/pagamento`)}
-                >
-                  Ir para pagamento
-                </div>
-              ) : (
-                pedido.status === 'aprovado' &&
-                gradeOk && (
-                  <div className="btn-primary" style={{ width: 200, cursor: 'pointer' }} onClick={() => setShowPaymentLinkModal(true)}>
-                    Gerar link de pagamento
+                  aprovado (antes disso não tem o que pagar ainda) e com a grade batida. Pedido já
+                  `pago` não mostra nenhum dos dois botões (bug relatado pelo usuário, ver nota na
+                  `.grademin` logo abaixo — mesma causa). */}
+              {pedido.status !== 'pago' &&
+                (persona !== 'representante' ? (
+                  <div
+                    className={gradeOk ? 'btn-primary' : 'btn-secondary'}
+                    style={{ width: 180, cursor: gradeOk ? 'pointer' : 'not-allowed', opacity: gradeOk ? 1 : 0.6 }}
+                    onClick={() => gradeOk && navigate(`/carrinhos/${cart.id}/${pedido.id}/pagamento`)}
+                  >
+                    Ir para pagamento
                   </div>
-                )
-              )}
+                ) : (
+                  pedido.status === 'aprovado' &&
+                  gradeOk && (
+                    <div className="btn-primary" style={{ width: 200, cursor: 'pointer' }} onClick={() => setShowPaymentLinkModal(true)}>
+                      Gerar link de pagamento
+                    </div>
+                  )
+                ))}
             </div>
-            <div className={`grademin ${gradeOk ? 'ok' : 'warn'}`}>
-              {gradeOk ? (
-                <>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-                    <path d="M5 13l4 4L19 7" />
-                  </svg>
-                  {pares} pares — grade mínima atingida
-                </>
-              ) : (
-                <>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 9v3M12 16h.01" />
-                    <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
-                  </svg>
-                  {pares} de {GRADE_MINIMA_PARES} pares — faltam {GRADE_MINIMA_PARES - pares} pra atingir a grade mínima
-                </>
-              )}
-            </div>
+            {/* Escondido quando já `pago` (set/2026, bug relatado pelo usuário: "Giro Hertz Black"
+                em Radical Skate é um carrinho de reposição rápida — paga com 6 pares, bem abaixo
+                dos 36 da grade mínima, porque reposição nunca passou por esse crivo (ver
+                `buildReposicaoCarrinho` em store.ts, que já nasce `aguardando` sem checar
+                `GRADE_MINIMA_PARES`) — mesmo assim a tela mostrava "faltam 30 pares pra atingir a
+                grade mínima" num pedido já pago e sendo acompanhado, o que não faz sentido: grade
+                mínima é regra pra decidir SE o pedido pode ser enviado/pago, não algo que ainda
+                importa depois que ele já foi. */}
+            {pedido.status !== 'pago' && (
+              <div className={`grademin ${gradeOk ? 'ok' : 'warn'}`}>
+                {gradeOk ? (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                      <path d="M5 13l4 4L19 7" />
+                    </svg>
+                    {pares} pares — grade mínima atingida
+                  </>
+                ) : (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 9v3M12 16h.01" />
+                      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+                    </svg>
+                    {pares} de {GRADE_MINIMA_PARES} pares — faltam {GRADE_MINIMA_PARES - pares} pra atingir a grade mínima
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {cart.lastComment && (

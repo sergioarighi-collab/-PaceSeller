@@ -1567,6 +1567,22 @@ Testando ao vivo, a tela escopada mostrava "Enviar pro representante" num carrin
 
 Via Playwright contra o preview buildado: fora de modo loja, link do header tem `href="/rep/carrinhos"` e abre o portfólio com lojas variadas; dentro da Radical Skate, `href="/carrinhos"`, título "Carrinhos de Radical Skate", breadcrumb "Radar / Carrinhos / Radical Skate", link "Ver carteira inteira" volta pro portfólio. Depois do fechamento do gap: "Enviar pro representante" não aparece em lugar nenhum da tela escopada; bulk bar mostra "Você sugeriu... esperando revisão do lojista" / botão "Ver carrinho"; ações por linha mostram só "Acompanhar" (nenhum "Enviar"/"Editar no drawer" solto). Regressão: logada como lojista, `/carrinhos` continua mostrando "Meus carrinhos", "Enviar pro representante" e as ações "Enviar"/"Acompanhar"/"Revisar e aprovar" exatamente como antes. `tsc`/build limpos.
 
+## Bug: "faltam 30 pares pra grade mínima" num pedido já pago (set/2026)
+
+Usuário: "na loja radical skate, no carrinho Giro Hertz Black, se já está com a tesla, e estamos acompanhando o pedido, pq ainda tem a mensagem que faltam 30 pares para atingir a grade mínima?"
+
+### Causa
+
+`.grademin` (a caixa que mostra "grade mínima atingida" ou "faltam N pares") e os botões de pagamento no `.og-footer` (`Ir para pagamento`/`Gerar link de pagamento`) nunca checavam `pedido.status` — só `gradeOk` (`pares >= GRADE_MINIMA_PARES`). "Giro Hertz Black" (`reposicao-rapida`, Radical Skate) é um carrinho de **reposição rápida**: nasce via `buildReposicaoCarrinho` (store.ts) com `status: 'aguardando'` direto, **sem passar pelo crivo de `GRADE_MINIMA_PARES`** — reposição é um top-up pontual de um produto só, não uma coleção nova inteira, então nunca teve (nem devia ter) 36 pares. Esse carrinho específico já foi pago com 6 pares. A tela, sem checar status, seguia calculando `gradeOk` sobre esses 6 pares e mostrando o aviso — correto tecnicamente (6 < 36), mas sem sentido nenhum: grade mínima é critério pra decidir **se dá pra enviar/pagar** um pedido, não algo que continua relevante depois que ele já foi pago e está em produção.
+
+### Correção (`CarrinhoDetail.tsx`)
+
+Tanto o bloco de botões de pagamento (`.og-footer`, as duas variantes — lojista e representante) quanto a caixa `.grademin` agora só renderizam quando `pedido.status !== 'pago'`. Pros outros status (rascunho/aguardando/aprovado) nada muda — a checagem de grade mínima continua valendo enquanto o pedido ainda pode ser editado/enviado/pago.
+
+### Testado
+
+Via Playwright, fluxo real (login representante → Catálogo → Radical Skate → "Carrinhos" no header → abrir "Giro Hertz Black"): nem `.grademin` nem botão de pagamento aparecem, só o badge "Com a Tesla" e o subtotal. Regressão: um carrinho não pago ("Giro TG II") continua mostrando `.grademin` normalmente. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
