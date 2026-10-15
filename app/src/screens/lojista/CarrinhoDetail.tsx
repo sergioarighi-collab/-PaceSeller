@@ -6,7 +6,7 @@ import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { Toast } from '../../components/desktop/Toast'
 import { ConfirmModal } from '../../components/desktop/ConfirmModal'
 import { PaymentLinkModal } from '../../components/desktop/PaymentLinkModal'
-import { products, collectionTitle } from '../../lib/data'
+import { products } from '../../lib/data'
 import { useAppStore, pedidoActionKind, pedidoPares, pedidoStatusBadge, pedidoAguardandoAprovacaoRep } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
 import { formatBRL } from '../../lib/format'
@@ -73,52 +73,44 @@ export function CarrinhoDetail() {
   }
 
   const pares = pedidoPares(pedido)
-  const gradeOk = pares >= GRADE_MINIMA_PARES
+
+  // Estoque insuficiente (set/2026): o pedido pode ter sido montado com uma quantidade que a
+  // fábrica tinha na hora, mas demorou pra fechar (lojista revisando, rep aguardando aprovação) e o
+  // estoque caiu abaixo do que foi pedido — mesmo critério do aviso por linha logo abaixo
+  // (`outOfStock`), hoisted aqui pra travar o fechamento: um pedido que promete mais pares do que a
+  // fábrica tem agora não pode ser pago/aprovado como está (usuário relatou o caso real: "Reposição
+  // — Coil Denim" pedia 36, só restam 28, botão de fechar continuava liberado).
+  const stockShortfallItems = pedido.items.flatMap((item) => {
+    const product = products.find((p) => p.id === item.productId)
+    if (!product || item.qty <= product.stockPares) return []
+    return [{ item, product }]
+  })
+  const hasStockShortfall = stockShortfallItems.length > 0
+  const paresFaltantesPorEstoque = stockShortfallItems.reduce((sum, { item, product }) => sum + (item.qty - product.stockPares), 0)
+  const gradeOk = pares >= GRADE_MINIMA_PARES && !hasStockShortfall
   const statusBadge = pedidoStatusBadge(pedido, cart.representative, persona === 'representante')
 
-  // Coleção sub-representada (set/2026): substitui o antigo "Categoria feminina sub-representada"
-  // — texto fixo que não correspondia a nenhum dado real (o catálogo não tem categoria de gênero,
-  // só coleção: Coil/Hertz/Hertz Art/Flow/Flow XL/Fusion/TG II — ver types.ts). Critério novo:
-  // coleções que o pedido não tem nenhum item, ordenadas pelo crescimento médio dos produtos
-  // dela — só sugere a de maior crescimento, e só se for positivo (crescimento negativo não é
-  // motivo pra sugerir adicionar). Sem coleção qualificada, a linha simplesmente não aparece —
-  // mesmo princípio da sugestão de produto abaixo, de não trazer informação por trazer.
-  const missingCollection = (() => {
-    if (pedido.status === 'pago') return undefined
-    const pedidoCollections = new Set(
-      pedido.items.map((item) => products.find((p) => p.id === item.productId)?.collection).filter(Boolean),
-    )
-    const candidates = Array.from(new Set(products.map((p) => p.collection)))
-      .filter((c) => !pedidoCollections.has(c))
-      .map((collection) => {
-        const items = products.filter((p) => p.collection === collection)
-        const avgGrowth = items.reduce((sum, p) => sum + p.growthPct, 0) / items.length
-        return { collection, avgGrowth, count: items.length }
-      })
-      .filter((c) => c.avgGrowth > 0)
-      .sort((a, b) => b.avgGrowth - a.avgGrowth)
-    return candidates[0]
-  })()
+  // Sugestão de produto pra repor o gap de pares que o estoque comeu (set/2026): substitui o antigo
+  // bloco genérico "Antes de fechar" (coleção ausente + "oportunidade perdida" sempre visíveis,
+  // mesmo sem nenhum problema real) — usuário relatou que ele atrapalhava mais do que ajudava
+  // ("fazendo com que o lojista demore mais ainda pra fechar um pedido"). Agora só aparece nesse
+  // cenário concreto e bloqueante, com uma ação que resolve o problema de verdade: primeiro produto
+  // fora do pedido com estoque suficiente pra cobrir sozinho o que faltou (uma sugestão que cobre só
+  // metade do gap deixaria o aviso de grade mínima aparecendo de novo depois de "resolvido").
+  const stockFillSuggestion = hasStockShortfall
+    ? products.find((p) => !pedido.items.some((item) => item.productId === p.id) && p.stockPares >= paresFaltantesPorEstoque)
+    : undefined
 
-  // "Antes de fechar" (set/2026): revisado pra só trazer info acionável no momento de fechar o
-  // pedido — tirado o check "mix balanceado" (positivo, não pedia ação nenhuma) e o comparativo
-  // com o ano passado (histórico, mais análise do que decisão de compra — cabe melhor num
-  // painel/Radar). No lugar entrou uma sugestão concreta de produto: usa o mesmo critério de
-  // "Oportunidade perdida" já usado no OrderDrawer (produto que vende bem mas a loja ainda não
-  // tem), só que aqui olhando os itens do pedido já fechado, não o carrinho em montagem. Só um
-  // produto por vez (o de maior chance), não uma lista — pedido do usuário foi não trazer
-  // informação por trazer.
-  const productSuggestion =
-    pedido.status === 'pago'
-      ? undefined
-      : products.find(
-          (p) => p.badges.some((b) => b.label === 'Oportunidade perdida') && !pedido.items.some((item) => item.productId === p.id),
-        )
-
-  function addSuggestionToPedido() {
-    if (!productSuggestion) return
+  function addStockFillSuggestion() {
+    if (!stockFillSuggestion) return
     startEditPedido(cart.id, pedido.id)
-    addToCart(productSuggestion.id, 12)
+    // Não basta empilhar o produto sugerido em cima do que já está no pedido: o item original
+    // continuaria prometendo mais pares do que a fábrica tem (ex.: 36 de Coil Denim com só 28 em
+    // estoque). Precisa também baixar cada item em falta pro que existe de verdade — o total de
+    // pares do pedido não muda (o que saiu de um lado entra do outro), só deixa de prometer o que
+    // não existe.
+    for (const { product } of stockShortfallItems) addToCart(product.id, product.stockPares)
+    addToCart(stockFillSuggestion.id, paresFaltantesPorEstoque)
   }
 
   return (
@@ -307,6 +299,14 @@ export function CarrinhoDetail() {
                     </svg>
                     {pares} pares — grade mínima atingida
                   </>
+                ) : hasStockShortfall ? (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 9v3M12 16h.01" />
+                      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+                    </svg>
+                    Estoque insuficiente — faltam {paresFaltantesPorEstoque} pares pra manter a grade mínima de {GRADE_MINIMA_PARES}
+                  </>
                 ) : (
                   <>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -344,32 +344,27 @@ export function CarrinhoDetail() {
             </div>
           )}
 
-          {(missingCollection || productSuggestion) && (
+          {hasStockShortfall && (
             <div className="qualitybox">
-              <div className="qtitle">Antes de fechar</div>
-              {missingCollection && (
-                <div className="qline">
-                  <div className="qleft">
-                    <span className="ck" style={{ background: 'var(--risk-dim)', color: 'var(--risk)' }}>
-                      !
-                    </span>
-                    Coleção {collectionTitle[missingCollection.collection as keyof typeof collectionTitle]} ausente do pedido
-                  </div>
-                  <div className="miniaction" style={{ cursor: 'pointer' }} onClick={shopMoreForThisCarrinho}>
-                    + Adicionar {missingCollection.count} itens
-                  </div>
+              <div className="qtitle">Estoque insuficiente pra fechar</div>
+              <div className="qline">
+                <div className="qleft">
+                  <span className="ck" style={{ background: 'var(--risk-dim)', color: 'var(--risk)' }}>
+                    !
+                  </span>
+                  Faltam {paresFaltantesPorEstoque} pares pra manter os {GRADE_MINIMA_PARES} da grade mínima
                 </div>
-              )}
-              {productSuggestion && (
+              </div>
+              {stockFillSuggestion && (
                 <div className="qline">
                   <div className="qleft">
                     <span className="ck" style={{ background: 'var(--info-dim)', color: 'var(--info)' }}>
                       +
                     </span>
-                    {productSuggestion.name.replace('Tênis Tesla ', '')} vende bem, mas sua loja ainda não tem
+                    {stockFillSuggestion.name.replace('Tênis Tesla ', '')} tem estoque suficiente pra completar
                   </div>
-                  <div className="miniaction" style={{ cursor: 'pointer' }} onClick={addSuggestionToPedido}>
-                    + Adicionar
+                  <div className="miniaction" style={{ cursor: 'pointer' }} onClick={addStockFillSuggestion}>
+                    + Adicionar {paresFaltantesPorEstoque}
                   </div>
                 </div>
               )}

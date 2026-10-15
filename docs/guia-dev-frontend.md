@@ -1617,6 +1617,32 @@ O botão do `.og-footer` pro representante tinha que cobrir dois casos que parec
 
 Via Playwright contra o preview buildado: no carrinho "Coil Verão" (Radical Skate, `suggestedBy: 'representante'`, `status: 'aguardando'`, 40 pares ≥ grade mínima), botão mostra "Fechar e enviar link de pagamento"; clique gera link `.../coil-verao/4855-1/pagamento`, abre o modal "Link de pagamento", e depois de fechado aparece "Link de pagamento gerado agora" (ausente antes do clique). Regressão: no carrinho "Giro TG II" (Loja Vertex, submetido pelo lojista), aprovado via "Aprovar pedido" e confirmado que o footer segue mostrando "Gerar link de pagamento" (não o rótulo novo) com link correto (`.../giro-tg2/4902-1/pagamento`) — o caso antigo não regrediu. `tsc`/build limpos.
 
+## Travar fechamento quando o estoque caiu abaixo do pedido, e repensar o "Antes de fechar" (set/2026)
+
+Usuário viu ao vivo (print real do app) o carrinho "Reposição — Coil Denim": pedia 36 pares, o aviso por linha já dizia "Só restam 28 pares em estoque — pedido demorou pra fechar", mas o botão "Fechar e enviar link de pagamento" continuava liberado e a grade mínima aparecia como "atingida". Pergunta: "o Rep não poderia fechar o carrinho e enviar o link, pois está faltando o 8 pares do pedido original, correto?" — confirmado, e junto veio um segundo pedido: "o 'antes de fechar' ... mais atrapalhando do que ajudando ... vamos retirar o antes de fechar, e a sugestão só acontece quando der esse problema ... do item não ter mais em estoque, assim, sugerimos produtos para fechar a grade mínima de 36."
+
+### Causa
+
+`gradeOk` (`CarrinhoDetail.tsx`) só olhava `pares >= GRADE_MINIMA_PARES` — a quantidade **pedida**, nunca cruzada com `Product.stockPares` (que o aviso por linha, `outOfStock`, já calculava, mas sem efeito nenhum no botão de fechar). Um pedido parado tempo suficiente pra o estoque cair abaixo do que foi solicitado continuava "fechável" como se nada tivesse mudado.
+
+### Correção: estoque insuficiente bloqueia o fechamento
+
+- `stockShortfallItems` (novo, hoisted no topo do componente) — itens do pedido cuja `qty` pedida excede `product.stockPares` agora. `hasStockShortfall` e `paresFaltantesPorEstoque` (soma do que falta por item) derivam daí.
+- `gradeOk` ganhou mais uma condição: `pares >= GRADE_MINIMA_PARES && !hasStockShortfall`. Isso já bloqueia os dois botões de fechamento (`Ir para pagamento` do lojista e `Fechar e enviar link`/`Gerar link de pagamento` da representante — os dois já liam a mesma variável, não precisou duplicar a trava) e muda a `.grademin`, que ganhou um terceiro estado (além de "ok"/"faltam N pra atingir"): quando `hasStockShortfall`, mostra "Estoque insuficiente — faltam N pares pra manter a grade mínima de 36" em vez do texto genérico de grade mínima (evita a mensagem sem sentido de "faltam 0" quando o pedido já tinha 36+ pares solicitados, só que parte deles não existe mais na fábrica).
+
+### "Antes de fechar" genérico → sugestão só pra esse problema específico
+
+Removido por completo o bloco antigo (coleção ausente no pedido + "oportunidade perdida" sempre visíveis, mesmo sem nenhum problema real de verdade pra resolver) — `missingCollection`, o `productSuggestion` antigo (critério "Oportunidade perdida") e `addSuggestionToPedido` saíram do componente. No lugar, a mesma `.qualitybox`/`.qline` (reaproveitada, sem CSS novo) só renderiza quando `hasStockShortfall`:
+
+- Uma linha de aviso (sem ação): "Faltam N pares pra manter os 36 da grade mínima".
+- Uma linha de sugestão (`stockFillSuggestion`, quando existe): primeiro produto fora do pedido com `stockPares` suficiente pra cobrir sozinho o gap inteiro — critério propositalmente mais restrito que o antigo "Oportunidade perdida" (sugerir um produto que também não tem estoque suficiente só trocaria um problema por outro).
+
+**Detalhe que não é óbvio**: `addStockFillSuggestion` não só adiciona o produto sugerido — também baixa a quantidade de cada item em `stockShortfallItems` pro `stockPares` disponível (`addToCart(product.id, product.stockPares)`, que substitui a quantidade, não soma — ver `store.ts`). Sem isso, o item original continuaria prometendo mais pares do que a fábrica tem (ex.: ficaria com Coil Denim em 36 **e** Coil Black Reflect em +8, pedido inflado pra 44 pares em vez de redistribuir os mesmos 36). O total de pares do pedido não muda — o que sai de um item (capado no que existe) entra no outro (o que faltava).
+
+### Testado
+
+Via Playwright contra o preview buildado, reproduzindo o cenário real do print: Radar (representante) → visão "Carrinhos" → clicar em "Sugerir reposição" no sinal de estoque baixo de Coil Denim (Radical Skate) — cria o carrinho com 36 pares pedidos vs. 28 em estoque (`buildStockPares`/`suggestedGradeQty`, determinístico pro SKU, mesmo cálculo real do app). Confirmado: `.grademin` mostra "Estoque insuficiente — faltam 8 pares..."; `.qualitybox` "Estoque insuficiente pra fechar" com a sugestão "Coil Black Reflect tem estoque suficiente pra completar" + "Adicionar 8"; nenhum botão de fechar aparece. Clicado "+ Adicionar 8" → abre o drawer de edição (mesmo padrão já usado por outras sugestões) → "Salvar alterações": Coil Denim cai pra qtd 28 (aviso de estoque insuficiente some da linha), Coil Black Reflect entra com qtd 8, total continua 36 pares, `.grademin` vira "36 pares — grade mínima atingida", `.qualitybox` some, botão "Fechar e enviar link de pagamento" aparece normalmente. Regressão: carrinho sem nenhum problema de estoque ("Coil Verão", lojista) continua mostrando "40 pares — grade mínima atingida", sem `.qualitybox` nenhuma, "Ir para pagamento" funcionando normal. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
