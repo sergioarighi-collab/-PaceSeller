@@ -37,6 +37,7 @@ export function CarrinhoDetail() {
   const aprovarPedido = useAppStore((s) => s.aprovarPedido)
   const setRepCanEdit = useAppStore((s) => s.setRepCanEdit)
   const renameCarrinho = useAppStore((s) => s.renameCarrinho)
+  const marcarLinkPagamentoGerado = useAppStore((s) => s.marcarLinkPagamentoGerado)
   const persona = useAppStore((s) => s.persona)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
   const pedido = cart.pedido
@@ -242,9 +243,16 @@ export function CarrinhoDetail() {
               {/* Pagar é ação do lojista, não da representante (ela só aprova — ver aprovarPedido em
                   store.ts) — sem isso, o "modo loja" deixava a Ana pagar pedido do próprio lojista
                   sem querer, pela mesma tela reaproveitada. No lugar, ela gera um link pra mandar
-                  pro lojista pagar sozinho (set/2026, ver PaymentLinkModal.tsx) — só depois de
-                  aprovado (antes disso não tem o que pagar ainda) e com a grade batida. Pedido já
-                  `pago` não mostra nenhum dos dois botões (bug relatado pelo usuário, ver nota na
+                  pro lojista pagar sozinho (set/2026, ver PaymentLinkModal.tsx). Dois casos geram
+                  esse link — mesmo modal, rótulo diferente pra deixar claro o que está acontecendo:
+                  - pedido do LOJISTA que ela já aprovou (`status === 'aprovado'`) → "Gerar link".
+                  - pedido que a própria ANA montou (`suggestedBy === 'representante'`) nunca passa
+                    por "aprovado" (esse status só existe pro caminho contrário — ver
+                    `pedidoAguardandoAprovacaoRep`/`aprovarPedido`); sem esse segundo caso ela não
+                    tinha NENHUM jeito de gerar link pra um carrinho que ela mesma fechou, ficava
+                    presa em "aguardando" pra sempre (gap relatado pelo usuário) → "Fechar e enviar
+                    link de pagamento", disponível assim que a grade mínima bate.
+                  Pedido já `pago` não mostra nenhum botão (bug relatado pelo usuário, ver nota na
                   `.grademin` logo abaixo — mesma causa). */}
               {pedido.status !== 'pago' &&
                 (persona !== 'representante' ? (
@@ -256,14 +264,32 @@ export function CarrinhoDetail() {
                     Ir para pagamento
                   </div>
                 ) : (
-                  pedido.status === 'aprovado' &&
-                  gradeOk && (
-                    <div className="btn-primary" style={{ width: 200, cursor: 'pointer' }} onClick={() => setShowPaymentLinkModal(true)}>
-                      Gerar link de pagamento
-                    </div>
-                  )
+                  (() => {
+                    const jaAprovado = pedido.status === 'aprovado'
+                    const fecharCartaoPropria = pedido.suggestedBy === 'representante' && pedido.status === 'aguardando'
+                    if (!gradeOk || (!jaAprovado && !fecharCartaoPropria)) return null
+                    return (
+                      <div
+                        className="btn-primary"
+                        style={{ width: 220, cursor: 'pointer' }}
+                        onClick={() => {
+                          marcarLinkPagamentoGerado(cart.id)
+                          setShowPaymentLinkModal(true)
+                        }}
+                      >
+                        {jaAprovado ? 'Gerar link de pagamento' : 'Fechar e enviar link de pagamento'}
+                      </div>
+                    )
+                  })()
                 ))}
             </div>
+            {/* Rastro de "já mandei esse link?" (set/2026) — só pro representante, só depois da
+                primeira geração. Sem isso, nada na tela indicava que a ação já tinha sido feita. */}
+            {persona === 'representante' && pedido.linkPagamentoGeradoEm && (
+              <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: -10, marginBottom: 14 }}>
+                Link de pagamento gerado {pedido.linkPagamentoGeradoEm}
+              </div>
+            )}
             {/* Escondido quando já `pago` (set/2026, bug relatado pelo usuário: "Giro Hertz Black"
                 em Radical Skate é um carrinho de reposição rápida — paga com 6 pares, bem abaixo
                 dos 36 da grade mínima, porque reposição nunca passou por esse crivo (ver

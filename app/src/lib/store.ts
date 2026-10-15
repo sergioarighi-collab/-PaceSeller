@@ -142,6 +142,9 @@ interface AppState {
    * vazio não faz nada (não dá pra ficar sem nome — ver `CarrinhoDetail.tsx`, que já barra isso na
    * UI antes de chamar). */
   renameCarrinho: (carrinhoId: string, name: string) => void
+  /** Marca que o link de pagamento foi gerado agora (set/2026, ver `Pedido.linkPagamentoGeradoEm`
+   * e `PaymentLinkModal.tsx`) — só grava o "quando", não muda `status` nem mais nada do pedido. */
+  marcarLinkPagamentoGerado: (carrinhoId: string) => void
   /**
    * Ação manual de "Enviar pro representante" — muda um Pedido rascunho pra "aguardando" sem
    * passar pelo drawer. Só age se a grade mínima (36 pares) já foi batida; senão não faz nada
@@ -536,6 +539,10 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!trimmed) return
     set((s) => ({ carrinhos: s.carrinhos.map((c) => (c.id === carrinhoId ? { ...c, name: trimmed } : c)) }))
   },
+  marcarLinkPagamentoGerado: (carrinhoId) =>
+    set((s) => ({
+      carrinhos: s.carrinhos.map((c) => (c.id === carrinhoId ? { ...c, pedido: { ...c.pedido, linkPagamentoGeradoEm: 'agora' } } : c)),
+    })),
   sendPedidoToRepresentante: (carrinhoId, pedidoId) =>
     set((s) => ({
       carrinhos: s.carrinhos.map((c) => {

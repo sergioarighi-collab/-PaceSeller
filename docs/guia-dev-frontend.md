@@ -1596,6 +1596,27 @@ Usuário: "tenho que poder renomear meus carrinhos tanto na visão rep quanto na
 
 Via Playwright: como representante, renomeado "Coleção Inverno" → "Coleção Inverno — Prioridade" — sidebar, aba ativa do `.cartswitcher` e breadcrumb atualizam juntos; `Esc` numa tentativa seguinte de renomear não grava (nome continua o último salvo). Como lojista, renomeado um carrinho próprio também funciona. `tsc`/build limpos.
 
+## Link de pagamento (fechamento de pedido pelo representante, set/2026)
+
+Usuário: "e o pagamento, após fechamento do carrinho, ele pode gerar um link e compartilhar com o lojista." Depois, ao testar: "agora temos que pensar no fechamento do pedido, onde o representante também poderia fechar para o lojistas, encaminhando um link de pagamento." Confirmado com "quero" e, na leva final, "quero que implmente isso".
+
+### Dois casos, uma UI só
+
+O botão do `.og-footer` pro representante tinha que cobrir dois casos que pareciam o mesmo "fechar o carrinho" mas são estruturalmente diferentes, por causa de uma assimetria do fluxo de status (`Pedido.status`):
+
+- **Carrinho que o lojista montou e enviou** (`suggestedBy` ausente): passa por `aprovarPedido` (a Ana aprova) e só aí vira `status: 'aprovado'` — um status que **só existe** nesse caminho.
+- **Carrinho que a própria Ana montou pro lojista** (`suggestedBy: 'representante'`, "Montar Pedido Sugerido"): nunca passa por `aprovarPedido` (não faz sentido ela aprovar o próprio pedido) — fica parado em `status: 'aguardando'` até o lojista pagar direto (o botão dele, "Ir para pagamento", não tem trava de status). Ou seja, **`'aprovado' é estruturalmente inalcançável** pra esse caso — antes dessa leva, a Ana não tinha botão nenhum pra fechar/gerar link pra um carrinho que ela mesma montou.
+
+### Implementação
+
+- `fecharCartaoPropria = pedido.suggestedBy === 'representante' && pedido.status === 'aguardando'` (`CarrinhoDetail.tsx`) — novo caso, ao lado do já existente `jaAprovado = pedido.status === 'aprovado'`. O botão do `.og-footer` (reescrito como IIFE pra caber a lógica de dois casos + early return) só aparece quando `gradeOk` **e** (`jaAprovado` **ou** `fecharCartaoPropria`); rótulo muda conforme o caso: "Gerar link de pagamento" (já aprovado) vs. "Fechar e enviar link de pagamento" (fechando o próprio pedido agora).
+- `PaymentLinkModal.tsx` (novo componente, usa `WebModal`): recebe `link`/`cartName`/`total`, mostra um `<input readOnly>` com a URL (`/carrinhos/{cartId}/{pedidoId}/pagamento` — a mesma rota de pagamento que já existia, não uma página nova) e botão "Copiar link" (`navigator.clipboard.writeText`, com fallback silencioso em try/catch pra ambiente sem permissão de clipboard). Mesmo modal serve os dois casos — só o texto/trigger que muda.
+- `Pedido.linkPagamentoGeradoEm?: string` (novo campo, `types.ts`) + `marcarLinkPagamentoGerado(carrinhoId)` (novo, `store.ts`): texto relativo solto (mesmo padrão de `updatedAt`), gravado como `'agora'` no momento do clique. Existe só pra ela não ficar na dúvida se já gerou o link antes — sem isso, clicar no botão não deixava nenhum rastro visível depois de fechar o modal. Mostrado como uma linha pequena abaixo do `.og-footer`, só pra persona representante: "Link de pagamento gerado {linkPagamentoGeradoEm}".
+
+### Testado
+
+Via Playwright contra o preview buildado: no carrinho "Coil Verão" (Radical Skate, `suggestedBy: 'representante'`, `status: 'aguardando'`, 40 pares ≥ grade mínima), botão mostra "Fechar e enviar link de pagamento"; clique gera link `.../coil-verao/4855-1/pagamento`, abre o modal "Link de pagamento", e depois de fechado aparece "Link de pagamento gerado agora" (ausente antes do clique). Regressão: no carrinho "Giro TG II" (Loja Vertex, submetido pelo lojista), aprovado via "Aprovar pedido" e confirmado que o footer segue mostrando "Gerar link de pagamento" (não o rótulo novo) com link correto (`.../giro-tg2/4902-1/pagamento`) — o caso antigo não regrediu. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

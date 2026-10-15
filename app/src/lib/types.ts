@@ -123,6 +123,11 @@ export interface Pedido {
   // em reunião com o cliente) em vez do lojista — hoje só simulado do lado do lojista, não existe
   // desktop do representante ainda (ver docs/guia-dev-frontend.md).
   suggestedBy?: 'representante'
+  // Quando o link de pagamento foi gerado pela última vez (set/2026, ver PaymentLinkModal.tsx) —
+  // texto relativo solto, mesmo padrão de `Carrinho.updatedAt`, não um timestamp real. Ausente =
+  // nunca gerou. Existe só pra ela não ficar na dúvida se já mandou o link ou não (sem isso, "Gerar
+  // link de pagamento" não deixava rastro nenhum de que a ação já tinha sido feita).
+  linkPagamentoGeradoEm?: string
 }
 
 export interface Carrinho {
