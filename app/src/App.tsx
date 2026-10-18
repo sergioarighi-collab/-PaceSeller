@@ -42,6 +42,7 @@ function comLojistaSelecionada<P extends object>(Component: ComponentType<P>) {
 const GatedCatalog = comLojistaSelecionada(Catalog)
 const GatedMeusCarrinhos = comLojistaSelecionada(MeusCarrinhos)
 const GatedCarrinhoDetail = comLojistaSelecionada(CarrinhoDetail)
+const GatedChat = comLojistaSelecionada(Chat)
 
 function App() {
   return (
@@ -69,7 +70,7 @@ function App() {
         <Route path="/carrinhos/:cartId/:pedidoId/pagamento" element={<Payment />} />
         <Route path="/carrinhos/:cartId/:pedidoId/confirmado" element={<OrderConfirmed />} />
         <Route path="/carrinhos/:cartId/:pedidoId/acompanhamento" element={<Tracking />} />
-        <Route path="/carrinhos/:cartId/:pedidoId/chat" element={<Chat />} />
+        <Route path="/carrinhos/:cartId/:pedidoId/chat" element={<GatedChat />} />
 
         {/* `key` diferente nas duas rotas (bug pego em teste): sem isso, o React via as duas como o
             mesmo componente na mesma posição da árvore e não remontava ao navegar de uma pra outra

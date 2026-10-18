@@ -39,8 +39,14 @@ export function CarrinhoDetail() {
   const renameCarrinho = useAppStore((s) => s.renameCarrinho)
   const marcarLinkPagamentoGerado = useAppStore((s) => s.marcarLinkPagamentoGerado)
   const persona = useAppStore((s) => s.persona)
+  const lojistas = useAppStore((s) => s.lojistas)
+  const activeLojistaId = useAppStore((s) => s.activeLojistaId)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
   const pedido = cart.pedido
+  // Nome do lojista ativo (set/2026, pro CTA "Falar com" do lado da representante) — pego pelo id
+  // em modo loja, não por `cart.representative` (esse campo guarda o nome DELA, "Ana", o mesmo nos
+  // dois lados; o lojista em si só existe em `s.lojistas`).
+  const lojistaAtivo = lojistas.find((l) => l.id === activeLojistaId)
 
   // Renomear carrinho (set/2026, pedido do usuário: "poder renomear meus carrinhos tanto na visão
   // rep quanto na visão lojista") — edição inline no título da sidebar, sem trava de persona (os
@@ -162,18 +168,27 @@ export function CarrinhoDetail() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 {persona === 'representante' ? (
-                  // Ações do REPRESENTANTE (set/2026, "modo loja"): só "Aprovar pedido" existe de
-                  // verdade por enquanto — quando não se aplica, fica só o badge de status (visão
-                  // somente-leitura). Comentar/editar em nome do lojista fica pra uma próxima leva,
-                  // ver guia-dev-frontend.md.
-                  pedidoAguardandoAprovacaoRep(pedido) && (
+                  // Ações do REPRESENTANTE (set/2026, "modo loja"): "Aprovar pedido" quando se
+                  // aplica, mais "Falar com {lojista}" (set/2026, pedido do usuário — antes ela não
+                  // tinha nenhum jeito de abrir essa conversa, só o lojista tinha o CTA equivalente;
+                  // ver Chat.tsx, que agora é ciente de persona). Comentar/editar em nome do lojista
+                  // fica pra uma próxima leva, ver guia-dev-frontend.md.
+                  <>
+                    {pedidoAguardandoAprovacaoRep(pedido) && (
+                      <span
+                        style={{ fontSize: 11.5, color: 'var(--positive)', fontWeight: 600, cursor: 'pointer' }}
+                        onClick={() => aprovarPedido(cart.id)}
+                      >
+                        Aprovar pedido
+                      </span>
+                    )}
                     <span
-                      style={{ fontSize: 11.5, color: 'var(--positive)', fontWeight: 600, cursor: 'pointer' }}
-                      onClick={() => aprovarPedido(cart.id)}
+                      style={{ fontSize: 11.5, color: 'var(--info)', fontWeight: 500, cursor: 'pointer' }}
+                      onClick={() => navigate(`/carrinhos/${cart.id}/${pedido.id}/chat`)}
                     >
-                      Aprovar pedido
+                      Falar com {lojistaAtivo?.contactName ?? 'o lojista'}
                     </span>
-                  )
+                  </>
                 ) : (
                   <>
                     {/* "Editar no drawer" aparece em qualquer pedido editável — rascunho incompleto,

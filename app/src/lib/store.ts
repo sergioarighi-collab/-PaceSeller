@@ -228,6 +228,28 @@ function buildReposicaoCarrinho(product: Product, idSuffix?: string): Carrinho {
   }
 }
 
+// Nome padrão pra um carrinho montado à mão pela representante no Catálogo (set/2026) — antes
+// caía no genérico `Carrinho ${N}` (mesmo nome pra qualquer coisa, sem relação com o conteúdo;
+// ficava estranho até na sidebar, "Carrinho: carrinho 4"). Mesmo princípio de `buildReposicaoCarrinho`
+// (nome descritivo baseado no produto), só que aqui ela pode ter escolhido vários produtos — usa o
+// primeiro item como referência, não a lista inteira (ia virar um nome gigante). Só um ponto de
+// partida: o nome continua editável a qualquer momento (ver `renameCarrinho`, sem trava de persona).
+function nomeSugestaoRep(items: PedidoItem[]): string {
+  const primeiro = items[0]
+  return primeiro ? `Sugestão — ${primeiro.name.replace('Tênis Tesla ', '')}` : 'Sugestão'
+}
+
+// Notificação nova no sino do lojista (set/2026) — até aqui `notifications` só vinha do seed
+// (`initialNotifications`), nenhuma ação em tempo real empurrava nada: a Ana podia sugerir um
+// pedido inteiro e nada avisava o lojista além dele entrar em "Meus carrinhos" por conta própria.
+// Usado só pelas ações que escrevem direto em `s.carrinhos` (o que o lojista logado de fato lê) —
+// `sugerirParaCarteira` fica de fora de propósito: ela escreve em `s.lojistas`, não em `s.carrinhos`,
+// então não teria efeito nenhum pro lojista "logado" nesta leva do protótipo (ver nota em
+// guia-dev-frontend.md sobre cópias independentes).
+function withNotification(notifications: NotificationItem[], text: string, carrinhoId?: string): NotificationItem[] {
+  return [{ id: `notif-${Date.now()}`, kind: 'status', text, timeLabel: 'agora', read: false, carrinhoId }, ...notifications]
+}
+
 export const useAppStore = create<AppState>((set, get) => ({
   persona: null,
   setPersona: (p) => set({ persona: p }),
@@ -336,9 +358,19 @@ export const useAppStore = create<AppState>((set, get) => ({
   activeLojistaId: null,
   enterLojista: (lojistaId) => {
     const s = get()
-    const lojista = s.lojistas.find((l) => l.id === lojistaId)
+    // Sincroniza de volta pra `s.lojistas` o que a loja ativa anterior tinha em `s.carrinhos`
+    // (set/2026, achado testando o kanban) — sem isso, trocar de loja DIRETO (ex: clicando num
+    // carrinho de outra loja a partir do Radar, sem passar por "Trocar loja"/`exitLojista`, que já
+    // fazia essa sincronização) perdia silenciosamente qualquer carrinho criado/editado na loja
+    // anterior: `enterLojista` só lia `lojista.carrinhos` de `s.lojistas`, que ficava desatualizado
+    // assim que a primeira ação em modo loja trocava a referência de `s.carrinhos` (mesma causa raiz
+    // que `lojistasAoVivo` cobre do lado da leitura — aqui é o lado da escrita, no exato momento da
+    // troca).
+    const lojistas = s.activeLojistaId ? s.lojistas.map((l) => (l.id === s.activeLojistaId ? { ...l, carrinhos: s.carrinhos } : l)) : s.lojistas
+    const lojista = lojistas.find((l) => l.id === lojistaId)
     if (!lojista) return
     set({
+      lojistas,
       activeLojistaId: lojistaId,
       carrinhos: lojista.carrinhos,
       cartItems: {},
@@ -366,6 +398,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   editingPedido: null,
   commitCartToCarrinho: (targetCarrinhoId) => {
     const s = get()
+    // Usado nos três branches abaixo (editar/somar num existente/criar novo) pra decidir se esse
+    // commit é a representante montando um carrinho em modo loja — ver nota mais abaixo sobre a
+    // trava de grade mínima que isso precisa respeitar antes de marcar como enviado.
+    const montadoPelaRep = s.persona === 'representante'
     const { lines, totalItems: itemsQty, totalValue: itemsValue } = cartSummary(s.cartItems)
     const { entries: comboLines, totalItems: combosQty, totalValue: combosValue } = comboSummary(s.cartCombos)
     const totalItems = itemsQty + combosQty
@@ -439,8 +475,12 @@ export const useAppStore = create<AppState>((set, get) => ({
       const mergedMarginPct =
         mergedSubtotal > 0 ? Math.round((existing.pedido.marginPct * existing.pedido.subtotal + marginPct * totalValue) / mergedSubtotal) : marginPct
       const mergedPares = mergedItems.reduce((sum, i) => sum + i.qty, 0)
-      const nextStatus =
-        existing.autoSendOnGradeMinima && existing.pedido.status === 'rascunho' && mergedPares >= GRADE_MINIMA_PARES ? 'aguardando' : existing.pedido.status
+      // Mesma trava do branch "carrinho novo" logo abaixo: somar itens numa 2ª rodada só envia
+      // pro lojista quando a grade mínima bate agora — antes disso, `montadoPelaRep` sozinho
+      // mandava na hora, com 1 produto só (bug relatado pelo usuário, ver guia-dev-frontend.md).
+      const willSendNow =
+        existing.pedido.status === 'rascunho' && mergedPares >= GRADE_MINIMA_PARES && (existing.autoSendOnGradeMinima || montadoPelaRep)
+      const nextStatus = willSendNow ? 'aguardando' : existing.pedido.status
       const carrinhos = s.carrinhos.map((c) =>
         c.id === existing.id
           ? {
@@ -458,7 +498,17 @@ export const useAppStore = create<AppState>((set, get) => ({
             }
           : c,
       )
-      set({ carrinhos, cartItems: {}, cartCombos: {}, cartItemSizes: {}, activeCarrinhoId: existing.id })
+      set({
+        carrinhos,
+        cartItems: {},
+        cartCombos: {},
+        cartItemSizes: {},
+        activeCarrinhoId: existing.id,
+        notifications:
+          willSendNow && montadoPelaRep
+            ? withNotification(s.notifications, `Ana sugeriu um novo pedido — ${existing.name}`, existing.id)
+            : s.notifications,
+      })
       return existing.id
     }
 
@@ -469,16 +519,23 @@ export const useAppStore = create<AppState>((set, get) => ({
     //
     // Exceção (set/2026, fechando um gap documentado): quando é a REPRESENTANTE montando esse
     // carrinho novo (ela só chega aqui dentro do "modo loja", catálogo/drawer reaproveitados —
-    // `comLojistaSelecionada` em App.tsx garante isso), ele já nasce marcado e enviado — mesmo par
-    // `suggestedBy: 'representante'` + `status: 'aguardando'` que `sugerirReposicao`/
-    // `sugerirParaCarteira` já usam pro caso automático. Sem isso, um carrinho montado à mão pela
-    // Ana virava um rascunho comum, indistinguível de algo que o próprio lojista começou — o
-    // lojista não tinha como saber que foi ela quem montou.
-    const montadoPelaRep = s.persona === 'representante'
+    // `comLojistaSelecionada` em App.tsx garante isso), ele já nasce marcado — mesmo par
+    // `suggestedBy: 'representante'` que `sugerirReposicao`/`sugerirParaCarteira` já usam pro caso
+    // automático. Sem isso, um carrinho montado à mão pela Ana virava um rascunho comum,
+    // indistinguível de algo que o próprio lojista começou — o lojista não tinha como saber que foi
+    // ela quem montou.
+    //
+    // `enviaAgora` (set/2026, corrigindo um bug relatado pelo usuário): `montadoPelaRep` sozinho
+    // mandava pro lojista na hora, mesmo com 1 produto só — nenhuma trava de grade mínima, diferente
+    // do lado do lojista (`sendPedidoToRepresentante`, que só age se já bateu). Agora só vira
+    // `aguardando` quando a grade mínima já foi atingida; abaixo disso fica `rascunho` (só ela vê,
+    // suggestedBy já marcado) até completar numa rodada seguinte no catálogo (ver `willSendNow` no
+    // branch "soma num carrinho existente" logo acima, mesmo critério).
+    const enviaAgora = montadoPelaRep && totalItems >= GRADE_MINIMA_PARES
     const novoPedido: Pedido = {
       id: `pedido-${Date.now()}`,
       label: 'Pedido',
-      status: montadoPelaRep ? 'aguardando' : 'rascunho',
+      status: enviaAgora ? 'aguardando' : 'rascunho',
       items: allItems,
       subtotal: totalValue,
       discount: 0,
@@ -490,7 +547,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     const novoCarrinho: Carrinho = {
       id: `carrinho-${Date.now()}`,
-      name: `Carrinho ${s.carrinhos.length + 1}`,
+      name: montadoPelaRep ? nomeSugestaoRep(allItems) : `Carrinho ${s.carrinhos.length + 1}`,
       representative: 'Ana',
       updatedAt: 'agora',
       daysSinceActivity: 0,
@@ -500,7 +557,16 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     const carrinhos = [...s.carrinhos, novoCarrinho]
 
-    set({ carrinhos, cartItems: {}, cartCombos: {}, cartItemSizes: {}, activeCarrinhoId: novoCarrinho.id })
+    set({
+      carrinhos,
+      cartItems: {},
+      cartCombos: {},
+      cartItemSizes: {},
+      activeCarrinhoId: novoCarrinho.id,
+      notifications: enviaAgora
+        ? withNotification(s.notifications, `Ana sugeriu um novo pedido — ${novoCarrinho.name}`, novoCarrinho.id)
+        : s.notifications,
+    })
     return novoCarrinho.id
   },
 
@@ -564,7 +630,8 @@ export const useAppStore = create<AppState>((set, get) => ({
     const product = products.find((p) => p.id === productId)
     if (!product) return null
     const novoCarrinho = buildReposicaoCarrinho(product)
-    set({ carrinhos: [...s.carrinhos, novoCarrinho] })
+    const notifications = withNotification(s.notifications, `Ana sugeriu um novo pedido — ${novoCarrinho.name}`, novoCarrinho.id)
+    set({ carrinhos: [...s.carrinhos, novoCarrinho], notifications })
     return novoCarrinho.id
   },
   sugerirParaCarteira: (productId, lojistaIds) => {
@@ -636,7 +703,10 @@ export type PedidoActionKind = 'acompanhar' | 'revisar' | 'enviar' | 'editar'
 export function pedidoActionKind(pedido: Pedido): PedidoActionKind {
   if (pedido.status === 'pago') return 'acompanhar'
   if (pedido.status === 'aguardando' && pedido.suggestedBy === 'representante') return 'revisar'
-  if (pedido.status === 'rascunho' && pedidoPares(pedido) >= GRADE_MINIMA_PARES) return 'enviar'
+  // `suggestedBy === 'representante'` num rascunho (set/2026, ver commitCartToCarrinho) é a Ana
+  // ainda montando um carrinho que não bateu a grade mínima — "Enviar pro representante" não faz
+  // sentido nenhum nesse caso (ela mandaria pra ela mesma); cai pro 'editar' padrão.
+  if (pedido.status === 'rascunho' && pedido.suggestedBy !== 'representante' && pedidoPares(pedido) >= GRADE_MINIMA_PARES) return 'enviar'
   return 'editar'
 }
 
@@ -857,7 +927,18 @@ export function pedidoStatusBadge(pedido: Pedido, representativeName: string, vi
     }
     return viewerIsRep ? { label: 'Aguardando você — revisar', tone: 'info' } : { label: `Aguardando ${representativeName}`, tone: 'neutral' }
   }
-  if (pedido.status === 'rascunho' && pedidoPares(pedido) >= GRADE_MINIMA_PARES) return { label: 'Pronto pra enviar', tone: 'positive' }
+  // (set/2026, bug relatado pelo usuário) Único branch que faltava olhar `viewerIsRep` — "Pronto
+  // pra enviar" é instrução pro LOJISTA (só ele tem o botão "Enviar pro representante"); mostrado
+  // assim pra Ana soava como se fosse ação dela, que ela não tem como executar num rascunho alheio.
+  if (pedido.status === 'rascunho' && pedidoPares(pedido) >= GRADE_MINIMA_PARES) {
+    return viewerIsRep ? { label: 'Rascunho do lojista — já bate a grade mínima', tone: 'neutral' } : { label: 'Pronto pra enviar', tone: 'positive' }
+  }
+  // Rascunho da própria Ana, ainda sem bater a grade mínima (set/2026, ver commitCartToCarrinho) —
+  // só pra ela: dá pra distinguir "estou montando" de um rascunho qualquer do lojista, sem inventar
+  // texto novo pro lado dele (que continua vendo só "Rascunho", igual sempre viu).
+  if (pedido.status === 'rascunho' && pedido.suggestedBy === 'representante' && viewerIsRep) {
+    return { label: 'Seu rascunho — ainda montando', tone: 'neutral' }
+  }
   return { label: 'Rascunho', tone: 'neutral' }
 }
 

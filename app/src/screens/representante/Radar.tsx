@@ -332,7 +332,17 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
         {viewMode === 'lojas' ? (
           <div className="radar-grid">
             {visiveis.map(({ lojista, sinais, topSinal }) => (
-              <div className={`web-icard ${topSinal ? `tone-${topSinal.tone}` : 'tone-positive'}`} key={lojista.id}>
+              // Corpo do card abre a loja direto (set/2026, achado testando: clicar achando que ia
+              // só "ver a loja" disparava a ação do sinal de estoque sem avisar — criava e já
+              // enviava um carrinho de reposição). Agora só o `.cta`, com texto explícito do que vai
+              // fazer ("Sugerir reposição →"), executa a ação; o resto do card é só navegação, sem
+              // efeito colateral nenhum — mesmo padrão "linha abre, botão age" de listas clicáveis.
+              <div
+                className={`web-icard ${topSinal ? `tone-${topSinal.tone}` : 'tone-positive'}`}
+                key={lojista.id}
+                style={{ cursor: 'pointer' }}
+                onClick={() => abrirLoja(lojista.id)}
+              >
                 <div className="kicon">
                   <SinalIcon kind={topSinal?.kind ?? 'empty'} />
                 </div>
@@ -346,7 +356,14 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
                     + {sinais.length - 1} outra{sinais.length - 1 > 1 ? 's' : ''} pendência{sinais.length - 1 > 1 ? 's' : ''}
                   </div>
                 )}
-                <div className="cta" style={{ cursor: 'pointer' }} onClick={() => (topSinal ? executarSinal(lojista.id, topSinal) : abrirLoja(lojista.id))}>
+                <div
+                  className="cta"
+                  style={{ cursor: 'pointer' }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    topSinal ? executarSinal(lojista.id, topSinal) : abrirLoja(lojista.id)
+                  }}
+                >
                   {topSinal ? sinalCta[topSinal.kind] : 'Atender esta loja'} →
                 </div>
               </div>
@@ -427,7 +444,15 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
               const status = repStatusLabel(cart.pedido)
               const pares = pedidoPares(cart.pedido)
               return (
-                <div className={`web-icard ${sinal ? `tone-${sinal.tone}` : 'tone-positive'}`} key={cart.id}>
+                // Mesmo princípio do card de loja acima: corpo abre o carrinho (nunca executa nada
+                // sozinho — um sinal de estoque aqui criaria OUTRO carrinho de reposição, não abriria
+                // o carrinho que já está na tela), só o `.cta` executa a ação do sinal.
+                <div
+                  className={`web-icard ${sinal ? `tone-${sinal.tone}` : 'tone-positive'}`}
+                  key={cart.id}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => abrirCarrinho(lojista.id, cart.id)}
+                >
                   <div className="kicon">
                     <CartIcon />
                   </div>
@@ -444,7 +469,10 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
                   <div
                     className="cta"
                     style={{ cursor: 'pointer' }}
-                    onClick={() => (sinal ? executarSinal(lojista.id, sinal) : abrirCarrinho(lojista.id, cart.id))}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      sinal ? executarSinal(lojista.id, sinal) : abrirCarrinho(lojista.id, cart.id)
+                    }}
                   >
                     {sinal ? sinalCta[sinal.kind] : 'Abrir'} →
                   </div>
