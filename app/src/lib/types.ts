@@ -128,6 +128,13 @@ export interface Pedido {
   // nunca gerou. Existe só pra ela não ficar na dúvida se já mandou o link ou não (sem isso, "Gerar
   // link de pagamento" não deixava rastro nenhum de que a ação já tinha sido feita).
   linkPagamentoGeradoEm?: string
+  // Quando o lojista abriu a tela de pagamento desse link pela primeira vez (set/2026, módulo
+  // "Links de pagamento" no Radar — ver guia-dev-frontend.md, inclusive a limitação de não
+  // distinguir "abriu o link que a Ana mandou" de "chegou nessa tela navegando por conta própria",
+  // já que as duas coisas levam pra mesma URL nesse protótipo). Mesmo padrão de texto relativo solto
+  // dos campos acima; "Reenviar" o link zera esse campo (conta como um envio novo, aguardando
+  // leitura de novo).
+  linkPagamentoAbertoEm?: string
 }
 
 export interface Carrinho {

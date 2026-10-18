@@ -143,8 +143,14 @@ interface AppState {
    * UI antes de chamar). */
   renameCarrinho: (carrinhoId: string, name: string) => void
   /** Marca que o link de pagamento foi gerado agora (set/2026, ver `Pedido.linkPagamentoGeradoEm`
-   * e `PaymentLinkModal.tsx`) — só grava o "quando", não muda `status` nem mais nada do pedido. */
+   * e `PaymentLinkModal.tsx`) — só grava o "quando", não muda `status` nem mais nada do pedido.
+   * Também usada pelo "Reenviar" do módulo "Links de pagamento" (set/2026) — reenviar zera
+   * `linkPagamentoAbertoEm`: conta como um envio novo, aguardando leitura de novo. */
   marcarLinkPagamentoGerado: (carrinhoId: string) => void
+  /** Marca que o lojista abriu a tela de pagamento desse link pela primeira vez (set/2026, módulo
+   * "Links de pagamento") — não grava de novo se já tinha aberto antes (primeira leitura é o que
+   * importa, não a mais recente). */
+  marcarLinkPagamentoAberto: (carrinhoId: string) => void
   /**
    * Ação manual de "Enviar pro representante" — muda um Pedido rascunho pra "aguardando" sem
    * passar pelo drawer. Só age se a grade mínima (36 pares) já foi batida; senão não faz nada
@@ -607,7 +613,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   marcarLinkPagamentoGerado: (carrinhoId) =>
     set((s) => ({
-      carrinhos: s.carrinhos.map((c) => (c.id === carrinhoId ? { ...c, pedido: { ...c.pedido, linkPagamentoGeradoEm: 'agora' } } : c)),
+      carrinhos: s.carrinhos.map((c) =>
+        c.id === carrinhoId ? { ...c, pedido: { ...c.pedido, linkPagamentoGeradoEm: 'agora', linkPagamentoAbertoEm: undefined } } : c,
+      ),
+    })),
+  marcarLinkPagamentoAberto: (carrinhoId) =>
+    set((s) => ({
+      carrinhos: s.carrinhos.map((c) =>
+        c.id === carrinhoId && !c.pedido.linkPagamentoAbertoEm ? { ...c, pedido: { ...c.pedido, linkPagamentoAbertoEm: 'agora' } } : c,
+      ),
     })),
   sendPedidoToRepresentante: (carrinhoId, pedidoId) =>
     set((s) => ({

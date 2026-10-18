@@ -4,6 +4,7 @@ import { RepTopNav } from '../../components/desktop/RepTopNav'
 import { SinalIcon } from '../../components/desktop/SinalIcon'
 import { CartIcon } from '../../components/desktop/CartIcon'
 import { Toast } from '../../components/desktop/Toast'
+import { PaymentLinkModal } from '../../components/desktop/PaymentLinkModal'
 import {
   useAppStore,
   lojistaSinais,
@@ -20,7 +21,7 @@ import type { Pedido } from '../../lib/types'
 import { formatBRL } from '../../lib/format'
 
 type ViewMode = 'lojas' | 'carrinhos'
-type BoardMode = 'lista' | 'kanban'
+type BoardMode = 'lista' | 'kanban' | 'links'
 
 // Colunas do kanban (set/2026) — derivadas de `status`+`suggestedBy` do Pedido, sem campo novo no
 // modelo: "aguardando" já significava coisas diferentes dependendo de quem sugeriu o pedido (ver
@@ -83,9 +84,14 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
   const enterLojista = useAppStore((s) => s.enterLojista)
   const sugerirReposicao = useAppStore((s) => s.sugerirReposicao)
   const sugerirParaCarteira = useAppStore((s) => s.sugerirParaCarteira)
+  const marcarLinkPagamentoGerado = useAppStore((s) => s.marcarLinkPagamentoGerado)
   const [lojistaFiltro, setLojistaFiltro] = useState<string | null>(null)
   const [timeframeFiltro, setTimeframeFiltro] = useState<SinalTimeframe>('hoje')
   const [oportunidadeToast, setOportunidadeToast] = useState<string | null>(null)
+  // Modal de link de pagamento (set/2026, visão "Links") — guarda o carrinho cujo link está sendo
+  // mostrado/copiado; `null` = modal fechado. Mesmo `PaymentLinkModal` que `CarrinhoDetail.tsx` já
+  // usa, só que aqui disparado a partir de uma lista com vários carrinhos, não de um só.
+  const [linkModalCart, setLinkModalCart] = useState<{ id: string; name: string; total: number; pedidoId: string } | null>(null)
 
   // Oportunidade de carteira (set/2026, pedido do usuário: "sugestões inteligentes de carrinhos
   // específicos para lojistas específicos") — recalculada a cada render a partir de `lojistas`, não
@@ -161,6 +167,14 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
   // etapa). O toggle de período nem aparece quando o quadro está ativo (ver JSX abaixo).
   const carrinhosKanban = lojistaFiltro ? carrinhosRanqueados.filter((x) => x.lojista.id === lojistaFiltro) : carrinhosRanqueados
 
+  // Links de pagamento (set/2026, pedido do usuário: "módulo de acompanhamento de links enviados,
+  // com reenviar e notificação de aberto") — mesma base de `carrinhosKanban` (só filtro de loja,
+  // sem período: um link aberto há dias continua relevante de acompanhar, não "expira" do período
+  // de hoje), só que filtrado aos pedidos que já tiveram um link gerado pelo menos uma vez. Mais
+  // recentes primeiro — não tem campo de data real pra ordenar (só texto relativo solto, mesmo
+  // padrão do resto do app), então usa o id do carrinho (cresce com `Date.now()`) como proxy.
+  const carrinhosComLink = carrinhosKanban.filter((x) => x.cart.pedido.linkPagamentoGeradoEm).sort((a, b) => (a.cart.id < b.cart.id ? 1 : -1))
+
   function abrirLoja(lojistaId: string) {
     enterLojista(lojistaId)
     navigate('/catalogo')
@@ -231,10 +245,11 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
             </div>
           ))}
         </div>
-        {/* Período não aparece no quadro (kanban): as colunas já são a organização por etapa, e um
-            carrinho "Fechado" não tem sinal/prazo nenhum — teria que sumir da própria coluna que
-            promete mostrar, quebrando o quadro (ver `carrinhosKanban` acima). */}
-        {!(viewMode === 'carrinhos' && boardMode === 'kanban') && (
+        {/* Período não aparece no quadro (kanban) nem nos links: as colunas do quadro já são a
+            organização por etapa, e um carrinho "Fechado" não tem sinal/prazo nenhum — teria que
+            sumir da própria coluna que promete mostrar (ver `carrinhosKanban`); um link aberto há
+            dias continua valendo acompanhar, não "expira" do período de hoje (ver `carrinhosComLink`). */}
+        {!(viewMode === 'carrinhos' && (boardMode === 'kanban' || boardMode === 'links')) && (
           <>
             <div className="radar-filterlabel" style={{ marginTop: 16 }}>
               Período
@@ -284,6 +299,9 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
             </div>
             <div className={`radar-viewchip ${boardMode === 'kanban' ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setBoardMode('kanban')}>
               Quadro
+            </div>
+            <div className={`radar-viewchip ${boardMode === 'links' ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setBoardMode('links')}>
+              Links
             </div>
           </div>
         )}
@@ -438,6 +456,88 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
               )
             })}
           </div>
+        ) : boardMode === 'links' ? (
+          <div className="linktable-wrap">
+            {carrinhosComLink.length === 0 ? (
+              <div className="kanban-empty" style={{ padding: '24px 4px' }}>
+                Nenhum link de pagamento gerado ainda{lojistaFiltro ? ' pra essa loja' : ''}.
+              </div>
+            ) : (
+              <table className="linktable">
+                <thead>
+                  <tr>
+                    <th>Carrinho</th>
+                    <th>Valor</th>
+                    <th>Link gerado</th>
+                    <th>Status de leitura</th>
+                    <th>Pedido</th>
+                    <th style={{ textAlign: 'right' }}>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {carrinhosComLink.map(({ lojista, cart }) => {
+                    const pedido = cart.pedido
+                    const status = repStatusLabel(pedido)
+                    const pago = pedido.status === 'pago'
+                    return (
+                      <tr key={cart.id}>
+                        <td>
+                          <div className="linktable-cart" style={{ cursor: 'pointer' }} onClick={() => abrirCarrinho(lojista.id, cart.id)}>
+                            {cart.name}
+                          </div>
+                          <div className="linktable-loja">{lojista.name}</div>
+                        </td>
+                        <td>{formatBRL(pedido.total)}</td>
+                        <td className="linktable-mono">{pedido.linkPagamentoGeradoEm}</td>
+                        <td>
+                          {pedido.linkPagamentoAbertoEm ? (
+                            <span className="linktable-badge ok">
+                              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4">
+                                <path d="M5 13l4 4L19 7" />
+                              </svg>
+                              Aberto {pedido.linkPagamentoAbertoEm}
+                            </span>
+                          ) : (
+                            <span className="linktable-badge warn">
+                              <span className="linktable-dot" />
+                              Ainda não aberto
+                            </span>
+                          )}
+                        </td>
+                        <td className="linktable-status">{pago ? <span style={{ color: 'var(--positive)', fontWeight: 600 }}>Pago</span> : status.label}</td>
+                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <span
+                            className="linktable-action"
+                            style={{ color: pago ? 'var(--text-tertiary)' : 'var(--info)' }}
+                            onClick={() =>
+                              setLinkModalCart({ id: cart.id, name: cart.name, total: pedido.total, pedidoId: pedido.id })
+                            }
+                          >
+                            Copiar
+                          </span>
+                          {!pago && (
+                            <>
+                              <span style={{ color: 'var(--text-tertiary)', margin: '0 6px' }}>·</span>
+                              <span
+                                className="linktable-action"
+                                style={{ fontWeight: 600 }}
+                                onClick={() => {
+                                  marcarLinkPagamentoGerado(cart.id)
+                                  setLinkModalCart({ id: cart.id, name: cart.name, total: pedido.total, pedidoId: pedido.id })
+                                }}
+                              >
+                                Reenviar
+                              </span>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         ) : (
           <div className="radar-grid">
             {carrinhosVisiveis.map(({ lojista, cart, sinal }) => {
@@ -485,6 +585,15 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
 
       {oportunidadeToast && (
         <Toast title="Reposição sugerida" sub={oportunidadeToast} onClose={() => setOportunidadeToast(null)} />
+      )}
+
+      {linkModalCart && (
+        <PaymentLinkModal
+          link={`${window.location.origin}/carrinhos/${linkModalCart.id}/${linkModalCart.pedidoId}/pagamento`}
+          cartName={linkModalCart.name}
+          total={formatBRL(linkModalCart.total)}
+          onClose={() => setLinkModalCart(null)}
+        />
       )}
     </div>
   )

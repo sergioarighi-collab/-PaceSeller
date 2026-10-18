@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
@@ -35,9 +35,19 @@ export function Payment() {
   const navigate = useNavigate()
   const { cartId, pedidoId } = useParams()
   const carrinhos = useAppStore((s) => s.carrinhos)
+  const marcarLinkPagamentoAberto = useAppStore((s) => s.marcarLinkPagamentoAberto)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
   const pedido = cart.pedido
   void pedidoId
+
+  // Módulo "Links de pagamento" (set/2026) — chegar nessa tela é o que conta como "abriu o link"
+  // (ver `Pedido.linkPagamentoAbertoEm`, nota sobre a limitação de não distinguir de uma navegação
+  // normal dentro do app). Só grava quando já tinha um link gerado (`linkPagamentoGeradoEm`) — sem
+  // isso, "Ir para pagamento" normal (sem nenhum link envolvido) também contaria como abertura.
+  useEffect(() => {
+    if (pedido.linkPagamentoGeradoEm) marcarLinkPagamentoAberto(cart.id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cart.id])
 
   const [condition, setCondition] = useState<PaymentCondition>(pedido.paymentCondition ?? '30')
   // Formas de pagamento ativas pro pedido — dividir o valor entre mais de uma (ex: parte no

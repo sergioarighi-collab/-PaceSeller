@@ -417,6 +417,30 @@
   .kanban-card.col-aguardando_ana{border-left-color:var(--info);}
   .kanban-card.col-fechado{border-left-color:var(--positive);}
 
+  /* Links de pagamento (set/2026, pedido do usuário: "módulo de acompanhamento de links enviados,
+     com reenviar e notificação de aberto") — terceira visão dentro de "Carrinhos" (Lista/Quadro/
+     Links), tabular de propósito: a informação por linha (valor, quando gerou, se abriu, status) é
+     mais densa/comparável que os cards do kanban, uma tabela deixa escanear várias linhas de uma vez
+     melhor que cards. Mockup validado antes (Artifact) com stat tiles no topo; usuário pediu pra
+     tirar ("não precisa da visualização do mini dashboard") — foram removidos, só ficou a tabela. */
+  .linktable-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow-x:auto;margin-top:20px;}
+  .linktable{width:100%;border-collapse:collapse;min-width:900px;}
+  .linktable thead tr{border-bottom:1px solid var(--border);}
+  .linktable th{text-align:left;padding:12px 16px;font-family:var(--mono);font-size:10.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.04em;font-weight:500;}
+  .linktable tbody tr{border-bottom:1px solid var(--border-soft);}
+  .linktable tbody tr:last-child{border-bottom:none;}
+  .linktable tbody tr:hover{background:var(--surface-2);}
+  .linktable td{padding:14px 16px;font-size:13px;color:var(--text-primary);vertical-align:middle;}
+  .linktable-cart{font-family:var(--display);font-size:13.5px;font-weight:700;color:var(--text-primary);}
+  .linktable-loja{font-size:11.5px;color:var(--text-secondary);margin-top:1px;}
+  .linktable-mono{font-family:var(--mono);font-size:11.5px;color:var(--text-secondary);}
+  .linktable-status{font-size:12.5px;color:var(--text-secondary);}
+  .linktable-badge{display:inline-flex;align-items:center;gap:6px;border-radius:12px;padding:3px 9px 3px 7px;font-size:11.5px;font-weight:500;}
+  .linktable-badge.ok{background:var(--positive-dim);color:var(--positive);}
+  .linktable-badge.warn{background:var(--warn-dim);color:var(--warn);}
+  .linktable-dot{width:6px;height:6px;border-radius:50%;background:var(--warn);display:inline-block;}
+  .linktable-action{font-size:12px;color:var(--info);cursor:pointer;}
+
   /* Hierarquia entre filtro de loja (primário) e de período (secundário) no Radar do representante
      (set/2026) — mesmo `.chip`/`.tl-filters` da base, só com modificadores: loja fica maior e
      preenchida quando selecionada (como um filtro "de verdade"); período vira link de texto puro,
