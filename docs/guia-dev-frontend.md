@@ -1643,6 +1643,32 @@ Removido por completo o bloco antigo (coleção ausente no pedido + "oportunidad
 
 Via Playwright contra o preview buildado, reproduzindo o cenário real do print: Radar (representante) → visão "Carrinhos" → clicar em "Sugerir reposição" no sinal de estoque baixo de Coil Denim (Radical Skate) — cria o carrinho com 36 pares pedidos vs. 28 em estoque (`buildStockPares`/`suggestedGradeQty`, determinístico pro SKU, mesmo cálculo real do app). Confirmado: `.grademin` mostra "Estoque insuficiente — faltam 8 pares..."; `.qualitybox` "Estoque insuficiente pra fechar" com a sugestão "Coil Black Reflect tem estoque suficiente pra completar" + "Adicionar 8"; nenhum botão de fechar aparece. Clicado "+ Adicionar 8" → abre o drawer de edição (mesmo padrão já usado por outras sugestões) → "Salvar alterações": Coil Denim cai pra qtd 28 (aviso de estoque insuficiente some da linha), Coil Black Reflect entra com qtd 8, total continua 36 pares, `.grademin` vira "36 pares — grade mínima atingida", `.qualitybox` some, botão "Fechar e enviar link de pagamento" aparece normalmente. Regressão: carrinho sem nenhum problema de estoque ("Coil Verão", lojista) continua mostrando "40 pares — grade mínima atingida", sem `.qualitybox` nenhuma, "Ir para pagamento" funcionando normal. `tsc`/build limpos.
 
+## Kanban de carrinhos (set/2026)
+
+Usuário levantou a hipótese ("e se criássemos múltiplos carrinhos com o rep e o lojista enxergando eles simultaneamente, tela dividida... como se fosse um kanban de carrinhos") e pediu pra testar visualmente antes de qualquer código. Validado em 3 rodadas:
+
+1. Mockup estático (Artifact, Design canvas) com 5 colunas por etapa — aprovado visualmente.
+2. Preocupação levantada: "fico pensando se isso pode dificultar a finalização do pedido, criar mais atrito. Não pode ser complexo" — resolvida com 2 regras de design: sem drag-and-drop (mover de coluna só como efeito de uma ação real, nunca arrastando) e como visão adicional, nunca substituindo a lista.
+3. Validação final ("sendo você especialista em UX e ecommerce"): kanban por etapa só faz sentido pra quem gerencia VÁRIAS contas ao mesmo tempo (padrão de pipeline de vendas tipo Pipedrive/HubSpot) — por isso só entra pro representante, não pro lojista (que só tem a própria loja, lista já é suficiente pra ele).
+
+### Implementação
+
+- `Radar.tsx`: novo `boardMode: 'lista' | 'kanban'` (estado separado de `viewMode`), só relevante dentro de `viewMode === 'carrinhos'` — toggle próprio (`.radar-viewtoggle` reaproveitado) não aparece na visão "Lojas".
+- 5 colunas derivadas de `Pedido.status`+`suggestedBy`, sem campo novo no modelo (`kanbanColuna()`): Rascunho → Aguardando o lojista (`aguardando`+`suggestedBy:'representante'`) → Aguardando você (`pedidoAguardandoAprovacaoRep`) → Aprovado → Fechado (`pago`). "Aprovado" cai na mesma cor/badge de "Aguardando o lojista" (`Com {contactName}`) — nos dois casos a bola já voltou pra ele, só muda o que falta ele fazer (decidir vs. pagar).
+- Clicar num card sempre abre o carrinho normal (`abrirCarrinho`, mesmo `CarrinhoDetail` de sempre) — nunca atalho de sinal, nunca arrastar. O quadro é pura visão/navegação, não toca no fluxo de fechamento.
+- Filtro de Período não aparece com o quadro ativo: ele não compõe com colunas por etapa (um carrinho "Fechado" não tem sinal/prazo e precisa ficar sempre visível na coluna dele — escondê-lo quebraria a promessa do quadro). Filtro de Loja continua valendo nas duas visões.
+- CSS novo (`.kanban-*`) em `mockup.css`, reaproveitando os tokens de cor já existentes (`--warn`/`--info`/`--positive`) — nenhuma cor nova no sistema.
+
+### Bug real descoberto testando (consertado na mesma leva): carteira do representante não refletia a própria ação dela
+
+Aprovando um pedido em modo loja e voltando pro Radar, o card continuava "Aguardando você" — a própria aprovação "sumia" até trocar de loja. Causa: `enterLojista` só aponta `s.carrinhos` pra mesma referência do array da loja ativa; qualquer ação depois (`aprovarPedido`, `.map()` imutável) troca essa referência sem tocar em `s.lojistas`, que fica desatualizado. `exitLojista` já corrigia isso ao SAIR da loja (salva `s.carrinhos` de volta em `s.lojistas`), mas nada cobria o caso de continuar em modo loja e olhar o Radar — exatamente o caso que quebra a "promessa" central do kanban (ver o carrinho mudar de coluna).
+
+Corrigido com `lojistasAoVivo(lojistas, activeLojistaId, carrinhosAtivos)` (novo, `store.ts`) — não mexe em nenhuma ação de escrita, só substitui `carrinhos` da loja ativa por `s.carrinhos` na hora de LER a carteira inteira. Aplicado em `Radar.tsx` e `LojistaGate.tsx` (os dois lugares que leem `s.lojistas` pra mostrar dados por carrinho — `RepTopNav`/`MeusCarrinhos` só usam `.name` de lá, não afetados).
+
+### Testado
+
+Via Playwright: quadro mostra as 5 colunas com dados reais da carteira (Radical Skate, Loja Vertex, Casa Esporte, Esporte Total); aprovado "Giro TG II" em modo loja (Loja Vertex) → voltando pro Radar, card sai de "Aguardando você" (0) e aparece em "Aprovado" (1) corretamente — confirma o fix do `lojistasAoVivo`. Clique no card abre `CarrinhoDetail` normal. Filtro de loja no quadro reduz corretamente (Loja Vertex → só os 2 carrinhos dela). Regressão: visão "Lojas" não ganhou o toggle Lista/Quadro; visão "Carrinhos" → "Lista" continua idêntica a antes (período volta a aparecer, cards normais). `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

@@ -765,6 +765,19 @@ export function lojistaComprasMes(lojista: Lojista): number {
   return lojista.carrinhos.reduce((sum, c) => (c.pedido.status === 'pago' ? sum + c.pedido.total : sum), 0)
 }
 
+// `s.lojistas[x].carrinhos` desatualiza assim que qualquer ação em modo loja mexe em `s.carrinhos`
+// (`enterLojista` só aponta `s.carrinhos` pra mesma referência da loja ativa na hora de entrar —
+// qualquer ação depois, como `aprovarPedido`, faz um `.map()` imutável que troca essa referência,
+// sem tocar em `s.lojistas`). Achado testando o kanban (set/2026): a representante aprovava um
+// pedido em modo loja e, ao voltar pro Radar (que lê `s.lojistas`, a carteira inteira), continuava
+// vendo o status antigo — a própria ação dela "sumia" até ela trocar de loja de novo. Telas que
+// mostram a carteira inteira (Radar, LojistaGate) usam isso em vez de `s.lojistas` puro, pra sempre
+// refletir o que está em `s.carrinhos` quando a loja em questão é a ativa.
+export function lojistasAoVivo(lojistas: Lojista[], activeLojistaId: string | null, carrinhosAtivos: Carrinho[]): Lojista[] {
+  if (!activeLojistaId) return lojistas
+  return lojistas.map((l) => (l.id === activeLojistaId ? { ...l, carrinhos: carrinhosAtivos } : l))
+}
+
 // Corte mínimo de crescimento pra um produto virar "oportunidade de carteira" — mesmo princípio dos
 // outros sinais (só entra com dado real por trás, não é chute): sem isso, qualquer produto com
 // crescimento positivo viraria uma "oportunidade", mesmo que marginal.

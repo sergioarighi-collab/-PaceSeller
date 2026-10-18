@@ -4,12 +4,46 @@ import { RepTopNav } from '../../components/desktop/RepTopNav'
 import { SinalIcon } from '../../components/desktop/SinalIcon'
 import { CartIcon } from '../../components/desktop/CartIcon'
 import { Toast } from '../../components/desktop/Toast'
-import { useAppStore, lojistaSinais, PESO_SINAL, repStatusLabel, pedidoPares, carteiraOportunidade } from '../../lib/store'
+import {
+  useAppStore,
+  lojistaSinais,
+  lojistasAoVivo,
+  PESO_SINAL,
+  repStatusLabel,
+  pedidoAguardandoAprovacaoRep,
+  pedidoPares,
+  carteiraOportunidade,
+} from '../../lib/store'
 import type { LojistaSinal, SinalTimeframe } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
+import type { Pedido } from '../../lib/types'
 import { formatBRL } from '../../lib/format'
 
 type ViewMode = 'lojas' | 'carrinhos'
+type BoardMode = 'lista' | 'kanban'
+
+// Colunas do kanban (set/2026) — derivadas de `status`+`suggestedBy` do Pedido, sem campo novo no
+// modelo: "aguardando" já significava coisas diferentes dependendo de quem sugeriu o pedido (ver
+// `pedidoAguardandoAprovacaoRep`), só não tinha uma coluna própria pra cada caso. `aprovado` só
+// existe pro caminho "lojista enviou, Ana aprovou" (ver aprovarPedido em store.ts) — por isso cai
+// na mesma coluna/cor de "aguardando o lojista": nos dois casos a bola já voltou pra ele.
+type KanbanColKey = 'rascunho' | 'aguardando_lojista' | 'aguardando_ana' | 'aprovado' | 'fechado'
+
+function kanbanColuna(pedido: Pedido): KanbanColKey {
+  if (pedido.status === 'pago') return 'fechado'
+  if (pedido.status === 'aprovado') return 'aprovado'
+  if (pedido.status === 'aguardando' && pedido.suggestedBy === 'representante') return 'aguardando_lojista'
+  if (pedidoAguardandoAprovacaoRep(pedido)) return 'aguardando_ana'
+  return 'rascunho'
+}
+
+const kanbanColunas: { key: KanbanColKey; title: string; sub: string }[] = [
+  { key: 'rascunho', title: 'Rascunho', sub: 'Em montagem, ainda não compartilhado' },
+  { key: 'aguardando_lojista', title: 'Aguardando o lojista', sub: 'Você sugeriu, esperando a decisão dele' },
+  { key: 'aguardando_ana', title: 'Aguardando você', sub: 'Ele enviou, esperando sua aprovação' },
+  { key: 'aprovado', title: 'Aprovado', sub: 'Já aprovado, falta ele pagar' },
+  { key: 'fechado', title: 'Fechado', sub: 'Pago, encaminhado pra fábrica' },
+]
 
 const timeframeOrder: SinalTimeframe[] = ['hoje', '15dias', '30dias']
 const timeframeLabel: Record<SinalTimeframe, string> = {
@@ -39,7 +73,13 @@ const sinalCta: Record<LojistaSinal['kind'], string> = {
 // o estado inicial do toggle, o usuário ainda pode alternar livremente depois de entrar.
 export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } = {}) {
   const navigate = useNavigate()
-  const lojistas = useAppStore((s) => s.lojistas)
+  const lojistasRaw = useAppStore((s) => s.lojistas)
+  const activeLojistaId = useAppStore((s) => s.activeLojistaId)
+  const carrinhosAtivos = useAppStore((s) => s.carrinhos)
+  // Reflete o que a Ana acabou de fazer em modo loja (aprovar, fechar, renomear...) mesmo antes de
+  // trocar de loja de novo — ver `lojistasAoVivo` em store.ts pro porquê de `s.lojistas` sozinho
+  // não bastar aqui.
+  const lojistas = lojistasAoVivo(lojistasRaw, activeLojistaId, carrinhosAtivos)
   const enterLojista = useAppStore((s) => s.enterLojista)
   const sugerirReposicao = useAppStore((s) => s.sugerirReposicao)
   const sugerirParaCarteira = useAppStore((s) => s.sugerirParaCarteira)
@@ -66,6 +106,10 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
   // tela nova nem funde com a Carteira — é um jeito de ver a mesma carteira com mais detalhe sem
   // trocar de tela. Ver `carrinhosRanqueados` abaixo.
   const [viewMode, setViewMode] = useState<ViewMode>(defaultView)
+  // Lista (default) vs Quadro — kanban por etapa, só dentro da visão "Carrinhos" (set/2026, pedido
+  // do usuário: validado antes como mockup — ver guia-dev-frontend.md). Não existe pra visão
+  // "Lojas": kanban por etapa de PEDIDO não faz sentido agrupando por LOJA.
+  const [boardMode, setBoardMode] = useState<BoardMode>('lista')
 
   // Cada card só mostra o sinal de maior peso daquela loja (os outros viram "+N outras
   // pendências") — `topSinal`/`timeframe` do card vêm desse sinal específico, não de uma mistura
@@ -110,6 +154,12 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
     if (lojistaFiltro) return x.lojista.id === lojistaFiltro
     return !x.sinal || x.sinal.timeframe === timeframeFiltro
   })
+
+  // Kanban: só o filtro de loja se aplica (set/2026) — o de período não compõe com colunas por
+  // etapa (um carrinho "Fechado" não tem sinal/prazo nenhum e precisa continuar visível sempre; e
+  // escondê-lo da coluna certa quebraria a promessa do quadro de mostrar a carteira inteira por
+  // etapa). O toggle de período nem aparece quando o quadro está ativo (ver JSX abaixo).
+  const carrinhosKanban = lojistaFiltro ? carrinhosRanqueados.filter((x) => x.lojista.id === lojistaFiltro) : carrinhosRanqueados
 
   function abrirLoja(lojistaId: string) {
     enterLojista(lojistaId)
@@ -181,24 +231,31 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
             </div>
           ))}
         </div>
-        <div className="radar-filterlabel" style={{ marginTop: 16 }}>
-          Período
-        </div>
-        <div className="tl-filters radar-filter-secondary">
-          {timeframeOrder.map((tf) => (
-            <div
-              key={tf}
-              className={`chip ${timeframeFiltro === tf && !lojistaFiltro ? 'selected' : ''}`}
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                setLojistaFiltro(null)
-                setTimeframeFiltro(tf)
-              }}
-            >
-              {timeframeLabel[tf]} <span className="n">{(viewMode === 'lojas' ? porPeriodo(tf) : carrinhosPorPeriodo(tf)).length}</span>
+        {/* Período não aparece no quadro (kanban): as colunas já são a organização por etapa, e um
+            carrinho "Fechado" não tem sinal/prazo nenhum — teria que sumir da própria coluna que
+            promete mostrar, quebrando o quadro (ver `carrinhosKanban` acima). */}
+        {!(viewMode === 'carrinhos' && boardMode === 'kanban') && (
+          <>
+            <div className="radar-filterlabel" style={{ marginTop: 16 }}>
+              Período
             </div>
-          ))}
-        </div>
+            <div className="tl-filters radar-filter-secondary">
+              {timeframeOrder.map((tf) => (
+                <div
+                  key={tf}
+                  className={`chip ${timeframeFiltro === tf && !lojistaFiltro ? 'selected' : ''}`}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    setLojistaFiltro(null)
+                    setTimeframeFiltro(tf)
+                  }}
+                >
+                  {timeframeLabel[tf]} <span className="n">{(viewMode === 'lojas' ? porPeriodo(tf) : carrinhosPorPeriodo(tf)).length}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Visão "Lojas" (1 card por loja, resume no sinal de maior peso) vs "Carrinhos" (1 card
             por carrinho, cada um com o sinal específico dele, se tiver) — mesmos filtros de loja/
@@ -215,6 +272,21 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
             Carrinhos
           </div>
         </div>
+
+        {/* Lista vs Quadro (set/2026, pedido do usuário: "ver todos os carrinhos divididos em
+            colunas, em qual etapa e com quem") — só dentro de "Carrinhos": kanban por etapa de
+            PEDIDO não existe na visão "Lojas". Alternativa à lista, nunca a substitui — quem prefere
+            lista continua usando lista. */}
+        {viewMode === 'carrinhos' && (
+          <div className="radar-viewtoggle" style={{ marginTop: 8 }}>
+            <div className={`radar-viewchip ${boardMode === 'lista' ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setBoardMode('lista')}>
+              Lista
+            </div>
+            <div className={`radar-viewchip ${boardMode === 'kanban' ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setBoardMode('kanban')}>
+              Quadro
+            </div>
+          </div>
+        )}
 
         {/* Oportunidade de carteira (set/2026) — banner de largura total, fora da grade de cards
             (não compete com Lojas/Carrinhos, aparece nas duas visões). Reaproveita a cor tone-black
@@ -279,6 +351,69 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
                 </div>
               </div>
             ))}
+          </div>
+        ) : boardMode === 'kanban' ? (
+          <div className="kanban-board">
+            {kanbanColunas.map((col) => {
+              const cards = carrinhosKanban.filter((x) => kanbanColuna(x.cart.pedido) === col.key)
+              return (
+                <div className="kanban-col" key={col.key}>
+                  <div className="kanban-colhead">
+                    <div className="kanban-coltitle">{col.title}</div>
+                    <div className="kanban-colcount">{cards.length}</div>
+                  </div>
+                  <div className="kanban-colsub">{col.sub}</div>
+                  <div className="kanban-cards">
+                    {cards.length === 0 ? (
+                      <div className="kanban-empty">Nenhum carrinho aqui agora</div>
+                    ) : (
+                      cards.map(({ lojista, cart }) => {
+                        const pares = pedidoPares(cart.pedido)
+                        return (
+                          <div
+                            className={`kanban-card col-${col.key}`}
+                            key={cart.id}
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => abrirCarrinho(lojista.id, cart.id)}
+                          >
+                            <div>
+                              <div className="kanban-cardtitle">{cart.name}</div>
+                              <div className="kanban-cardloja">{lojista.name}</div>
+                            </div>
+                            {/* "Bola com" (set/2026) — só nas colunas onde o carrinho já foi
+                                compartilhado; "Rascunho" não ganha etiqueta porque ainda é privado,
+                                não tem um lado "com a bola" de verdade (ver kanbanColuna acima). */}
+                            {col.key === 'aguardando_lojista' || col.key === 'aprovado' ? (
+                              <div className="kanban-badge" style={{ background: 'var(--warn-dim)', color: 'var(--warn)' }}>
+                                <span className="kanban-dot" style={{ background: 'var(--warn)' }} />
+                                Com {lojista.contactName}
+                              </div>
+                            ) : col.key === 'aguardando_ana' ? (
+                              <div className="kanban-badge" style={{ background: 'var(--info-dim)', color: 'var(--info)' }}>
+                                <span className="kanban-dot" style={{ background: 'var(--info)' }} />
+                                Com você
+                              </div>
+                            ) : col.key === 'fechado' ? (
+                              <div className="kanban-badge" style={{ background: 'var(--positive-dim)', color: 'var(--positive)' }}>
+                                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--positive)" strokeWidth="3.4">
+                                  <path d="M5 13l4 4L19 7" />
+                                </svg>
+                                Em produção
+                              </div>
+                            ) : null}
+                            <div className="kanban-cardfoot">
+                              <span>{pares} pares</span>
+                              <span className="val">{formatBRL(cart.pedido.total)}</span>
+                            </div>
+                            <div className="kanban-cardtime">{cart.updatedAt}</div>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         ) : (
           <div className="radar-grid">

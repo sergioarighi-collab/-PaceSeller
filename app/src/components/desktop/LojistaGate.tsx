@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { RepTopNav } from './RepTopNav'
-import { useAppStore, lojistaComprasMes } from '../../lib/store'
+import { useAppStore, lojistaComprasMes, lojistasAoVivo } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
 
 // Paleta de "selo de marca" por loja (set/2026) — não existe logo de verdade no mock, então cada
@@ -40,7 +40,12 @@ function iniciais(name: string): string {
 // continua clicável, a seta só reforça visualmente que dá pra entrar.
 export function LojistaGate() {
   const navigate = useNavigate()
-  const lojistas = useAppStore((s) => s.lojistas)
+  const lojistasRaw = useAppStore((s) => s.lojistas)
+  const activeLojistaId = useAppStore((s) => s.activeLojistaId)
+  const carrinhosAtivos = useAppStore((s) => s.carrinhos)
+  // Mesmo motivo do Radar.tsx: sem isso, "comprado este mês" ficava desatualizado assim que a Ana
+  // pagava/aprovava algo em modo loja e voltava pra escolher outra loja — ver `lojistasAoVivo`.
+  const lojistas = lojistasAoVivo(lojistasRaw, activeLojistaId, carrinhosAtivos)
   const enterLojista = useAppStore((s) => s.enterLojista)
 
   function escolherLoja(lojistaId: string) {

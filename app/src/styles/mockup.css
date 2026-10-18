@@ -384,6 +384,34 @@
   .radar-viewchip{font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:20px;color:var(--text-secondary);border:1px solid var(--border-strong);}
   .radar-viewchip.selected{background:var(--black);color:#fff;border-color:var(--black);}
 
+  /* Kanban de carrinhos (set/2026, pedido do usuário: "ver todos os carrinhos, divididos em
+     colunas, em qual etapa e com quem") — segunda forma de ver a visão "Carrinhos" do Radar do
+     representante, alternativa à lista (`.radar-grid`), nunca a substituindo. Validado antes como
+     mockup (ver guia-dev-frontend.md) com 5 colunas por `status`+`suggestedBy` do Pedido — sem
+     campo novo no modelo, só reorganiza o que já existe. Sem drag-and-drop de propósito: mover um
+     carrinho de coluna só acontece como efeito de uma ação real (aprovar/fechar/pagar), nunca
+     arrastando — pedido do usuário foi explicitamente não aumentar o atrito de fechar pedido. */
+  .kanban-board{display:flex;gap:16px;overflow-x:auto;padding-bottom:8px;margin-top:20px;}
+  .kanban-col{flex:0 0 250px;display:flex;flex-direction:column;gap:10px;}
+  .kanban-colhead{display:flex;align-items:center;justify-content:space-between;padding:0 2px;}
+  .kanban-coltitle{font-family:var(--display);font-size:13.5px;font-weight:700;color:var(--text-primary);}
+  .kanban-colcount{font-family:var(--mono);font-size:11px;color:var(--text-tertiary);background:var(--surface-3);border-radius:10px;padding:2px 8px;}
+  .kanban-colsub{font-size:11px;color:var(--text-tertiary);margin-top:-6px;padding:0 2px;line-height:1.35;}
+  .kanban-cards{display:flex;flex-direction:column;gap:9px;max-height:560px;overflow-y:auto;padding-right:2px;}
+  .kanban-empty{font-size:11.5px;color:var(--text-tertiary);padding:10px 2px;}
+  .kanban-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--border-strong);border-radius:8px;padding:12px 13px;display:flex;flex-direction:column;gap:8px;cursor:pointer;}
+  .kanban-card:hover{border-color:var(--border-strong);}
+  .kanban-cardtitle{font-family:var(--display);font-size:13.5px;font-weight:700;color:var(--text-primary);line-height:1.25;}
+  .kanban-cardloja{font-size:11.5px;color:var(--text-secondary);margin-top:1px;}
+  .kanban-badge{display:inline-flex;align-self:flex-start;align-items:center;gap:5px;border-radius:12px;padding:3px 8px 3px 7px;font-size:11px;font-weight:500;}
+  .kanban-dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0;}
+  .kanban-cardfoot{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;}
+  .kanban-cardfoot .val{color:var(--text-secondary);}
+  .kanban-cardtime{font-family:var(--mono);font-size:10.5px;color:var(--text-tertiary);}
+  .kanban-card.col-aguardando_lojista,.kanban-card.col-aprovado{border-left-color:var(--warn);}
+  .kanban-card.col-aguardando_ana{border-left-color:var(--info);}
+  .kanban-card.col-fechado{border-left-color:var(--positive);}
+
   /* Hierarquia entre filtro de loja (primário) e de período (secundário) no Radar do representante
      (set/2026) — mesmo `.chip`/`.tl-filters` da base, só com modificadores: loja fica maior e
      preenchida quando selecionada (como um filtro "de verdade"); período vira link de texto puro,
