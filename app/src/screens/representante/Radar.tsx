@@ -380,9 +380,10 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
                               <div className="kanban-cardtitle">{cart.name}</div>
                               <div className="kanban-cardloja">{lojista.name}</div>
                             </div>
-                            {/* "Bola com" (set/2026) — só nas colunas onde o carrinho já foi
-                                compartilhado; "Rascunho" não ganha etiqueta porque ainda é privado,
-                                não tem um lado "com a bola" de verdade (ver kanbanColuna acima). */}
+                            {/* "Bola com" (set/2026) — sempre presente, mesmo em "Rascunho" (etiqueta
+                                neutra "Ainda privado", já que ninguém tem a bola de verdade antes de
+                                compartilhar — ver kanbanColuna acima), pra todo card ter a mesma
+                                estrutura e altura, não só os que já foram compartilhados. */}
                             {col.key === 'aguardando_lojista' || col.key === 'aprovado' ? (
                               <div className="kanban-badge" style={{ background: 'var(--warn-dim)', color: 'var(--warn)' }}>
                                 <span className="kanban-dot" style={{ background: 'var(--warn)' }} />
@@ -400,7 +401,12 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
                                 </svg>
                                 Em produção
                               </div>
-                            ) : null}
+                            ) : (
+                              <div className="kanban-badge" style={{ background: 'var(--surface-2)', color: 'var(--text-tertiary)' }}>
+                                <span className="kanban-dot" style={{ background: 'var(--text-tertiary)' }} />
+                                Ainda privado
+                              </div>
+                            )}
                             <div className="kanban-cardfoot">
                               <span>{pares} pares</span>
                               <span className="val">{formatBRL(cart.pedido.total)}</span>

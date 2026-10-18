@@ -1669,6 +1669,10 @@ Corrigido com `lojistasAoVivo(lojistas, activeLojistaId, carrinhosAtivos)` (novo
 
 Via Playwright: quadro mostra as 5 colunas com dados reais da carteira (Radical Skate, Loja Vertex, Casa Esporte, Esporte Total); aprovado "Giro TG II" em modo loja (Loja Vertex) → voltando pro Radar, card sai de "Aguardando você" (0) e aparece em "Aprovado" (1) corretamente — confirma o fix do `lojistasAoVivo`. Clique no card abre `CarrinhoDetail` normal. Filtro de loja no quadro reduz corretamente (Loja Vertex → só os 2 carrinhos dela). Regressão: visão "Lojas" não ganhou o toggle Lista/Quadro; visão "Carrinhos" → "Lista" continua idêntica a antes (período volta a aparecer, cards normais). `tsc`/build limpos.
 
+### Ajuste: cards de tamanho inconsistente (mesma leva)
+
+Usuário notou que os cards da coluna "Rascunho" ficavam mais baixos que os das outras colunas. Causa: só "Rascunho" não renderizava a etiqueta "bola com" (`null` em vez de badge, já que um carrinho ainda privado não tem "com quem está" de verdade) — menos um elemento, menos altura. Corrigido com os dois em conjunto: "Rascunho" ganhou uma etiqueta neutra própria ("Ainda privado", cinza, sem pretender que alguém já tem a bola) pra toda coluna ter a mesma estrutura, e `.kanban-card` ganhou `min-height:118px` pra não depender só da estrutura bater pra alinhar (nomes de carrinho/loja mais longos quebrando linha, por exemplo). Testado: os 7 cards da carteira renderizam com exatamente a mesma altura (`getBoundingClientRect().height` igual nos 7).
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
