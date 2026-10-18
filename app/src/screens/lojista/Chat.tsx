@@ -11,6 +11,12 @@ function iniciais(name: string): string {
   return palavras.length === 1 ? palavras[0].slice(0, 2).toUpperCase() : (palavras[0][0] + palavras[1][0]).toUpperCase()
 }
 
+// Nome completo da Ana, só usado aqui (set/2026) — `cart.representative` guarda só "Ana" (usado em
+// textos curtos pelo resto do app, ex: "Representante: Ana"), mas o chat do lado do lojista sempre
+// mostrou o nome completo. Perdido por um instante ao tornar a tela ciente de persona (regressão
+// pega testando do lado do lojista) — resgatado como constante pra não depender de `cart.representative`.
+const ANA_NOME_COMPLETO = 'Ana Ferreira'
+
 export function Chat() {
   const navigate = useNavigate()
   const { cartId } = useParams()
@@ -29,7 +35,7 @@ export function Chat() {
   // qualquer loja ia descaracterizar uma conversa que faz sentido pro contexto dela. Do lado da Ana,
   // a conversa é mais simples e usa o nome/carrinho reais (funciona pra qualquer loja da carteira).
   const lojistaAtivo = lojistas.find((l) => l.id === activeLojistaId)
-  const outraPessoa = persona === 'representante' ? (lojistaAtivo?.contactName ?? cart.representative) : cart.representative
+  const outraPessoa = persona === 'representante' ? (lojistaAtivo?.contactName ?? cart.representative) : ANA_NOME_COMPLETO
 
   // Thread é um roteiro fixo (não é chat de verdade, não tem backend) — mensagens novas só se somam
   // localmente ao final, pra "Enviar" deixar de ser um botão decorativo sem virar um chat real (que
