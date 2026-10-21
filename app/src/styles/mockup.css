@@ -19,16 +19,16 @@
     --black-hover:#000000;
     --on-black:#FFFFFF;
     --positive:#1E8A54;
-    --positive-dim:#EAF5EE;
+    --positive-dim:#D2E8DD;
     --risk:#C9392F;
-    --risk-dim:#FBEAE9;
+    --risk-dim:#F4D7D5;
     --info:#3060C4;
-    --info-dim:#EBF0FB;
+    --info-dim:#D6DFF3;
     /* 'parado' (carrinho sem atividade, set/2026) — precisa de cor própria, separada de --info
        (já usado por 'revisao'/"aguardando aprovação"): são situações bem diferentes (uma trava uma
        decisão da Ana agora, a outra só esfriou) pra dividirem a mesma cor na visão "Carrinhos". */
     --warn:#C97A1E;
-    --warn-dim:#FFF3E0;
+    --warn-dim:#F4E4D2;
     --display:'Space Grotesk',sans-serif;
     --body:'IBM Plex Sans',sans-serif;
     --mono:'IBM Plex Mono',monospace;
@@ -118,7 +118,7 @@
   .searchbox{flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:10px 12px;font-size:13px;color:var(--text-tertiary);display:flex;align-items:center;gap:8px;}
   .filterbtn{width:38px;height:38px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--text-secondary);flex-shrink:0;}
   .chiprow{display:flex;gap:8px;padding:8px 18px 4px;overflow-x:hidden;}
-  .chip{font-size:11.5px;padding:7px 12px;border-radius:20px;border:1px solid var(--border);color:var(--text-secondary);background:var(--surface-2);white-space:nowrap;}
+  .chip{font-size:11.5px;padding:7px 12px;border-radius:20px;border:1px solid var(--border-strong);color:var(--text-secondary);background:var(--surface);white-space:nowrap;}
   .chip.selected{background:var(--surface);border-color:var(--black);color:var(--text-primary);font-weight:600;}
 
   .pcard{display:flex;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:12px;margin-top:10px;}
