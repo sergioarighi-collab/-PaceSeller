@@ -4,6 +4,7 @@ import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { PersonaTopNav } from '../../components/desktop/PersonaTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { ProductThumb } from '../../components/desktop/ProductThumb'
+import { CartIcon } from '../../components/desktop/CartIcon'
 import { ConfirmModal } from '../../components/desktop/ConfirmModal'
 import { Toast } from '../../components/desktop/Toast'
 import {
@@ -277,118 +278,123 @@ export function MeusCarrinhos() {
           ))}
         </div>
 
-        <div className="cartlist" style={{ maxWidth: 900 }}>
-          {rows.map(({ cart }) => {
-            const pedido = cart.pedido
-            const thumbIds = Array.from(new Set(pedido.items.map((i) => i.productId).filter((id) => products.some((pr) => pr.id === id))))
-            const isDraftTarget = draftTargetId === cart.id
-            const pares = pedidoPares(pedido)
-            const gradeOk = pares >= GRADE_MINIMA_PARES
-            const gradePct = Math.min(100, Math.round((pares / GRADE_MINIMA_PARES) * 100))
-            const action = pedidoAction(cart, pedido)
-            const statusBadge = pedidoStatusBadge(pedido, cart.representative, persona === 'representante')
+        {rows.length === 0 ? (
+          <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-secondary)', padding: '64px 0' }}>Nenhum carrinho nessa categoria</div>
+        ) : (
+          <div className="cr-list" style={{ maxWidth: 900, marginTop: 20 }}>
+            {rows.map(({ cart }) => {
+              const pedido = cart.pedido
+              const thumbIds = Array.from(new Set(pedido.items.map((i) => i.productId).filter((id) => products.some((pr) => pr.id === id))))
+              const isDraftTarget = draftTargetId === cart.id
+              const pares = pedidoPares(pedido)
+              const gradeOk = pares >= GRADE_MINIMA_PARES
+              const gradePct = Math.min(100, Math.round((pares / GRADE_MINIMA_PARES) * 100))
+              const action = pedidoAction(cart, pedido)
+              const statusBadge = pedidoStatusBadge(pedido, cart.representative, persona === 'representante')
+              const parado = cart.daysSinceActivity >= EXPIRA_APOS_DIAS && pedido.status !== 'pago'
 
-            return (
-              <div className="cart-card" key={cart.id}>
-                <div className="cc-top">
-                  <div>
-                    <div className="cc-name">{cart.name}</div>
-                    <div className="cc-meta">
-                      Representante: {cart.representative} · Atualizado {cart.updatedAt}
+              return (
+                <div className="cr-row" key={cart.id} onClick={() => navigate(`/carrinhos/${cart.id}`)}>
+                  <div className="cr-main">
+                    <div className={`cr-icon tone-${statusBadge.tone}`}>
+                      <CartIcon />
                     </div>
-                  </div>
-                  <div className="btn-secondary" style={{ width: 100, cursor: 'pointer', display: 'block' }} onClick={() => navigate(`/carrinhos/${cart.id}`)}>
-                    Abrir
-                  </div>
-                </div>
-
-                {thumbIds.length > 0 && (
-                  <div className="thumbrow">
-                    {thumbIds.slice(0, 4).map((id) => {
-                      const product = products.find((p) => p.id === id)
-                      if (!product) return null
-                      return (
-                        <div className="thumb" key={id}>
-                          <ProductThumb src={product.image} alt={product.name} iconSize={19} padding={2} />
-                        </div>
-                      )
-                    })}
-                    {thumbIds.length > 4 && (
-                      <div className="thumb" style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                        +{thumbIds.length - 4}
+                    <div className="cr-info">
+                      <div className="cr-nameline">
+                        <span className="cr-name">{cart.name}</span>
+                        <span className={`cr-badge tone-${statusBadge.tone}`}>{statusBadge.label}</span>
                       </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="pedrow">
-                  <span className="plabel">{pedido.label}</span>
-                  <span className={`pstatus tone-${statusBadge.tone}`}>{statusBadge.label}</span>
-                  <div className="pgrade">
-                    <div className={`bar ${gradeOk ? 'ok' : ''}`}>
-                      <div style={{ width: `${gradePct}%` }} />
+                      <div className="cr-meta">
+                        Representante: {cart.representative} · Atualizado {cart.updatedAt}
+                      </div>
                     </div>
-                    <span className="pgradetxt">
-                      {pares}/{GRADE_MINIMA_PARES} pares
-                    </span>
-                  </div>
-                  <span className="pval">{formatBRL(pedido.total)}</span>
-                  {action && (
-                    <span className={`pact ${action.tone === 'primary' ? 'primary' : ''}`} onClick={action.onClick}>
-                      {action.label}
-                    </span>
-                  )}
-                </div>
-
-                {isDraftTarget && (
-                  <div className="pedrow pending">
-                    <span className="plabel">No drawer</span>
-                    <span className="pstatus pending">Ainda não adicionado</span>
-                    <div className="pgrade">
-                      <span className="pgradetxt">
-                        {draftPares} pares · vai pra este carrinho
+                    <div className="cr-grade">
+                      <div className={`cr-bar ${gradeOk ? 'ok' : ''}`}>
+                        <div style={{ width: `${gradePct}%` }} />
+                      </div>
+                      <span className="cr-gradetxt">
+                        {pares}/{GRADE_MINIMA_PARES}
                       </span>
                     </div>
-                    <span className="pval">{formatBRL(draftValue)}</span>
-                    <span className="pact" onClick={openOrderDrawer}>
-                      Ver no drawer
-                    </span>
-                  </div>
-                )}
-
-                {cart.daysSinceActivity >= EXPIRA_APOS_DIAS && pedido.status !== 'pago' && (
-                  <div className="signalrow">
-                    <span className="sig risk">Parado há {cart.daysSinceActivity} dias — considere revisar</span>
-                  </div>
-                )}
-
-                {(cart.lastComment || pedido.suggestedBy === 'representante') && (
-                  <div className="repbar">
-                    <div className="ravatar">AN</div>
-                    <div className="rtext">
-                      {cart.lastComment ? (
-                        <>
-                          <b>{cart.lastComment.author}:</b> {cart.lastComment.text} <span className="rtime">{cart.lastComment.timeLabel}</span>
-                        </>
-                      ) : persona === 'representante' ? (
-                        <>
-                          <b>Você</b> montou esse pedido — aguardando o lojista revisar.
-                        </>
-                      ) : (
-                        <>
-                          <b>Ana</b> montou um pedido pra você revisar.
-                        </>
+                    <div className="cr-value">{formatBRL(pedido.total)}</div>
+                    <div className="cr-actionslot">
+                      {action && (
+                        <span
+                          className={`cr-action ${action.tone === 'primary' ? 'primary' : ''}`}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            action.onClick()
+                          }}
+                        >
+                          {action.label}
+                        </span>
                       )}
                     </div>
+                    <svg className="cr-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2.4">
+                      <path d="M9 6l6 6-6 6" />
+                    </svg>
                   </div>
-                )}
-              </div>
-            )
-          })}
-          {rows.length === 0 && (
-            <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-secondary)', padding: '64px 0' }}>Nenhum carrinho nessa categoria</div>
-          )}
-        </div>
+
+                  {thumbIds.length > 0 && (
+                    <div className="cr-thumbs">
+                      {thumbIds.slice(0, 5).map((id) => {
+                        const product = products.find((p) => p.id === id)
+                        if (!product) return null
+                        return (
+                          <div className="thumb" key={id}>
+                            <ProductThumb src={product.image} alt={product.name} iconSize={16} padding={2} />
+                          </div>
+                        )
+                      })}
+                      {thumbIds.length > 5 && (
+                        <div className="thumb" style={{ fontFamily: 'var(--mono)', fontSize: 10, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                          +{thumbIds.length - 5}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {isDraftTarget && (
+                    <div className="cr-sub pending" onClick={(e) => e.stopPropagation()}>
+                      <span>
+                        {draftPares} pares ainda no drawer, vão pra este carrinho ({formatBRL(draftValue)}) —{' '}
+                        <span style={{ fontWeight: 600, cursor: 'pointer' }} onClick={openOrderDrawer}>
+                          ver no drawer
+                        </span>
+                      </span>
+                    </div>
+                  )}
+
+                  {parado && (
+                    <div className="cr-sub warn">
+                      <span>Parado há {cart.daysSinceActivity} dias — considere revisar</span>
+                    </div>
+                  )}
+
+                  {(cart.lastComment || pedido.suggestedBy === 'representante') && (
+                    <div className="cr-sub">
+                      <div className="cr-avatar">AN</div>
+                      {cart.lastComment ? (
+                        <span>
+                          <b>{cart.lastComment.author}:</b> {cart.lastComment.text}{' '}
+                          <span style={{ color: 'var(--text-tertiary)' }}>· {cart.lastComment.timeLabel}</span>
+                        </span>
+                      ) : persona === 'representante' ? (
+                        <span>
+                          <b>Você</b> montou esse pedido — aguardando o lojista revisar.
+                        </span>
+                      ) : (
+                        <span>
+                          <b>Ana</b> montou um pedido pra você revisar.
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {sendToast && <Toast title={sendToast.title} sub={sendToast.sub} onClose={() => setSendToast(null)} />}

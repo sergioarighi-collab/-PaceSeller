@@ -326,18 +326,6 @@
   .bulkrow .bbtn{background:transparent;color:var(--positive);border:1.5px solid var(--positive);font-size:12px;font-weight:700;padding:7px 14px;border-radius:4px;white-space:nowrap;cursor:pointer;}
   .bulkrow.review .bbtn{color:var(--info);border-color:var(--info);}
 
-  .cartlist{display:flex;flex-direction:column;gap:14px;margin-top:20px;}
-  .cart-card{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:18px 20px 16px;}
-  .cc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;}
-  .cc-name{font-family:var(--display);font-size:16.5px;font-weight:700;color:var(--text-primary);}
-  .cc-meta{font-family:var(--mono);font-size:11px;color:var(--text-tertiary);margin-top:4px;}
-  /* "Abrir" com mais destaque (set/2026) — pedido do usuário; contorno mais forte em vez de
-     preencher de preto (testado e descartado: com 3+ carrinhos na lista, um "Abrir" preto por
-     card competia com os banners de ação já pretos no topo da página, tipo "Enviar pro
-     representante" — o contorno resolve sem virar preto entre pretos). Escopado a .cart-card
-     porque .btn-secondary é genérico e usado em telas sem essa disputa de atenção. */
-  .cart-card .btn-secondary{border:1.5px solid var(--black);color:var(--text-primary);font-weight:700;}
-
   /* Cards do Radar do representante (set/2026, revisado depois — pedido do usuário: "o radar do rep
      deveria estar mais parecido com o do lojista... tem bastante contraste") — reaproveitam
      literalmente `.web-icard`/`.kicon`/`.eyebrow`/`.cta` do Radar do lojista, não uma classe própria
@@ -471,51 +459,53 @@
   .radar-filter-secondary .chip{font-size:11.5px;padding:0;border:none;background:transparent;color:var(--text-tertiary);border-radius:0;}
   .radar-filter-secondary .chip.selected{background:transparent;border:none;color:var(--text-primary);font-weight:600;}
 
-  .thumbrow{display:flex;gap:6px;margin-top:12px;}
-  /* 44px/2px de radius — mesma miniatura do swatch de cor do Catálogo (.pw-swatch), pra manter
-     consistência do tamanho de foto de produto no app inteiro (set/2026). */
-  .thumbrow .thumb{width:44px;height:44px;border-radius:2px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);overflow:hidden;position:relative;}
-
-  .pedrow{display:flex;align-items:center;gap:14px;background:var(--surface-2);border:1px solid var(--border-soft);border-radius:5px;padding:10px 13px;margin-top:8px;}
-  .pedrow.pending{background:var(--info-dim);border:1px dashed var(--info);}
-  .pedrow .plabel{font-size:12.5px;font-weight:600;color:var(--text-primary);min-width:76px;}
-  /* Tom por "de quem é a vez" (ver pedidoStatusBadge em store.ts), não mais por status bruto do
-     Pedido — os dois estados "aguardando" (esperando a Ana vs. esperando o lojista revisar) usam
-     tons diferentes (neutral/info) mesmo os dois vindo do mesmo status interno. */
-  .pedrow .pstatus{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;padding:3px 7px;border-radius:3px;letter-spacing:.02em;}
-  .pedrow .pstatus.tone-neutral{background:var(--surface-3);color:var(--text-secondary);}
-  .pedrow .pstatus.tone-info{background:var(--info-dim);color:var(--info);}
-  .pedrow .pstatus.tone-positive{background:var(--positive-dim);color:var(--positive);}
-  .pedrow .pstatus.pending{background:var(--surface);color:var(--info);}
-  .pedrow .pgrade{flex:1;display:flex;align-items:center;gap:8px;min-width:0;}
-  .pedrow .pgrade .bar{flex:1;height:5px;background:var(--surface-3);border-radius:3px;overflow:hidden;min-width:24px;}
-  .pedrow .pgrade .bar > div{height:100%;background:var(--black);}
-  .pedrow .pgrade .bar.ok > div{background:var(--positive);}
-  .pedrow .pgradetxt{font-family:var(--mono);font-size:10.5px;color:var(--text-tertiary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .pedrow .pval{font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--text-primary);white-space:nowrap;}
-  .pedrow .pact{font-size:11.5px;font-weight:600;color:var(--info);white-space:nowrap;cursor:pointer;}
-  .pedrow .pact.primary{color:var(--positive);}
-  @media (max-width: 760px){
-    .pedrow{flex-wrap:wrap;row-gap:6px;}
-    .pedrow .plabel{order:1;}
-    .pedrow .pstatus{order:2;}
-    .pedrow .pval{order:3;margin-left:auto;}
-    .pedrow .pact{order:4;}
-    .pedrow .pgrade{order:5;flex-basis:100%;min-width:0;}
-  }
-
-  .signalrow{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px;}
-  .sig{font-size:10.5px;font-family:var(--mono);padding:4px 8px;border-radius:4px;display:inline-flex;align-items:center;gap:5px;}
-  .sig.info{background:var(--info-dim);color:var(--info);}
-  .sig.pos{background:var(--positive-dim);color:var(--positive);}
-  .sig.risk{background:var(--risk-dim);color:var(--risk);}
-  .sig.neutral{background:var(--surface-2);color:var(--text-secondary);border:1px solid var(--border-soft);}
-
-  .repbar{display:flex;align-items:center;gap:10px;margin-top:13px;padding-top:13px;border-top:1px solid var(--border-soft);}
-  .repbar .ravatar{width:24px;height:24px;border-radius:50%;background:var(--surface-3);color:var(--text-primary);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9.5px;font-weight:600;flex-shrink:0;}
-  .repbar .rtext{flex:1;font-size:12px;color:var(--text-primary);line-height:1.4;}
-  .repbar .rtext b{font-weight:600;}
-  .repbar .rtime{font-size:10.5px;color:var(--text-tertiary);}
+  /* Lista de carrinhos redesenhada (set/2026, pedido do usuário: "o botão... me incomoda... podemos
+     pensar em outra forma de organizar... a carrinho como um todo menos linhas e mais sólido") —
+     substitui `.cartlist`/`.cart-card` (cards soltos, cada um com borda/padding próprios, botão
+     "Abrir" isolado no canto) por um bloco só (`.cr-list`), linhas internas separadas por hairline,
+     igual à lista de lojas (`LojistaGate.tsx`, `.gate-row`) — mesma ideia aplicada aqui. Validado
+     antes como mockup (Artifact). Usado em `MeusCarrinhos.tsx`, telas do lojista E da representante
+     (mesmo componente — pedido do usuário: "essas alterações podemos colocar no perfil do lojista
+     tb", já verdade de graça, a tela é 100% compartilhada). */
+  .cr-list{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+  .cr-row{padding:18px 20px;border-bottom:1px solid var(--border-soft);cursor:pointer;transition:background .1s;}
+  .cr-row:last-child{border-bottom:none;}
+  .cr-row:hover{background:var(--surface-2);}
+  .cr-main{display:flex;align-items:center;gap:14px;}
+  .cr-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--surface-3);color:var(--text-secondary);}
+  .cr-icon.tone-info{background:var(--info-dim);color:var(--info);}
+  .cr-icon.tone-positive{background:var(--positive-dim);color:var(--positive);}
+  .cr-info{flex:1;min-width:0;}
+  .cr-nameline{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
+  .cr-name{font-family:var(--display);font-size:15.5px;font-weight:700;color:var(--text-primary);}
+  .cr-badge{font-size:11px;font-weight:600;border-radius:10px;padding:2.5px 9px;white-space:nowrap;}
+  .cr-badge.tone-neutral{background:var(--surface-3);color:var(--text-secondary);}
+  .cr-badge.tone-info{background:var(--info-dim);color:var(--info);}
+  .cr-badge.tone-positive{background:var(--positive-dim);color:var(--positive);}
+  .cr-meta{font-size:12px;color:var(--text-secondary);margin-top:2px;}
+  .cr-grade{display:flex;align-items:center;gap:7px;flex-shrink:0;}
+  .cr-bar{width:52px;height:4px;border-radius:2px;background:var(--surface-3);overflow:hidden;flex-shrink:0;}
+  .cr-bar > div{height:100%;background:var(--black);}
+  .cr-bar.ok > div{background:var(--positive);}
+  .cr-gradetxt{font-family:var(--mono);font-size:11px;color:var(--text-tertiary);white-space:nowrap;}
+  .cr-value{font-family:var(--display);font-size:15px;font-weight:700;color:var(--text-primary);width:112px;text-align:right;flex-shrink:0;white-space:nowrap;}
+  /* Ação (Enviar/Aprovar/Revisar/Editar/Acompanhar) ocupa o slot onde o botão "Abrir" ficava — mesmo
+     princípio de largura fixa aprendido no módulo de Links (`.linktable-slot`): sem ação disponível
+     (ex: representante vendo um carrinho que não é a vez dela), o slot continua reservado vazio, o
+     chevron não pula de posição entre linhas. */
+  .cr-actionslot{width:118px;text-align:right;flex-shrink:0;}
+  .cr-action{font-size:12.5px;font-weight:600;color:var(--info);cursor:pointer;}
+  .cr-action.primary{display:inline-block;color:#fff;background:var(--black);border-radius:16px;padding:7px 14px;}
+  .cr-action:hover:not(.primary){text-decoration:underline;}
+  .cr-chevron{flex-shrink:0;transition:transform .1s;}
+  .cr-row:hover .cr-chevron{transform:translateX(2px);}
+  .cr-thumbs{display:flex;gap:6px;margin-top:10px;padding-left:52px;}
+  .cr-thumbs .thumb{width:32px;height:32px;border-radius:6px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);overflow:hidden;}
+  .cr-sub{display:flex;align-items:center;gap:8px;margin-top:10px;padding-left:52px;font-size:12.5px;color:var(--text-secondary);}
+  .cr-sub.pending{color:var(--info);font-weight:500;}
+  .cr-sub.warn{color:var(--risk);font-weight:500;}
+  .cr-sub .cr-avatar{width:20px;height:20px;border-radius:50%;background:var(--black);color:#fff;font-family:var(--mono);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .cr-sub b{color:var(--text-primary);font-weight:600;}
 
   .permswitch{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-secondary);cursor:pointer;user-select:none;}
   .swtrack{width:30px;height:17px;border-radius:10px;background:var(--positive);position:relative;flex-shrink:0;transition:background .15s;}
