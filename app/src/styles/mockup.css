@@ -424,13 +424,19 @@
      melhor que cards. Mockup validado antes (Artifact) com stat tiles no topo; usuário pediu pra
      tirar ("não precisa da visualização do mini dashboard") — foram removidos, só ficou a tabela. */
   .linktable-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow-x:auto;margin-top:20px;}
-  .linktable{width:100%;border-collapse:collapse;min-width:900px;}
+  .linktable{width:100%;border-collapse:collapse;min-width:960px;}
   .linktable thead tr{border-bottom:1px solid var(--border);}
   .linktable th{text-align:left;padding:12px 16px;font-family:var(--mono);font-size:10.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.04em;font-weight:500;}
-  .linktable tbody tr{border-bottom:1px solid var(--border-soft);}
+  .linktable tbody tr{border-bottom:1px solid var(--border-soft);border-left:3px solid transparent;}
   .linktable tbody tr:last-child{border-bottom:none;}
   .linktable tbody tr:hover{background:var(--surface-2);}
-  .linktable td{padding:14px 16px;font-size:13px;color:var(--text-primary);vertical-align:middle;}
+  .linktable tbody tr.row-warn{border-left-color:var(--warn);}
+  .linktable tbody tr.row-ok{border-left-color:var(--positive);}
+  .linktable td{padding:12px 16px;font-size:13px;color:var(--text-primary);vertical-align:middle;}
+  /* Ícone + nome/loja (set/2026, pedido do usuário: "toda linha... poderia ganhar algo mais, no
+     sentido de um design melhor") — valida pelo mockup (Artifact): quadradinho cinza com o mesmo
+     CartIcon que o resto do Radar já usa (não um glifo novo), dá uma âncora visual por linha. */
+  .linktable-icon{width:34px;height:34px;border-radius:8px;background:var(--surface-2);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .linktable-cart{font-family:var(--display);font-size:13.5px;font-weight:700;color:var(--text-primary);}
   .linktable-loja{font-size:11.5px;color:var(--text-secondary);margin-top:1px;}
   .linktable-mono{font-family:var(--mono);font-size:11.5px;color:var(--text-secondary);}
@@ -439,7 +445,19 @@
   .linktable-badge.ok{background:var(--positive-dim);color:var(--positive);}
   .linktable-badge.warn{background:var(--warn-dim);color:var(--warn);}
   .linktable-dot{width:6px;height:6px;border-radius:50%;background:var(--warn);display:inline-block;}
+  /* Ações alinhadas (set/2026, pedido do usuário: "os botões... Abrir, ficar alinhado e quando não
+     tiver algum ficar vazio, mas não perder o alinhamento") — cada ação mora num slot de largura
+     fixa; quando não se aplica (ex: "Reenviar" num pedido já pago), o slot continua lá, só vazio —
+     "Abrir" cai sempre na mesma posição em toda linha, não desloca conforme o que mais aparece. */
+  .linktable-actions{display:flex;align-items:center;justify-content:flex-end;gap:2px;}
+  .linktable-slot{text-align:center;}
+  .linktable-slot.open{width:74px;}
+  .linktable-slot.copy{width:58px;}
+  .linktable-slot.resend{width:66px;}
+  .linktable-open{display:inline-block;font-size:12px;font-weight:600;color:var(--text-primary);background:var(--surface-3);border:1px solid var(--border-strong);border-radius:16px;padding:7px 15px;cursor:pointer;}
+  .linktable-open:hover{background:var(--border-strong);}
   .linktable-action{font-size:12px;color:var(--info);cursor:pointer;}
+  .linktable-action:hover{text-decoration:underline;}
 
   /* Hierarquia entre filtro de loja (primário) e de período (secundário) no Radar do representante
      (set/2026) — mesmo `.chip`/`.tl-filters` da base, só com modificadores: loja fica maior e

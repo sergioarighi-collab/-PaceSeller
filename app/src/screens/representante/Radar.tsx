@@ -479,18 +479,26 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
                     const pedido = cart.pedido
                     const status = repStatusLabel(pedido)
                     const pago = pedido.status === 'pago'
+                    const aberto = Boolean(pedido.linkPagamentoAbertoEm)
                     return (
-                      <tr key={cart.id}>
+                      <tr key={cart.id} className={aberto ? 'row-ok' : 'row-warn'}>
                         <td>
-                          <div className="linktable-cart" style={{ cursor: 'pointer' }} onClick={() => abrirCarrinho(lojista.id, cart.id)}>
-                            {cart.name}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                            <div className="linktable-icon">
+                              <CartIcon />
+                            </div>
+                            <div>
+                              <div className="linktable-cart" style={{ cursor: 'pointer' }} onClick={() => abrirCarrinho(lojista.id, cart.id)}>
+                                {cart.name}
+                              </div>
+                              <div className="linktable-loja">{lojista.name}</div>
+                            </div>
                           </div>
-                          <div className="linktable-loja">{lojista.name}</div>
                         </td>
                         <td>{formatBRL(pedido.total)}</td>
                         <td className="linktable-mono">{pedido.linkPagamentoGeradoEm}</td>
                         <td>
-                          {pedido.linkPagamentoAbertoEm ? (
+                          {aberto ? (
                             <span className="linktable-badge ok">
                               <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4">
                                 <path d="M5 13l4 4L19 7" />
@@ -505,31 +513,37 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
                           )}
                         </td>
                         <td className="linktable-status">{pago ? <span style={{ color: 'var(--positive)', fontWeight: 600 }}>Pago</span> : status.label}</td>
-                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                          <span
-                            className="linktable-action"
-                            style={{ color: pago ? 'var(--text-tertiary)' : 'var(--info)' }}
-                            onClick={() =>
-                              setLinkModalCart({ id: cart.id, name: cart.name, total: pedido.total, pedidoId: pedido.id })
-                            }
-                          >
-                            Copiar
-                          </span>
-                          {!pago && (
-                            <>
-                              <span style={{ color: 'var(--text-tertiary)', margin: '0 6px' }}>·</span>
+                        <td>
+                          <div className="linktable-actions">
+                            <span className="linktable-slot open">
+                              <span className="linktable-open" onClick={() => abrirCarrinho(lojista.id, cart.id)}>
+                                Abrir
+                              </span>
+                            </span>
+                            <span className="linktable-slot copy">
                               <span
                                 className="linktable-action"
-                                style={{ fontWeight: 600 }}
-                                onClick={() => {
-                                  marcarLinkPagamentoGerado(cart.id)
-                                  setLinkModalCart({ id: cart.id, name: cart.name, total: pedido.total, pedidoId: pedido.id })
-                                }}
+                                style={{ color: pago ? 'var(--text-tertiary)' : 'var(--info)' }}
+                                onClick={() => setLinkModalCart({ id: cart.id, name: cart.name, total: pedido.total, pedidoId: pedido.id })}
                               >
-                                Reenviar
+                                Copiar
                               </span>
-                            </>
-                          )}
+                            </span>
+                            <span className="linktable-slot resend">
+                              {!pago && (
+                                <span
+                                  className="linktable-action"
+                                  style={{ color: 'var(--text-primary)', fontWeight: 600 }}
+                                  onClick={() => {
+                                    marcarLinkPagamentoGerado(cart.id)
+                                    setLinkModalCart({ id: cart.id, name: cart.name, total: pedido.total, pedidoId: pedido.id })
+                                  }}
+                                >
+                                  Reenviar
+                                </span>
+                              )}
+                            </span>
+                          </div>
                         </td>
                       </tr>
                     )

@@ -1708,6 +1708,21 @@ Usuário pediu um "módulo de acompanhamento de links enviados, com a função d
 
 Via Playwright: tabela vazia mostra mensagem certa antes de qualquer link existir; gerar o link de "Coil Verão" (carrinho da própria Ana) faz a linha aparecer com "Ainda não aberto"; "Copiar" não altera nada; "Reenviar" reabre o modal e atualiza "Link gerado" pra "agora". Pra confirmar o mecanismo de "abriu o link" (que só pode ser testado de ponta a ponta entre as duas personas de verdade, não só lendo código — ver limitação abaixo), simulado via chamada direta ao store (`marcarLinkPagamentoGerado` numa janela de debug temporária) + navegação in-app real da lojista por "Ir para pagamento": `linkPagamentoAbertoEm` vai de `undefined` pra `'agora'` corretamente, só na primeira visita. `tsc`/build limpos.
 
+### Redesenho da linha (mesma leva, validado antes como mockup)
+
+Usuário pediu dois ajustes depois de ver a primeira versão da tabela: o "abrir" da linha (até então só o nome do carrinho, texto puro) "se confunde com as linhas do próprio carrinho" — pediu um botão sólido, cinza (não preto); e que a linha como um todo "ganhasse algo mais, no sentido de um design melhor". Dois Artifacts de iteração antes de implementar:
+
+1. Ícone (mesmo `CartIcon` que o resto do Radar já usa, dentro de um quadrado cinza — `.linktable-icon`) à esquerda do nome/loja, e uma faixa de 3px na borda esquerda da linha, colorida por status de leitura (`.row-warn`/`.row-ok` — âmbar "ainda não aberto", verde "aberto") pra escanear sem ler cada linha. Botão "Abrir" próprio (`.linktable-open`, pill sólida `--surface-3`/cinza-claro, nunca preto) ao lado de "Copiar"/"Reenviar", chamando `abrirCarrinho` — a mesma ação que clicar no nome já fazia, só que agora com affordance de botão de verdade.
+2. Ajuste fino pedido numa 2ª rodada: "os botões... como o Abrir, ficar alinhado e quando não tiver algum ficar vazio, mas não perder o alinhamento" — carrinho já pago não tem "Reenviar" (não faz sentido reenviar link de algo pago), e sem um slot de largura fixa o "Abrir" ficava em posições X diferentes entre linhas com 2 ou 3 ações (`text-align:right` empurra tudo junto quando falta um item). Resolvido com `.linktable-actions` (flex) + `.linktable-slot.open/copy/resend` (larguras fixas, 74/58/66px) — quando "Reenviar" não se aplica, o slot `.resend` renderiza vazio (`{!pago && (...)}` dentro do slot, não o slot inteiro condicional), reservando o espaço em vez de remover.
+
+### Bug extra encontrado testando o redesenho (consertado na mesma leva): `repStatusLabel` não tratava pedido `aprovado`
+
+Aprovei "Giro TG II" pra testar a tabela com um caso de pedido aprovado e a coluna "Pedido" mostrou "Rascunho do lojista" — claramente errado (ela mesma tinha acabado de aprovar). Causa: `repStatusLabel` (usada nessa coluna e também na visão "Carrinhos" → Lista) nunca tinha um branch pra `status === 'aprovado'`, caía direto no `return` padrão do fim da função (pensado só pra rascunho de verdade). `pedidoStatusBadge` (usada em `CarrinhoDetail.tsx`) já tratava esse caso certinho — `repStatusLabel` só nunca tinha sido exercitada com um pedido aprovado antes de eu usá-la nessa tabela nova. Corrigido com o mesmo rótulo: "Aprovado — aguardando pagamento".
+
+### Testado (redesenho)
+
+Via Playwright: gerados links pra "Coil Verão" (aguardando) e "Giro TG II" (aprovado, depois de aprovar); as duas linhas renderizam com ícone, faixa âmbar (nenhuma ainda aberta), e — crucial — `getBoundingClientRect().left` do botão "Abrir" é **idêntico** nas duas linhas (1180px), confirmando o alinhamento mesmo com conteúdo de "Pedido" de tamanhos diferentes. Coluna "Pedido" mostra "Aprovado — aguardando pagamento" certo pro Giro TG II. Regressão completa (kanban, renomear, pagamento, carrinho já pago) sem quebra. `tsc`/build limpos.
+
 ## Limitações que dependem de backend (documentado pro futuro, pedido do usuário)
 
 Esse protótipo roda 100% client-side — Zustand em memória, sem persistência (`localStorage`) nem servidor atrás. Isso já aparecia pontualmente em notas de gap espalhadas pelo guia; aqui vai a lista consolidada do que **especificamente precisa de um backend de verdade** pra funcionar além de uma demonstração na mesma aba do navegador. Cada item é um limite real, não um bug a corrigir no frontend.

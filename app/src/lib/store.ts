@@ -900,6 +900,11 @@ export function carteiraOportunidade(lojistas: Lojista[]): CarteiraOportunidade 
 // o Radar passou a precisar do mesmo rótulo na visão "Carrinhos" (ver `RepRadar.tsx`).
 export function repStatusLabel(pedido: Pedido): PedidoStatusBadge {
   if (pedido.status === 'pago') return { label: 'Com a Tesla', tone: 'positive' }
+  // Faltava esse branch (achado testando o módulo "Links de pagamento", set/2026) — um pedido
+  // `aprovado` caía no `return` padrão do fim e mostrava "Rascunho do lojista", claramente errado
+  // (ela mesma aprovou, não é rascunho de ninguém). Mesmo rótulo que `pedidoStatusBadge` já usa pra
+  // esse caso do lado dela.
+  if (pedido.status === 'aprovado') return { label: 'Aprovado — aguardando pagamento', tone: 'positive' }
   if (pedidoAguardandoAprovacaoRep(pedido)) return { label: 'Aguardando você', tone: 'info' }
   if (pedido.status === 'aguardando') return { label: 'Aguardando o lojista', tone: 'neutral' }
   return { label: 'Rascunho do lojista', tone: 'neutral' }
