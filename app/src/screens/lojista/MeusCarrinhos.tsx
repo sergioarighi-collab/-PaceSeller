@@ -99,10 +99,6 @@ export function MeusCarrinhos() {
   const draftValue = draftItemsValue + draftCombosValue
   const draftTargetId = !editingPedido && draftPares > 0 ? resolveTargetCarrinhoId(carrinhos, activeCarrinhoId) : null
 
-  // Com 1 pedido por carrinho, "pedidos ao todo" equivale ao nº de carrinhos — mantido como KPI
-  // próprio porque o rótulo já é familiar pro lojista (ver guia-dev-frontend.md).
-  const pedidosAoTodo = carrinhos.length
-  const prontosParaEnviar = carrinhos.filter((c) => c.pedido.status === 'rascunho' && pedidoPares(c.pedido) >= GRADE_MINIMA_PARES).length
   const emAndamento = carrinhos.filter((c) => c.pedido.status !== 'pago').reduce((sum, c) => sum + c.pedido.total, 0) + draftValue
 
   // Pedidos prontos pra enviar (rascunho + grade batida) e pedidos que a Ana montou e ainda
@@ -163,13 +159,15 @@ export function MeusCarrinhos() {
             <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
               {persona === 'representante' ? (
                 <>
-                  {carrinhos.length} carrinhos abertos nessa loja ·{' '}
+                  {carrinhos.length} carrinhos abertos nessa loja · Em andamento: {formatBRL(emAndamento)} ·{' '}
                   <span style={{ color: 'var(--info)', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/rep/carrinhos')}>
                     ← Ver carteira inteira
                   </span>
                 </>
               ) : (
-                <>{carrinhos.length} carrinhos abertos · com Ana, sua representante</>
+                <>
+                  {carrinhos.length} carrinhos abertos · Em andamento: {formatBRL(emAndamento)} · com Ana, sua representante
+                </>
               )}
             </div>
           </div>
@@ -182,32 +180,6 @@ export function MeusCarrinhos() {
             }}
           >
             Criar novo carrinho
-          </div>
-        </div>
-
-        <div className="stattiles">
-          <div className="tile">
-            <div className="tlabel">Carrinhos abertos</div>
-            <div className="tval">{carrinhos.length}</div>
-          </div>
-          <div className="tile">
-            <div className="tlabel">Pedidos ao todo</div>
-            <div className="tval">{pedidosAoTodo}</div>
-          </div>
-          <div className="tile">
-            <div className="tlabel">Prontos pra enviar</div>
-            <div className="tval" style={{ color: prontosParaEnviar > 0 ? 'var(--positive)' : undefined }}>
-              {prontosParaEnviar}
-            </div>
-          </div>
-          <div className="tile">
-            <div className="tlabel">Em andamento</div>
-            <div className="tval">{formatBRL(emAndamento)}</div>
-            {draftPares > 0 && (
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 9.5, color: 'var(--info)', marginTop: 3 }}>
-                inclui {formatBRL(draftValue)} ainda no drawer
-              </div>
-            )}
           </div>
         </div>
 

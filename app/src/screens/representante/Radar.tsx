@@ -214,7 +214,7 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-app)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-canvas)' }}>
       <RepTopNav />
 
       <div className="web-hero-band">

@@ -54,7 +54,7 @@ export function LojistaGate() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-app)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-canvas)' }}>
       <RepTopNav />
       <div className="web-main">
         <h1 style={{ fontFamily: 'var(--display)', fontSize: 24, fontWeight: 700, color: 'var(--text-primary)' }}>

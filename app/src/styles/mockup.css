@@ -201,7 +201,6 @@
   .legend .item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-secondary);}
   .legend .sw{width:8px;height:8px;border-radius:2px;}
   .sw.a{background:var(--black);} .sw.b{background:var(--border-strong);} .sw.c{background:var(--surface-3);border:1px solid var(--border);}
-  .stattiles{display:flex;gap:10px;padding:16px 18px 4px;}
   .tile{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:12px 10px;}
   .tile .tlabel{font-size:10px;color:var(--text-tertiary);font-family:var(--mono);text-transform:uppercase;}
   .tile .tval{font-family:var(--mono);font-size:16px;font-weight:500;color:var(--text-primary);margin-top:5px;}
