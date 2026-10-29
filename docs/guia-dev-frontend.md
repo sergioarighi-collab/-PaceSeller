@@ -1825,6 +1825,28 @@ Usado só dentro da seção Compartilhados, só pra `persona === 'representante'
 
 Via Playwright nas duas personas: Radar da representante mostra só "Lojas", sem nenhum toggle (`'.radar-viewtoggle'` → 0 elementos), nav sem "Carrinhos" até entrar numa loja, com "Carrinhos" depois de entrar. "Carrinhos de Radical Skate" (representante) separado certinho em 2 seções (2 compartilhados — "Giro Hertz Black" pago → "Finalizado pelo cliente", "Coil Verão" aguardando+suggestedBy ela → "Aguardando o cliente" — e 1 não compartilhado, "Coleção Inverno" rascunho → `pedidoStatusBadge` normal). "Meus carrinhos" do lojista com a mesma separação, badges antigos intactos (Com a Tesla/Aguardando você — revisar/Pronto pra enviar). Regressão completa adaptada pros seletores novos (duas checagens que dependiam do kanban/toggle removido foram reescritas pra usar o fluxo real — aprovar "Giro TG II" entrando na loja pelo Radar, depois conferir a seção/contagem em vez do board) — sem quebra. `tsc`/build limpos.
 
+## Link de pagamento removido — compartilhar o carrinho já basta (out/2026)
+
+Usuário, na mesma leva da simplificação do Radar/Meus Carrinhos acima, questionou a existência do botão "Gerar/Fechar e enviar link de pagamento" (módulo criado numa leva anterior deste guia): "retirar o enviar o link de pagamento, pois acho que não precisa, pois é só compartilhar o carrinho e avisar o lojista para fechar, eu não preciso encaminhar para ele um link, é mais uma etapa. o que achas?" — pedido pra opinar antes de mexer.
+
+Investigando o código antes de responder, achei a confirmação: o botão só existia pra **evitar que a própria Ana pagasse sem querer** o pedido do lojista enquanto estava em "modo loja" (mesma tela reaproveitada pelas duas personas — ver nota original em `CarrinhoDetail.tsx`). O lojista, logado na própria conta (fora de modo loja), **sempre** teve `Ir para pagamento` direto assim que a grade mínima batia, não importa quem montou o carrinho — o link nunca foi necessário pra ele chegar lá, só existia pra travar a ação do lado dela. Com a tag "Aguardando o cliente"/"Finalizado pelo cliente" (seção acima) já avisando de quem é a vez, "compartilhar o carrinho" sozinho já comunica tudo que o link tentava comunicar. Usuário confirmou ("perfeito") e reforçou o porquê maior: "a ideia principal é também o rep montar os carrinhos e compartilhar com o seu cliente, sem precisar ir na loja mostrar o catálogo... com o seu radar inteligente" — o produto inteiro já é pensado pra funcionar remoto via compartilhamento, um link era uma etapa a mais competindo com esse mesmo princípio.
+
+### O que saiu
+
+- Botões "Gerar link de pagamento"/"Fechar e enviar link de pagamento" no `og-footer` de `CarrinhoDetail.tsx` (lado da representante) — no lugar, um texto simples sem ação: "Aguardando {lojista} pagar" (mesmas condições de antes: grade batida + `aprovado` ou carrinho dela mesma com grade batida ainda `aguardando`). Ela ainda pode falar com ele pelo CTA "Falar com {lojista}" ao lado, se quiser cutucar — só não tem mais um botão de ação nesse ponto específico.
+- Rastro "Link de pagamento gerado há X" (só aparecia pra ela) — removido junto, não fazia mais sentido sem o botão.
+- `PaymentLinkModal.tsx` inteiro (componente) — deletado, ficou sem nenhum uso.
+- `marcarLinkPagamentoGerado`/`marcarLinkPagamentoAberto` (store.ts) e `Pedido.linkPagamentoGeradoEm`/`linkPagamentoAbertoEm` (types.ts) — removidos junto, incluindo o `useEffect` em `Payment.tsx` que gravava a "abertura" (esse campo já estava órfão desde a remoção da tabela de Links no Radar — ver seção acima — essa limpeza fecha o ciclo).
+- Nada do lado do LOJISTA mudou — `Ir para pagamento` direto continua exatamente igual, sempre foi o caminho real.
+
+### Testado
+
+Via Playwright: pedido `aguardando` montado pela Ana (suggestedBy dela, grade batida) e pedido `aprovado` (Loja Vertex) — os dois mostram só o texto "Aguardando {contactName} pagar" no footer, sem nenhum `.btn-primary`. Regressão completa (criar carrinho, renomear, split compartilhado/não compartilhado, grademin/footer do lado do lojista) sem quebra. `tsc`/build limpos (78 módulos, um a menos que antes — `PaymentLinkModal.tsx` saiu do bundle).
+
+### Ideia anotada pro futuro (ainda não implementada)
+
+Usuário comentou, pensando no que vem depois: "o que podemos criar depois é um módulo de enviados, dentro do carrinho uma página que dá acesso para ele verificar todos os carrinhos enviados e finalizados pelo cliente, podendo reenviar o carrinho para refazer o pedido". Não implementado ainda — fica registrado aqui pra não se perder: uma tela dentro do módulo de carrinhos listando os já enviados/finalizados (provavelmente cruza com a seção "Compartilhados" que já existe, ver acima — talvez um recorte dela, talvez um filtro adicional por `status === 'pago'`), com ação de reenviar/reabrir um pedido fechado pra montar um novo em cima do mesmo carrinho.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

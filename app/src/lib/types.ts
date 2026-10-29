@@ -123,18 +123,6 @@ export interface Pedido {
   // em reunião com o cliente) em vez do lojista — hoje só simulado do lado do lojista, não existe
   // desktop do representante ainda (ver docs/guia-dev-frontend.md).
   suggestedBy?: 'representante'
-  // Quando o link de pagamento foi gerado pela última vez (set/2026, ver PaymentLinkModal.tsx) —
-  // texto relativo solto, mesmo padrão de `Carrinho.updatedAt`, não um timestamp real. Ausente =
-  // nunca gerou. Existe só pra ela não ficar na dúvida se já mandou o link ou não (sem isso, "Gerar
-  // link de pagamento" não deixava rastro nenhum de que a ação já tinha sido feita).
-  linkPagamentoGeradoEm?: string
-  // Quando o lojista abriu a tela de pagamento desse link pela primeira vez (set/2026, módulo
-  // "Links de pagamento" no Radar — ver guia-dev-frontend.md, inclusive a limitação de não
-  // distinguir "abriu o link que a Ana mandou" de "chegou nessa tela navegando por conta própria",
-  // já que as duas coisas levam pra mesma URL nesse protótipo). Mesmo padrão de texto relativo solto
-  // dos campos acima; "Reenviar" o link zera esse campo (conta como um envio novo, aguardando
-  // leitura de novo).
-  linkPagamentoAbertoEm?: string
 }
 
 export interface Carrinho {

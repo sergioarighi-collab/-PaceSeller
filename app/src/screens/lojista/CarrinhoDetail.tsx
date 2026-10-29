@@ -5,7 +5,6 @@ import { PersonaTopNav } from '../../components/desktop/PersonaTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { Toast } from '../../components/desktop/Toast'
 import { ConfirmModal } from '../../components/desktop/ConfirmModal'
-import { PaymentLinkModal } from '../../components/desktop/PaymentLinkModal'
 import { products } from '../../lib/data'
 import { useAppStore, pedidoActionKind, pedidoPares, pedidoStatusBadge, pedidoAguardandoAprovacaoRep } from '../../lib/store'
 import { GRADE_MINIMA_PARES } from '../../lib/types'
@@ -37,7 +36,6 @@ export function CarrinhoDetail() {
   const aprovarPedido = useAppStore((s) => s.aprovarPedido)
   const setRepCanEdit = useAppStore((s) => s.setRepCanEdit)
   const renameCarrinho = useAppStore((s) => s.renameCarrinho)
-  const marcarLinkPagamentoGerado = useAppStore((s) => s.marcarLinkPagamentoGerado)
   const persona = useAppStore((s) => s.persona)
   const lojistas = useAppStore((s) => s.lojistas)
   const activeLojistaId = useAppStore((s) => s.activeLojistaId)
@@ -69,9 +67,6 @@ export function CarrinhoDetail() {
   // (ver commitCartToCarrinho em store.ts) — avisa antes de deixar entrar, em vez de simplesmente
   // voltar o status sem avisar.
   const [confirmEditAguardando, setConfirmEditAguardando] = useState(false)
-  // Link de pagamento (set/2026, pedido do usuário: "após fechamento do carrinho, ele pode gerar
-  // um link e compartilhar com o lojista") — ver PaymentLinkModal.tsx.
-  const [showPaymentLinkModal, setShowPaymentLinkModal] = useState(false)
 
   function handleEditarNoDrawer() {
     if (pedido.status === 'aguardando' || pedido.status === 'aprovado') setConfirmEditAguardando(true)
@@ -249,18 +244,18 @@ export function CarrinhoDetail() {
               </span>
               {/* Pagar é ação do lojista, não da representante (ela só aprova — ver aprovarPedido em
                   store.ts) — sem isso, o "modo loja" deixava a Ana pagar pedido do próprio lojista
-                  sem querer, pela mesma tela reaproveitada. No lugar, ela gera um link pra mandar
-                  pro lojista pagar sozinho (set/2026, ver PaymentLinkModal.tsx). Dois casos geram
-                  esse link — mesmo modal, rótulo diferente pra deixar claro o que está acontecendo:
-                  - pedido do LOJISTA que ela já aprovou (`status === 'aprovado'`) → "Gerar link".
-                  - pedido que a própria ANA montou (`suggestedBy === 'representante'`) nunca passa
-                    por "aprovado" (esse status só existe pro caminho contrário — ver
-                    `pedidoAguardandoAprovacaoRep`/`aprovarPedido`); sem esse segundo caso ela não
-                    tinha NENHUM jeito de gerar link pra um carrinho que ela mesma fechou, ficava
-                    presa em "aguardando" pra sempre (gap relatado pelo usuário) → "Fechar e enviar
-                    link de pagamento", disponível assim que a grade mínima bate.
-                  Pedido já `pago` não mostra nenhum botão (bug relatado pelo usuário, ver nota na
-                  `.grademin` logo abaixo — mesma causa). */}
+                  sem querer, pela mesma tela reaproveitada. Chegou a existir um botão "Gerar link de
+                  pagamento" aqui (set/2026) pra ela mandar um link pro lojista pagar sozinho —
+                  removido (out/2026, pedido do usuário: "não preciso encaminhar pra ele um link, é
+                  mais uma etapa... é só compartilhar o carrinho e avisar o lojista pra fechar").
+                  Investigando o pedido, o link nunca foi necessário: o lojista, logado na própria
+                  conta (fora de "modo loja"), sempre teve "Ir para pagamento" direto — o link só
+                  existia pra essa trava de UI do lado dela. Com o carrinho compartilhado e a tag
+                  "Aguardando o cliente" (ver `clienteTag` em MeusCarrinhos.tsx) já avisando que é a
+                  vez dele, sobra só um texto — sem ação nenhuma, ela não tem o que fazer aqui além de
+                  falar com ele se quiser (CTA ao lado, "Falar com {lojista}"). Pedido já `pago` não
+                  mostra nada (bug relatado pelo usuário, ver nota na `.grademin` logo abaixo —
+                  mesma causa). */}
               {pedido.status !== 'pago' &&
                 (persona !== 'representante' ? (
                   <div
@@ -276,27 +271,13 @@ export function CarrinhoDetail() {
                     const fecharCartaoPropria = pedido.suggestedBy === 'representante' && pedido.status === 'aguardando'
                     if (!gradeOk || (!jaAprovado && !fecharCartaoPropria)) return null
                     return (
-                      <div
-                        className="btn-primary"
-                        style={{ width: 220, cursor: 'pointer' }}
-                        onClick={() => {
-                          marcarLinkPagamentoGerado(cart.id)
-                          setShowPaymentLinkModal(true)
-                        }}
-                      >
-                        {jaAprovado ? 'Gerar link de pagamento' : 'Fechar e enviar link de pagamento'}
-                      </div>
+                      <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>
+                        Aguardando {lojistaAtivo?.contactName ?? 'o lojista'} pagar
+                      </span>
                     )
                   })()
                 ))}
             </div>
-            {/* Rastro de "já mandei esse link?" (set/2026) — só pro representante, só depois da
-                primeira geração. Sem isso, nada na tela indicava que a ação já tinha sido feita. */}
-            {persona === 'representante' && pedido.linkPagamentoGeradoEm && (
-              <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: -10, marginBottom: 14 }}>
-                Link de pagamento gerado {pedido.linkPagamentoGeradoEm}
-              </div>
-            )}
             {/* Escondido quando já `pago` (set/2026, bug relatado pelo usuário: "Giro Hertz Black"
                 em Radical Skate é um carrinho de reposição rápida — paga com 6 pares, bem abaixo
                 dos 36 da grade mínima, porque reposição nunca passou por esse crivo (ver
@@ -484,14 +465,6 @@ export function CarrinhoDetail() {
         />
       )}
 
-      {showPaymentLinkModal && (
-        <PaymentLinkModal
-          link={`${window.location.origin}/carrinhos/${cart.id}/${pedido.id}/pagamento`}
-          cartName={cart.name}
-          total={formatBRL(pedido.total)}
-          onClose={() => setShowPaymentLinkModal(false)}
-        />
-      )}
     </DesktopPage>
   )
 }
