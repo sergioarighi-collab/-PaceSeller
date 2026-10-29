@@ -72,14 +72,7 @@ function App() {
         <Route path="/carrinhos/:cartId/:pedidoId/acompanhamento" element={<Tracking />} />
         <Route path="/carrinhos/:cartId/:pedidoId/chat" element={<GatedChat />} />
 
-        {/* `key` diferente nas duas rotas (bug pego em teste): sem isso, o React via as duas como o
-            mesmo componente na mesma posição da árvore e não remontava ao navegar de uma pra outra
-            — o `useState(defaultView)` só roda na montagem, então o toggle ficava preso em "Lojas"
-            mesmo entrando direto por `/rep/carrinhos`. */}
-        <Route path="/rep/radar" element={<RepRadar key="radar" />} />
-        {/* Mesmo RepRadar, só abrindo já na visão "Carrinhos" — acesso rápido pelo header (ver
-            RepTopNav.tsx), não uma tela nova. */}
-        <Route path="/rep/carrinhos" element={<RepRadar key="carrinhos" defaultView="carrinhos" />} />
+        <Route path="/rep/radar" element={<RepRadar />} />
       </Routes>
     </BrowserRouter>
   )

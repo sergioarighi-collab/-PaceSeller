@@ -65,7 +65,6 @@ export function Chat() {
           persona === 'representante'
             ? [
                 { label: 'Radar', to: '/rep/radar' },
-                { label: 'Carrinhos', to: '/rep/carrinhos' },
                 { label: pedido.label, to: `/carrinhos/${cart.id}` },
                 { label: `Falar com ${outraPessoa}` },
               ]

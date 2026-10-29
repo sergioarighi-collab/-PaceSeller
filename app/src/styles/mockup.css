@@ -362,90 +362,6 @@
   .gate-divider{width:1px;align-self:stretch;background:var(--border);flex-shrink:0;}
   .gate-chevron{width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);flex-shrink:0;}
 
-  /* Toggle "Lojas"/"Carrinhos" do Radar do representante (set/2026, pedido do usuário: "mantemos os
-     cards do radar original, mas trazemos um filtro por carrinhos") — pílula segmentada, mesmo
-     padrão visual de escolha binária já usado noutros lugares do app, não um `.chip`/`.tl-filters`
-     (esses já significam "filtro de loja/período" aqui dentro, um terceiro elemento igual confundiria
-     com um filtro a mais em vez de uma troca de modo de visualização). */
-  .radar-viewtoggle{display:flex;gap:6px;margin-top:18px;}
-  .radar-viewchip{font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:20px;color:var(--text-secondary);border:1px solid var(--border-strong);}
-  .radar-viewchip.selected{background:var(--black);color:#fff;border-color:var(--black);}
-
-  /* Kanban de carrinhos (set/2026, pedido do usuário: "ver todos os carrinhos, divididos em
-     colunas, em qual etapa e com quem") — segunda forma de ver a visão "Carrinhos" do Radar do
-     representante, alternativa à lista (`.radar-grid`), nunca a substituindo. Validado antes como
-     mockup (ver guia-dev-frontend.md) com 5 colunas por `status`+`suggestedBy` do Pedido — sem
-     campo novo no modelo, só reorganiza o que já existe. Sem drag-and-drop de propósito: mover um
-     carrinho de coluna só acontece como efeito de uma ação real (aprovar/fechar/pagar), nunca
-     arrastando — pedido do usuário foi explicitamente não aumentar o atrito de fechar pedido. */
-  .kanban-board{display:flex;gap:16px;overflow-x:auto;padding-bottom:8px;margin-top:20px;}
-  .kanban-col{flex:0 0 250px;display:flex;flex-direction:column;gap:10px;}
-  .kanban-colhead{display:flex;align-items:center;justify-content:space-between;padding:0 2px;}
-  .kanban-coltitle{font-family:var(--display);font-size:13.5px;font-weight:700;color:var(--text-primary);}
-  .kanban-colcount{font-family:var(--mono);font-size:11px;color:var(--text-tertiary);background:var(--surface-3);border-radius:10px;padding:2px 8px;}
-  .kanban-colsub{font-size:11px;color:var(--text-tertiary);margin-top:-6px;padding:0 2px;line-height:1.35;}
-  .kanban-cards{display:flex;flex-direction:column;gap:9px;max-height:560px;overflow-y:auto;padding-right:2px;}
-  .kanban-empty{font-size:11.5px;color:var(--text-tertiary);padding:10px 2px;}
-  /* Altura fixa (set/2026, pedido do usuário: "padronizar o tamanho dos cards... deixar os
-     primeiros, na coluna do rascunho, do mesmo tamanho que os outros") — antes "Rascunho" não
-     renderizava a etiqueta "bola com" (coluna sem ninguém com a bola ainda), ficando mais baixo que
-     as outras colunas; agora toda coluna sempre tem a etiqueta (rascunho ganhou uma neutra, "Ainda
-     privado") e o card tem `min-height` pra não depender só da estrutura bater pra alinhar. */
-  .kanban-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--border-strong);border-radius:8px;padding:12px 13px;display:flex;flex-direction:column;gap:8px;cursor:pointer;min-height:118px;}
-  .kanban-card:hover{border-color:var(--border-strong);}
-  .kanban-cardtitle{font-family:var(--display);font-size:13.5px;font-weight:700;color:var(--text-primary);line-height:1.25;}
-  .kanban-cardloja{font-size:11.5px;color:var(--text-secondary);margin-top:1px;}
-  .kanban-badge{display:inline-flex;align-self:flex-start;align-items:center;gap:5px;border-radius:12px;padding:3px 8px 3px 7px;font-size:11px;font-weight:500;}
-  .kanban-dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0;}
-  .kanban-cardfoot{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;}
-  .kanban-cardfoot .val{color:var(--text-secondary);}
-  .kanban-cardtime{font-family:var(--mono);font-size:10.5px;color:var(--text-tertiary);}
-  .kanban-card.col-aguardando_lojista,.kanban-card.col-aprovado{border-left-color:var(--warn);}
-  .kanban-card.col-aguardando_ana{border-left-color:var(--info);}
-  .kanban-card.col-fechado{border-left-color:var(--positive);}
-
-  /* Links de pagamento (set/2026, pedido do usuário: "módulo de acompanhamento de links enviados,
-     com reenviar e notificação de aberto") — terceira visão dentro de "Carrinhos" (Lista/Quadro/
-     Links), tabular de propósito: a informação por linha (valor, quando gerou, se abriu, status) é
-     mais densa/comparável que os cards do kanban, uma tabela deixa escanear várias linhas de uma vez
-     melhor que cards. Mockup validado antes (Artifact) com stat tiles no topo; usuário pediu pra
-     tirar ("não precisa da visualização do mini dashboard") — foram removidos, só ficou a tabela. */
-  .linktable-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow-x:auto;margin-top:20px;}
-  .linktable{width:100%;border-collapse:collapse;min-width:960px;}
-  .linktable thead tr{border-bottom:1px solid var(--border);}
-  .linktable th{text-align:left;padding:12px 16px;font-family:var(--mono);font-size:10.5px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.04em;font-weight:500;}
-  .linktable tbody tr{border-bottom:1px solid var(--border-soft);border-left:3px solid transparent;}
-  .linktable tbody tr:last-child{border-bottom:none;}
-  .linktable tbody tr:hover{background:var(--surface-2);}
-  .linktable tbody tr.row-warn{border-left-color:var(--warn);}
-  .linktable tbody tr.row-ok{border-left-color:var(--positive);}
-  .linktable td{padding:12px 16px;font-size:13px;color:var(--text-primary);vertical-align:middle;}
-  /* Ícone + nome/loja (set/2026, pedido do usuário: "toda linha... poderia ganhar algo mais, no
-     sentido de um design melhor") — valida pelo mockup (Artifact): quadradinho cinza com o mesmo
-     CartIcon que o resto do Radar já usa (não um glifo novo), dá uma âncora visual por linha. */
-  .linktable-icon{width:34px;height:34px;border-radius:8px;background:var(--surface-2);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-  .linktable-cart{font-family:var(--display);font-size:13.5px;font-weight:700;color:var(--text-primary);}
-  .linktable-loja{font-size:11.5px;color:var(--text-secondary);margin-top:1px;}
-  .linktable-mono{font-family:var(--mono);font-size:11.5px;color:var(--text-secondary);}
-  .linktable-status{font-size:12.5px;color:var(--text-secondary);}
-  .linktable-badge{display:inline-flex;align-items:center;gap:6px;border-radius:12px;padding:3px 9px 3px 7px;font-size:11.5px;font-weight:500;}
-  .linktable-badge.ok{background:var(--positive-dim);color:var(--positive);}
-  .linktable-badge.warn{background:var(--warn-dim);color:var(--warn);}
-  .linktable-dot{width:6px;height:6px;border-radius:50%;background:var(--warn);display:inline-block;}
-  /* Ações alinhadas (set/2026, pedido do usuário: "os botões... Abrir, ficar alinhado e quando não
-     tiver algum ficar vazio, mas não perder o alinhamento") — cada ação mora num slot de largura
-     fixa; quando não se aplica (ex: "Reenviar" num pedido já pago), o slot continua lá, só vazio —
-     "Abrir" cai sempre na mesma posição em toda linha, não desloca conforme o que mais aparece. */
-  .linktable-actions{display:flex;align-items:center;justify-content:flex-end;gap:2px;}
-  .linktable-slot{text-align:center;}
-  .linktable-slot.open{width:74px;}
-  .linktable-slot.copy{width:58px;}
-  .linktable-slot.resend{width:66px;}
-  .linktable-open{display:inline-block;font-size:12px;font-weight:600;color:var(--text-primary);background:var(--surface-3);border:1px solid var(--border-strong);border-radius:16px;padding:7px 15px;cursor:pointer;}
-  .linktable-open:hover{background:var(--border-strong);}
-  .linktable-action{font-size:12px;color:var(--info);cursor:pointer;}
-  .linktable-action:hover{text-decoration:underline;}
-
   /* Hierarquia entre filtro de loja (primário) e de período (secundário) no Radar do representante
      (set/2026) — mesmo `.chip`/`.tl-filters` da base, só com modificadores: loja fica maior e
      preenchida quando selecionada (como um filtro "de verdade"); período vira link de texto puro,
@@ -474,6 +390,10 @@
   .cr-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--surface-3);color:var(--text-secondary);}
   .cr-icon.tone-info{background:var(--info-dim);color:var(--info);}
   .cr-icon.tone-positive{background:var(--positive-dim);color:var(--positive);}
+  /* 'warn' (out/2026) — tag "Aguardando o cliente" da seção Compartilhados, ver clienteTag em
+     MeusCarrinhos.tsx. Não existia pro `.cr-icon`/`.cr-badge` até aqui (só pro `.web-icard`),
+     mesmos tokens `--warn`/`--warn-dim` de sempre. */
+  .cr-icon.tone-warn{background:var(--warn-dim);color:var(--warn);}
   .cr-info{flex:1;min-width:0;}
   .cr-nameline{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;}
   .cr-name{font-family:var(--display);font-size:15.5px;font-weight:700;color:var(--text-primary);}
@@ -481,6 +401,7 @@
   .cr-badge.tone-neutral{background:var(--surface-3);color:var(--text-secondary);}
   .cr-badge.tone-info{background:var(--info-dim);color:var(--info);}
   .cr-badge.tone-positive{background:var(--positive-dim);color:var(--positive);}
+  .cr-badge.tone-warn{background:var(--warn-dim);color:var(--warn);}
   .cr-meta{font-size:12px;color:var(--text-secondary);margin-top:2px;}
   .cr-grade{display:flex;align-items:center;gap:7px;flex-shrink:0;}
   .cr-bar{width:52px;height:4px;border-radius:2px;background:var(--surface-3);overflow:hidden;flex-shrink:0;}

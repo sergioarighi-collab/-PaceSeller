@@ -1780,9 +1780,50 @@ Esse protótipo roda 100% client-side — Zustand em memória, sem persistência
 - **"Abriu o link de pagamento" (este módulo) tem dois limites presos a isso:** (1) não distingue "o lojista clicou no link que a Ana mandou" de "ele chegou nessa mesma tela navegando por conta própria dentro do app" — as duas coisas levam pra mesma URL (`/carrinhos/:cartId/:pedidoId/pagamento`), só é tratado como abertura quando `linkPagamentoGeradoEm` já existia, mas isso é uma aproximação, não uma distinção real (precisaria de um token único por link gerado, verificado no backend). (2) só é registrado se o lojista abrir a MESMA sessão de navegador que gerou o link — exatamente a limitação acima, mais visível aqui porque é o propósito central da feature ("ele está ciente que recebeu o link" exige que esse "ciente" viaje de um dispositivo pro outro, o que não existe sem servidor).
 - **Notificações (sino do lojista) não têm "push" nenhum.** `withNotification()` só empurra pro array em memória da sessão atual — se o lojista não estiver com o app aberto bem naquele momento, nada chega até ele depois (sem e-mail, SMS, push notification real). O sino do representante nem existe ainda (ver `RepTopNav.tsx`).
 - **Chat é um roteiro fixo, não mensagens de verdade.** `myMessages` em `Chat.tsx` só se soma localmente — nada é "entregue" pro outro lado. Mandar uma mensagem como lojista não aparece pra Ana em nenhuma tela dela (e vice-versa), mesmo as duas estando "na mesma sessão" simulada.
-- **Textos de tempo (`"agora"`, `"há 2 dias"`, `updatedAt`) são strings soltas no dado mock, não datas calculadas.** Não dá pra, por exemplo, ordenar por "mais recente" de verdade — a tabela de Links usa o `id` do carrinho (`Date.now()` embutido) como proxy de ordenação por data, porque não existe outro jeito client-side de saber quando algo realmente aconteceu.
+- **Textos de tempo (`"agora"`, `"há 2 dias"`, `updatedAt`) são strings soltas no dado mock, não datas calculadas.** Não dá pra, por exemplo, ordenar por "mais recente" de verdade — não existe outro jeito client-side de saber quando algo realmente aconteceu (a extinta tabela de Links de pagamento do Radar, ver seção "Radar do representante simplificado" mais abaixo, usava o `id` do carrinho como proxy de ordenação por essa mesma razão).
 
 Nenhum desses é "pra consertar agora" — são o escopo natural de um backend quando esse protótipo passar a virar produto de verdade. Ficam aqui documentados pra não serem descobertos de novo do zero mais pra frente.
+
+## Radar do representante simplificado: visão "Carrinhos" removida; Meus Carrinhos separado por compartilhamento (out/2026)
+
+Usuário, depois de testar várias rodadas de ajuste visual de fundo/contraste sem ficar satisfeito ("estou mudando pq pensei muito e da maneira que estávamos fazendo não estava funcionando"), decidiu por uma mudança estrutural em vez de mais uma de estilo: "vamos mexer no carrinho e no radar: No radar, vamos tirar o kanban, além disso, vamos retirar o carrinho do radar tb. E no módulo carrinho vamos identificar o compartilhamento do carrinho, então vamos separar em duas partes: carrinhos compartilhados e carrinhos não compartilhados". Confirmado com o usuário antes de implementar (`AskUserQuestion`): a visão "Carrinhos" inteira do Radar (Lista/Quadro/Links) sai, não só o Quadro — nenhuma tela separada herda a visão por carrinho fora de modo loja, ela só existe mesmo dentro de "Meus carrinhos"/"Carrinhos da loja".
+
+### O que saiu do Radar do representante (`representante/Radar.tsx`)
+
+- Toggle "Lojas" / "Carrinhos" (`viewMode`) — o Radar agora só mostra a carteira por LOJA, sem alternativa por carrinho.
+- Dentro de "Carrinhos", o segundo toggle "Lista" / "Quadro" / "Links" (`boardMode`) foi embora junto — incluía o board kanban por etapa de pedido (`kanbanColuna`/`kanbanColunas`, 5 colunas) e a tabela de acompanhamento de links de pagamento (`.linktable`, geração de ambos validados em rodadas anteriores — ver seções acima). Removidos porque dependiam só da visão "Carrinhos" que saiu, não porque algo neles estivesse quebrado.
+- `defaultView`/rota `/rep/carrinhos` (atalho direto pra abrir já em "Carrinhos") removidos junto — `RepRadar` não recebe mais prop nenhuma.
+- CSS morto removido de `mockup.css`: `.radar-viewtoggle`/`.radar-viewchip`, todo o bloco `.kanban-*`, todo o bloco `.linktable*` (confirmado via grep que nada mais no app usa essas classes antes de apagar).
+- `repStatusLabel` (store.ts) removida — só era chamada pelo kanban/links, ficou sem nenhum uso depois.
+- **O que NÃO saiu**: geração de link de pagamento continua existindo — é uma ação do `CarrinhoDetail.tsx` de um carrinho específico (`marcarLinkPagamentoGerado`, `PaymentLinkModal`), independente da tabela de acompanhamento que ficava no Radar. O que sumiu foi só a visão consolidada "ver todos os links de todas as lojas numa tabela só".
+
+### Nav do representante: "Carrinhos" só aparece com loja ativa (`RepTopNav.tsx`)
+
+Sem a visão "Carrinhos" do Radar, não sobrava nenhuma tela de "carrinhos" fora de modo loja pro item do header apontar (antes ia pra `/rep/carrinhos`, agora removida). Em vez de apontar pra algum lugar sem sentido ou remover a navegação de vez, o item "Carrinhos" só aparece quando tem `lojistaAtiva` (dentro de modo loja) — mesmo padrão condicional que outros itens do nav já usavam, só que agora soma/some de verdade ao entrar/sair de uma loja, não só muda de destino.
+
+Breadcrumbs que apontavam pra `/rep/carrinhos` como item do meio ("Radar / Carrinhos / {nome}") ajustados em 3 lugares: `MeusCarrinhos.tsx` e `Chat.tsx` tiraram o item do meio (vira só "Radar / {nome}"), `CarrinhoDetail.tsx` trocou o destino do item do meio pra `/carrinhos` (a visão escopada da própria loja, que já existe e faz mais sentido como "passo intermediário" do que a extinta visão de portfólio). O link "← Ver carteira inteira" em `MeusCarrinhos.tsx` (ia pra `/rep/carrinhos`) foi removido — redundante com o crumb "Radar" que já fica logo ali ao lado.
+
+### Compartilhado vs não compartilhado (`MeusCarrinhos.tsx`)
+
+Definição confirmada com o usuário (e reutiliza o mesmo critério que o Quadro do Radar já usava antes de ser removido, não é um conceito novo): **compartilhado** = `pedido.status !== 'rascunho'` (o outro lado já vê e pode mexer); **não compartilhado** = ainda em rascunho, só quem monta vê. `ehCompartilhado(pedido)` (novo, módulo do arquivo) encapsula isso.
+
+- Os filtros por aba (Todos/Rascunho/Aguardando Ana/Aguardando você/Com a Tesla) saíram de vez — usuário escolheu explicitamente "seções substituem os filtros" em vez de conviver os dois juntos, pra não ter duas formas de navegar pra mesma informação ("Rascunho" e "não compartilhado" já eram a mesma coisa).
+- Duas seções com cabeçalho próprio (título + contagem) e **cada uma seu próprio `.cr-list`** — não uma lista contínua com subtítulos. Pedido explícito do usuário: "mas acho que visualmente temos que deixar claro esse dois lugares, compartilhado e não compartilhado" — container separado + espaço generoso entre os dois (28px) é o que garante isso, um headline sozinho não bastaria. Compartilhados vem primeiro (zona ativa, pode precisar de ação de alguém agora), Não compartilhados depois (zona quieta).
+- Cada seção reaproveita exatamente a mesma linha `.cr-row` de sempre (nenhuma mudança na lógica de ação/thumbs/avisos/comentário) — só mudou como os carrinhos são agrupados antes de renderizar, extraído pra uma função `renderSecao(titulo, lista, vazio)` dentro do componente (fecha sobre o resto do state, não virou componente à parte). Empty state próprio por seção ("Nenhum carrinho compartilhado ainda" / "Nenhum rascunho no momento"), não mais um genérico "Nenhum carrinho nessa categoria".
+
+### Tag "Aguardando o cliente" / "Finalizado pelo cliente" — só pro representante
+
+Pedido do usuário, chegou em duas mensagens: primeiro "no compartilhado vale uma tag, aguardando o cliente, ou finalizado pelo cliente", depois confirmando a leitura ("e nesse caso, o compartilhado é aquele que vai sofrer alterações e possíveis mudanças"). "Cliente" aqui é o LOJISTA do ponto de vista da representante — por isso essa tag só faz sentido pra ela, nunca pro lojista (ele não tem "cliente" nessa tela; continua vendo o `pedidoStatusBadge` de sempre, mais granular e já testado, tanto nos compartilhados quanto nos rascunhos).
+
+`clienteTag(pedido)` (novo, `MeusCarrinhos.tsx`) resume os 3 status não-rascunho em 2 estados, mutuamente exclusivos (conferido contra `pedidoAguardandoAprovacaoRep`, que já cobre exatamente o complemento dentro de `status === 'aguardando'`):
+- **"Aguardando o cliente"** (tom `warn`, âmbar) — a bola está com o lojista: `aguardando` sugerido pela representante (ele precisa decidir) OU `aprovado` (falta ele pagar).
+- **"Finalizado pelo cliente"** (tom `positive`, verde) — o lojista já fez a parte dele: `aguardando` mandado por ele (`pedidoAguardandoAprovacaoRep`, bola com a Ana agora) OU `pago`.
+
+Usado só dentro da seção Compartilhados, só pra `persona === 'representante'` — substitui o `pedidoStatusBadge` ali (mesmo badge visual `.cr-badge`/`.cr-icon`, label/tom diferentes). Tom `warn` não existia ainda pra `.cr-icon`/`.cr-badge` (só pro `.web-icard`) — adicionado em `mockup.css` reaproveitando os mesmos tokens `--warn`/`--warn-dim` de sempre.
+
+### Testado
+
+Via Playwright nas duas personas: Radar da representante mostra só "Lojas", sem nenhum toggle (`'.radar-viewtoggle'` → 0 elementos), nav sem "Carrinhos" até entrar numa loja, com "Carrinhos" depois de entrar. "Carrinhos de Radical Skate" (representante) separado certinho em 2 seções (2 compartilhados — "Giro Hertz Black" pago → "Finalizado pelo cliente", "Coil Verão" aguardando+suggestedBy ela → "Aguardando o cliente" — e 1 não compartilhado, "Coleção Inverno" rascunho → `pedidoStatusBadge` normal). "Meus carrinhos" do lojista com a mesma separação, badges antigos intactos (Com a Tesla/Aguardando você — revisar/Pronto pra enviar). Regressão completa adaptada pros seletores novos (duas checagens que dependiam do kanban/toggle removido foram reescritas pra usar o fluxo real — aprovar "Giro TG II" entrando na loja pelo Radar, depois conferir a seção/contagem em vez do board) — sem quebra. `tsc`/build limpos.
 
 ## Regras de negócio confirmadas (não são chute)
 

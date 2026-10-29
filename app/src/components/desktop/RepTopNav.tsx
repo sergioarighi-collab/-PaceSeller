@@ -11,22 +11,12 @@ import { Toast } from './Toast'
 // trocar de loja ou sair dela).
 // "Catálogo" aponta pra rota /catalogo (a mesma do lojista, reaproveitada — ver "modo loja" em
 // guia-dev-frontend.md), não uma rota própria do representante.
-// "Carteira" saiu do nav (set/2026) — virou a visão "Carrinhos" dentro do próprio Radar (ver
-// guia-dev-frontend.md, "Carteira vira a visão Carrinhos do Radar"). "Carrinhos" voltou pro nav
-// logo depois (set/2026, pedido do usuário: "módulo de carrinho pro rep... colocar ele no header
-// pra acesso rápido").
-// Ordem Radar → Catálogo → Carrinhos (set/2026, pedido do usuário) — "Carrinhos" nasceu entre
-// Radar e Catálogo, mas a ordem certa é a jornada: olhar a carteira (Radar), decidir o que vender
-// (Catálogo), só depois acompanhar o que já foi montado (Carrinhos).
-// Escopo dinâmico de "Carrinhos" (set/2026, usuário levantou a dúvida: "eu não queria apenas
-// duplicar o radar no header... não seria melhor vincular o carrinho do header ao lojista que já
-// foi selecionado?" — opção B escolhida entre as alternativas discutidas, ver guia-dev-frontend.md
-// "Carrinhos no header: escopo dinâmico por contexto"): fora de modo loja aponta pra
-// `/rep/carrinhos` (portfólio inteiro, mesmo `RepRadar` de sempre); dentro de uma loja aponta pra
-// `/carrinhos` — o mesmo `MeusCarrinhos.tsx` que o lojista usa, que já vem escopado sozinho pra loja
-// ativa (`s.carrinhos` é trocado por `enterLojista`, não precisa de nenhum filtro extra). Por isso
-// `navItems` virou função dentro do componente (precisa de `lojistaAtiva`), não mais constante do
-// módulo.
+// "Carrinhos" só aparece com uma loja ativa (out/2026, pedido do usuário: "vamos retirar o
+// carrinho do radar tb" — a visão "Carrinhos" do Radar, que existia pra ver o portfólio inteiro
+// fora de modo loja, foi removida de propósito, ver RepRadar). Sem isso não sobra nenhuma tela de
+// "carrinhos" fora de modo loja pra esse item apontar — por isso ele some do nav em vez de apontar
+// pra algum lugar sem sentido. Dentro de uma loja continua indo pra `/carrinhos` — o mesmo
+// `MeusCarrinhos.tsx` que o lojista usa, já escopado sozinho pra loja ativa.
 export function RepTopNav() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [comingSoon, setComingSoon] = useState<string | null>(null)
@@ -44,7 +34,7 @@ export function RepTopNav() {
   const navItems = [
     { to: '/rep/radar', label: 'Radar', enabled: true },
     { to: '/catalogo', label: 'Catálogo', enabled: true },
-    { to: lojistaAtiva ? '/carrinhos' : '/rep/carrinhos', label: 'Carrinhos', enabled: true },
+    ...(lojistaAtiva ? [{ to: '/carrinhos', label: 'Carrinhos', enabled: true }] : []),
   ]
 
   return (

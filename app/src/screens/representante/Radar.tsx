@@ -2,49 +2,9 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { RepTopNav } from '../../components/desktop/RepTopNav'
 import { SinalIcon } from '../../components/desktop/SinalIcon'
-import { CartIcon } from '../../components/desktop/CartIcon'
 import { Toast } from '../../components/desktop/Toast'
-import { PaymentLinkModal } from '../../components/desktop/PaymentLinkModal'
-import {
-  useAppStore,
-  lojistaSinais,
-  lojistasAoVivo,
-  PESO_SINAL,
-  repStatusLabel,
-  pedidoAguardandoAprovacaoRep,
-  pedidoPares,
-  carteiraOportunidade,
-} from '../../lib/store'
+import { useAppStore, lojistaSinais, lojistasAoVivo, PESO_SINAL, carteiraOportunidade } from '../../lib/store'
 import type { LojistaSinal, SinalTimeframe } from '../../lib/store'
-import { GRADE_MINIMA_PARES } from '../../lib/types'
-import type { Pedido } from '../../lib/types'
-import { formatBRL } from '../../lib/format'
-
-type ViewMode = 'lojas' | 'carrinhos'
-type BoardMode = 'lista' | 'kanban' | 'links'
-
-// Colunas do kanban (set/2026) — derivadas de `status`+`suggestedBy` do Pedido, sem campo novo no
-// modelo: "aguardando" já significava coisas diferentes dependendo de quem sugeriu o pedido (ver
-// `pedidoAguardandoAprovacaoRep`), só não tinha uma coluna própria pra cada caso. `aprovado` só
-// existe pro caminho "lojista enviou, Ana aprovou" (ver aprovarPedido em store.ts) — por isso cai
-// na mesma coluna/cor de "aguardando o lojista": nos dois casos a bola já voltou pra ele.
-type KanbanColKey = 'rascunho' | 'aguardando_lojista' | 'aguardando_ana' | 'aprovado' | 'fechado'
-
-function kanbanColuna(pedido: Pedido): KanbanColKey {
-  if (pedido.status === 'pago') return 'fechado'
-  if (pedido.status === 'aprovado') return 'aprovado'
-  if (pedido.status === 'aguardando' && pedido.suggestedBy === 'representante') return 'aguardando_lojista'
-  if (pedidoAguardandoAprovacaoRep(pedido)) return 'aguardando_ana'
-  return 'rascunho'
-}
-
-const kanbanColunas: { key: KanbanColKey; title: string; sub: string }[] = [
-  { key: 'rascunho', title: 'Rascunho', sub: 'Em montagem, ainda não compartilhado' },
-  { key: 'aguardando_lojista', title: 'Aguardando o lojista', sub: 'Você sugeriu, esperando a decisão dele' },
-  { key: 'aguardando_ana', title: 'Aguardando você', sub: 'Ele enviou, esperando sua aprovação' },
-  { key: 'aprovado', title: 'Aprovado', sub: 'Já aprovado, falta ele pagar' },
-  { key: 'fechado', title: 'Fechado', sub: 'Pago, encaminhado pra fábrica' },
-]
 
 const timeframeOrder: SinalTimeframe[] = ['hoje', '15dias', '30dias']
 const timeframeLabel: Record<SinalTimeframe, string> = {
@@ -67,12 +27,12 @@ const sinalCta: Record<LojistaSinal['kind'], string> = {
 // lojista e entra direto no contexto dele (ver `enterLojista` em store.ts) — "modo loja". Sem
 // clicar em nada, o lojista só é escolhido manualmente ao entrar no Catálogo pela nav (ver
 // LojistaGate.tsx).
-// `defaultView` (set/2026) — permite abrir a página já na visão "Carrinhos" em vez de "Lojas",
-// usado pela rota `/rep/carrinhos` (nav própria no header, ver RepTopNav.tsx: "módulo de carrinho
-// do rep, lembrando a integração com o lojista" — já existia aqui dentro como a visão "Carrinhos",
-// só faltava um atalho direto; ver guia-dev-frontend.md). Mesmo componente/mesma lógica — só muda
-// o estado inicial do toggle, o usuário ainda pode alternar livremente depois de entrar.
-export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } = {}) {
+// Visão "Carrinhos" (Lista/Quadro/Links) REMOVIDA (out/2026, pedido do usuário: "vamos tirar o
+// kanban... e retirar o carrinho do radar tb") — incluía um toggle Lojas/Carrinhos, um segundo
+// toggle Lista/Quadro/Links dentro de "Carrinhos", um board kanban por etapa de pedido e a tabela
+// de acompanhamento de links de pagamento. O Radar volta a mostrar só a carteira por LOJA; ver
+// "compartilhado vs não compartilhado" em MeusCarrinhos.tsx pra onde a visão por carrinho migrou.
+export function RepRadar() {
   const navigate = useNavigate()
   const lojistasRaw = useAppStore((s) => s.lojistas)
   const activeLojistaId = useAppStore((s) => s.activeLojistaId)
@@ -84,14 +44,9 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
   const enterLojista = useAppStore((s) => s.enterLojista)
   const sugerirReposicao = useAppStore((s) => s.sugerirReposicao)
   const sugerirParaCarteira = useAppStore((s) => s.sugerirParaCarteira)
-  const marcarLinkPagamentoGerado = useAppStore((s) => s.marcarLinkPagamentoGerado)
   const [lojistaFiltro, setLojistaFiltro] = useState<string | null>(null)
   const [timeframeFiltro, setTimeframeFiltro] = useState<SinalTimeframe>('hoje')
   const [oportunidadeToast, setOportunidadeToast] = useState<string | null>(null)
-  // Modal de link de pagamento (set/2026, visão "Links") — guarda o carrinho cujo link está sendo
-  // mostrado/copiado; `null` = modal fechado. Mesmo `PaymentLinkModal` que `CarrinhoDetail.tsx` já
-  // usa, só que aqui disparado a partir de uma lista com vários carrinhos, não de um só.
-  const [linkModalCart, setLinkModalCart] = useState<{ id: string; name: string; total: number; pedidoId: string } | null>(null)
 
   // Oportunidade de carteira (set/2026, pedido do usuário: "sugestões inteligentes de carrinhos
   // específicos para lojistas específicos") — recalculada a cada render a partir de `lojistas`, não
@@ -106,17 +61,6 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
     sugerirParaCarteira(oportunidade.product.id, oportunidade.lojistasSemProduto.map((l) => l.id))
     setOportunidadeToast(`Enviado pra ${nomes.join(', ')}`)
   }
-  // Visão "Lojas" (default) vs "Carrinhos" (set/2026, pedido do usuário: "trazer por filtros...
-  // mantemos os cards do radar original, mas trazemos um filtro por carrinhos dos lojistas") —
-  // mesmo grid/card, só muda a granularidade: um card por LOJA ou um card por CARRINHO. Não é uma
-  // tela nova nem funde com a Carteira — é um jeito de ver a mesma carteira com mais detalhe sem
-  // trocar de tela. Ver `carrinhosRanqueados` abaixo.
-  const [viewMode, setViewMode] = useState<ViewMode>(defaultView)
-  // Lista (default) vs Quadro — kanban por etapa, só dentro da visão "Carrinhos" (set/2026, pedido
-  // do usuário: validado antes como mockup — ver guia-dev-frontend.md). Não existe pra visão
-  // "Lojas": kanban por etapa de PEDIDO não faz sentido agrupando por LOJA.
-  const [boardMode, setBoardMode] = useState<BoardMode>('lista')
-
   // Cada card só mostra o sinal de maior peso daquela loja (os outros viram "+N outras
   // pendências") — `topSinal`/`timeframe` do card vêm desse sinal específico, não de uma mistura
   // dos vários sinais que a loja possa ter.
@@ -137,52 +81,9 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
     return !x.topSinal || x.topSinal.timeframe === timeframeFiltro
   })
 
-  // Visão "Carrinhos": um card por carrinho (não por loja), carregando o sinal específico DAQUELE
-  // carrinho quando existir (revisão/estoque/parado sempre nascem com `cartId` — ver
-  // `lojistaSinais`). Mesma regra de peso/precedência de filtro da visão "Lojas", só que no nível
-  // do carrinho em vez da loja — um carrinho sem sinal não é "menos carrinho", só não tem nada
-  // puxando a atenção da Ana agora (mesmo card "tudo em dia" que já existia, só que por carrinho).
-  // Pega o de MAIOR peso quando o carrinho tem mais de um sinal (ex: estoque baixo + parado ao
-  // mesmo tempo) — mesmo critério da visão "Lojas", não só o primeiro que aparecer.
-  const carrinhosRanqueados = lojistas
-    .flatMap((lojista) => {
-      const sinais = lojistaSinais(lojista)
-      return lojista.carrinhos.map((cart) => {
-        const doCarrinho = sinais.filter((s) => s.cartId === cart.id).sort((a, b) => PESO_SINAL[b.kind] - PESO_SINAL[a.kind])
-        return { lojista, cart, sinal: doCarrinho[0] as LojistaSinal | undefined }
-      })
-    })
-    .sort((a, b) => (b.sinal ? PESO_SINAL[b.sinal.kind] : 0) - (a.sinal ? PESO_SINAL[a.sinal.kind] : 0))
-
-  const carrinhosComSinal = carrinhosRanqueados.filter((x) => x.sinal)
-  const carrinhosPorPeriodo = (tf: SinalTimeframe) => carrinhosComSinal.filter((x) => x.sinal!.timeframe === tf)
-  const carrinhosVisiveis = carrinhosRanqueados.filter((x) => {
-    if (lojistaFiltro) return x.lojista.id === lojistaFiltro
-    return !x.sinal || x.sinal.timeframe === timeframeFiltro
-  })
-
-  // Kanban: só o filtro de loja se aplica (set/2026) — o de período não compõe com colunas por
-  // etapa (um carrinho "Fechado" não tem sinal/prazo nenhum e precisa continuar visível sempre; e
-  // escondê-lo da coluna certa quebraria a promessa do quadro de mostrar a carteira inteira por
-  // etapa). O toggle de período nem aparece quando o quadro está ativo (ver JSX abaixo).
-  const carrinhosKanban = lojistaFiltro ? carrinhosRanqueados.filter((x) => x.lojista.id === lojistaFiltro) : carrinhosRanqueados
-
-  // Links de pagamento (set/2026, pedido do usuário: "módulo de acompanhamento de links enviados,
-  // com reenviar e notificação de aberto") — mesma base de `carrinhosKanban` (só filtro de loja,
-  // sem período: um link aberto há dias continua relevante de acompanhar, não "expira" do período
-  // de hoje), só que filtrado aos pedidos que já tiveram um link gerado pelo menos uma vez. Mais
-  // recentes primeiro — não tem campo de data real pra ordenar (só texto relativo solto, mesmo
-  // padrão do resto do app), então usa o id do carrinho (cresce com `Date.now()`) como proxy.
-  const carrinhosComLink = carrinhosKanban.filter((x) => x.cart.pedido.linkPagamentoGeradoEm).sort((a, b) => (a.cart.id < b.cart.id ? 1 : -1))
-
   function abrirLoja(lojistaId: string) {
     enterLojista(lojistaId)
     navigate('/catalogo')
-  }
-
-  function abrirCarrinho(lojistaId: string, cartId: string) {
-    enterLojista(lojistaId)
-    navigate(`/carrinhos/${cartId}`)
   }
 
   // Cada sinal já executa a ação de verdade, não só abre uma tela pro representante fazer o resto
@@ -245,69 +146,27 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
             </div>
           ))}
         </div>
-        {/* Período não aparece no quadro (kanban) nem nos links: as colunas do quadro já são a
-            organização por etapa, e um carrinho "Fechado" não tem sinal/prazo nenhum — teria que
-            sumir da própria coluna que promete mostrar (ver `carrinhosKanban`); um link aberto há
-            dias continua valendo acompanhar, não "expira" do período de hoje (ver `carrinhosComLink`). */}
-        {!(viewMode === 'carrinhos' && (boardMode === 'kanban' || boardMode === 'links')) && (
-          <>
-            <div className="radar-filterlabel" style={{ marginTop: 16 }}>
-              Período
+        <div className="radar-filterlabel" style={{ marginTop: 16 }}>
+          Período
+        </div>
+        <div className="tl-filters radar-filter-secondary">
+          {timeframeOrder.map((tf) => (
+            <div
+              key={tf}
+              className={`chip ${timeframeFiltro === tf && !lojistaFiltro ? 'selected' : ''}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                setLojistaFiltro(null)
+                setTimeframeFiltro(tf)
+              }}
+            >
+              {timeframeLabel[tf]} <span className="n">{porPeriodo(tf).length}</span>
             </div>
-            <div className="tl-filters radar-filter-secondary">
-              {timeframeOrder.map((tf) => (
-                <div
-                  key={tf}
-                  className={`chip ${timeframeFiltro === tf && !lojistaFiltro ? 'selected' : ''}`}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => {
-                    setLojistaFiltro(null)
-                    setTimeframeFiltro(tf)
-                  }}
-                >
-                  {timeframeLabel[tf]} <span className="n">{(viewMode === 'lojas' ? porPeriodo(tf) : carrinhosPorPeriodo(tf)).length}</span>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        {/* Visão "Lojas" (1 card por loja, resume no sinal de maior peso) vs "Carrinhos" (1 card
-            por carrinho, cada um com o sinal específico dele, se tiver) — mesmos filtros de loja/
-            período acima valem pras duas, só muda o que populate o grid abaixo. */}
-        <div className="radar-viewtoggle">
-          <div className={`radar-viewchip ${viewMode === 'lojas' ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setViewMode('lojas')}>
-            Lojas
-          </div>
-          <div
-            className={`radar-viewchip ${viewMode === 'carrinhos' ? 'selected' : ''}`}
-            style={{ cursor: 'pointer' }}
-            onClick={() => setViewMode('carrinhos')}
-          >
-            Carrinhos
-          </div>
+          ))}
         </div>
 
-        {/* Lista vs Quadro (set/2026, pedido do usuário: "ver todos os carrinhos divididos em
-            colunas, em qual etapa e com quem") — só dentro de "Carrinhos": kanban por etapa de
-            PEDIDO não existe na visão "Lojas". Alternativa à lista, nunca a substitui — quem prefere
-            lista continua usando lista. */}
-        {viewMode === 'carrinhos' && (
-          <div className="radar-viewtoggle" style={{ marginTop: 8 }}>
-            <div className={`radar-viewchip ${boardMode === 'lista' ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setBoardMode('lista')}>
-              Lista
-            </div>
-            <div className={`radar-viewchip ${boardMode === 'kanban' ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setBoardMode('kanban')}>
-              Quadro
-            </div>
-            <div className={`radar-viewchip ${boardMode === 'links' ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setBoardMode('links')}>
-              Links
-            </div>
-          </div>
-        )}
-
-        {/* Oportunidade de carteira (set/2026) — banner de largura total, fora da grade de cards
-            (não compete com Lojas/Carrinhos, aparece nas duas visões). Reaproveita a cor tone-black
+        {/* Oportunidade de carteira (set/2026) — banner de largura total, fora da grade de cards.
+            Reaproveita a cor tone-black
             do Radar do lojista (mesma natureza "Oportunidade"), só em layout horizontal (ver
             .opp-banner em mockup.css). Um só por vez (o produto de maior crescimento que bate o
             critério — ver carteiraOportunidade em store.ts), não uma lista, pra não virar
@@ -347,8 +206,7 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
             descrição, link de texto colorido no rodapé em vez da pílula sólida que existia antes).
             `eyebrow` leva a info que só o representante precisa (de qual loja é — o lojista não
             precisa disso, só tem uma loja), `h3`/`p` carregam o que o card é "sobre" e o sinal. */}
-        {viewMode === 'lojas' ? (
-          <div className="radar-grid">
+        <div className="radar-grid">
             {visiveis.map(({ lojista, sinais, topSinal }) => (
               // Corpo do card abre a loja direto (set/2026, achado testando: clicar achando que ia
               // só "ver a loja" disparava a ação do sinal de estoque sem avisar — criava e já
@@ -387,227 +245,10 @@ export function RepRadar({ defaultView = 'lojas' }: { defaultView?: ViewMode } =
               </div>
             ))}
           </div>
-        ) : boardMode === 'kanban' ? (
-          <div className="kanban-board">
-            {kanbanColunas.map((col) => {
-              const cards = carrinhosKanban.filter((x) => kanbanColuna(x.cart.pedido) === col.key)
-              return (
-                <div className="kanban-col" key={col.key}>
-                  <div className="kanban-colhead">
-                    <div className="kanban-coltitle">{col.title}</div>
-                    <div className="kanban-colcount">{cards.length}</div>
-                  </div>
-                  <div className="kanban-colsub">{col.sub}</div>
-                  <div className="kanban-cards">
-                    {cards.length === 0 ? (
-                      <div className="kanban-empty">Nenhum carrinho aqui agora</div>
-                    ) : (
-                      cards.map(({ lojista, cart }) => {
-                        const pares = pedidoPares(cart.pedido)
-                        return (
-                          <div
-                            className={`kanban-card col-${col.key}`}
-                            key={cart.id}
-                            style={{ cursor: 'pointer' }}
-                            onClick={() => abrirCarrinho(lojista.id, cart.id)}
-                          >
-                            <div>
-                              <div className="kanban-cardtitle">{cart.name}</div>
-                              <div className="kanban-cardloja">{lojista.name}</div>
-                            </div>
-                            {/* "Bola com" (set/2026) — sempre presente, mesmo em "Rascunho" (etiqueta
-                                neutra "Ainda privado", já que ninguém tem a bola de verdade antes de
-                                compartilhar — ver kanbanColuna acima), pra todo card ter a mesma
-                                estrutura e altura, não só os que já foram compartilhados. */}
-                            {col.key === 'aguardando_lojista' || col.key === 'aprovado' ? (
-                              <div className="kanban-badge" style={{ background: 'var(--warn-dim)', color: 'var(--warn)' }}>
-                                <span className="kanban-dot" style={{ background: 'var(--warn)' }} />
-                                Com {lojista.contactName}
-                              </div>
-                            ) : col.key === 'aguardando_ana' ? (
-                              <div className="kanban-badge" style={{ background: 'var(--info-dim)', color: 'var(--info)' }}>
-                                <span className="kanban-dot" style={{ background: 'var(--info)' }} />
-                                Com você
-                              </div>
-                            ) : col.key === 'fechado' ? (
-                              <div className="kanban-badge" style={{ background: 'var(--positive-dim)', color: 'var(--positive)' }}>
-                                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="var(--positive)" strokeWidth="3.4">
-                                  <path d="M5 13l4 4L19 7" />
-                                </svg>
-                                Em produção
-                              </div>
-                            ) : (
-                              <div className="kanban-badge" style={{ background: 'var(--surface-2)', color: 'var(--text-tertiary)' }}>
-                                <span className="kanban-dot" style={{ background: 'var(--text-tertiary)' }} />
-                                Ainda privado
-                              </div>
-                            )}
-                            <div className="kanban-cardfoot">
-                              <span>{pares} pares</span>
-                              <span className="val">{formatBRL(cart.pedido.total)}</span>
-                            </div>
-                            <div className="kanban-cardtime">{cart.updatedAt}</div>
-                          </div>
-                        )
-                      })
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        ) : boardMode === 'links' ? (
-          <div className="linktable-wrap">
-            {carrinhosComLink.length === 0 ? (
-              <div className="kanban-empty" style={{ padding: '24px 4px' }}>
-                Nenhum link de pagamento gerado ainda{lojistaFiltro ? ' pra essa loja' : ''}.
-              </div>
-            ) : (
-              <table className="linktable">
-                <thead>
-                  <tr>
-                    <th>Carrinho</th>
-                    <th>Valor</th>
-                    <th>Link gerado</th>
-                    <th>Status de leitura</th>
-                    <th>Pedido</th>
-                    <th style={{ textAlign: 'right' }}>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {carrinhosComLink.map(({ lojista, cart }) => {
-                    const pedido = cart.pedido
-                    const status = repStatusLabel(pedido)
-                    const pago = pedido.status === 'pago'
-                    const aberto = Boolean(pedido.linkPagamentoAbertoEm)
-                    return (
-                      <tr key={cart.id} className={aberto ? 'row-ok' : 'row-warn'}>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-                            <div className="linktable-icon">
-                              <CartIcon />
-                            </div>
-                            <div>
-                              <div className="linktable-cart" style={{ cursor: 'pointer' }} onClick={() => abrirCarrinho(lojista.id, cart.id)}>
-                                {cart.name}
-                              </div>
-                              <div className="linktable-loja">{lojista.name}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td>{formatBRL(pedido.total)}</td>
-                        <td className="linktable-mono">{pedido.linkPagamentoGeradoEm}</td>
-                        <td>
-                          {aberto ? (
-                            <span className="linktable-badge ok">
-                              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.4">
-                                <path d="M5 13l4 4L19 7" />
-                              </svg>
-                              Aberto {pedido.linkPagamentoAbertoEm}
-                            </span>
-                          ) : (
-                            <span className="linktable-badge warn">
-                              <span className="linktable-dot" />
-                              Ainda não aberto
-                            </span>
-                          )}
-                        </td>
-                        <td className="linktable-status">{pago ? <span style={{ color: 'var(--positive)', fontWeight: 600 }}>Pago</span> : status.label}</td>
-                        <td>
-                          <div className="linktable-actions">
-                            <span className="linktable-slot open">
-                              <span className="linktable-open" onClick={() => abrirCarrinho(lojista.id, cart.id)}>
-                                Abrir
-                              </span>
-                            </span>
-                            <span className="linktable-slot copy">
-                              <span
-                                className="linktable-action"
-                                style={{ color: pago ? 'var(--text-tertiary)' : 'var(--info)' }}
-                                onClick={() => setLinkModalCart({ id: cart.id, name: cart.name, total: pedido.total, pedidoId: pedido.id })}
-                              >
-                                Copiar
-                              </span>
-                            </span>
-                            <span className="linktable-slot resend">
-                              {!pago && (
-                                <span
-                                  className="linktable-action"
-                                  style={{ color: 'var(--text-primary)', fontWeight: 600 }}
-                                  onClick={() => {
-                                    marcarLinkPagamentoGerado(cart.id)
-                                    setLinkModalCart({ id: cart.id, name: cart.name, total: pedido.total, pedidoId: pedido.id })
-                                  }}
-                                >
-                                  Reenviar
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
-        ) : (
-          <div className="radar-grid">
-            {carrinhosVisiveis.map(({ lojista, cart, sinal }) => {
-              const status = repStatusLabel(cart.pedido)
-              const pares = pedidoPares(cart.pedido)
-              return (
-                // Mesmo princípio do card de loja acima: corpo abre o carrinho (nunca executa nada
-                // sozinho — um sinal de estoque aqui criaria OUTRO carrinho de reposição, não abriria
-                // o carrinho que já está na tela), só o `.cta` executa a ação do sinal.
-                <div
-                  className={`web-icard ${sinal ? `tone-${sinal.tone}` : 'tone-positive'}`}
-                  key={cart.id}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => abrirCarrinho(lojista.id, cart.id)}
-                >
-                  <div className="kicon">
-                    <CartIcon />
-                  </div>
-                  <div className="eyebrow">{lojista.name}</div>
-                  <h3>{cart.name}</h3>
-                  <p>{sinal ? sinal.text : `${status.label} — ${pares}/${GRADE_MINIMA_PARES} pares`}</p>
-                  {/* Valor do pedido (set/2026) — única informação da extinta Carteira.tsx que não
-                      tinha equivalente aqui; o resto (status, "Abrir") já existia. Ver guia-dev-
-                      frontend.md ("Carteira vira a visão Carrinhos do Radar") pro que foi descartado
-                      de propósito (stat tiles, barra de grade mínima). */}
-                  <div style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--text-tertiary)', marginTop: 4 }}>
-                    {formatBRL(cart.pedido.total)}
-                  </div>
-                  <div
-                    className="cta"
-                    style={{ cursor: 'pointer' }}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      sinal ? executarSinal(lojista.id, sinal) : abrirCarrinho(lojista.id, cart.id)
-                    }}
-                  >
-                    {sinal ? sinalCta[sinal.kind] : 'Abrir'} →
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
       </div>
 
       {oportunidadeToast && (
         <Toast title="Reposição sugerida" sub={oportunidadeToast} onClose={() => setOportunidadeToast(null)} />
-      )}
-
-      {linkModalCart && (
-        <PaymentLinkModal
-          link={`${window.location.origin}/carrinhos/${linkModalCart.id}/${linkModalCart.pedidoId}/pagamento`}
-          cartName={linkModalCart.name}
-          total={formatBRL(linkModalCart.total)}
-          onClose={() => setLinkModalCart(null)}
-        />
       )}
     </div>
   )

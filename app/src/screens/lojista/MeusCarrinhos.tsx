@@ -22,19 +22,28 @@ import type { Carrinho, Pedido } from '../../lib/types'
 import { products } from '../../lib/data'
 import { formatBRL } from '../../lib/format'
 
-// "Aguardando aprovação" virou 2 abas (set/2026, pedido do usuário: "está confuso") — misturava os
-// dois lados opostos de quem está esperando por quem (ver pedidoStatusBadge em store.ts). Cada aba
-// já carrega no próprio nome o motivo de estar ali, sem precisar abrir o carrinho pra descobrir.
-const filters = ['Todos', 'Rascunho', 'Aguardando Ana', 'Aguardando você', 'Com a Tesla'] as const
-const filterHint: Record<(typeof filters)[number], string> = {
-  Todos: 'Todos os carrinhos, qualquer status',
-  Rascunho: 'Você ainda está montando — falta adicionar itens ou enviar pro representante',
-  'Aguardando Ana': 'Você já enviou — agora é a vez da Ana aprovar, nada pra fazer por enquanto',
-  'Aguardando você': 'A Ana sugeriu ou editou um pedido — é a sua vez de revisar e decidir',
-  'Com a Tesla': 'Pedido pago — já saiu da sua mão e da Ana, agora é acompanhar a produção e entrega',
+const EXPIRA_APOS_DIAS = 7
+
+// Compartilhado vs não compartilhado (out/2026, pedido do usuário: "no módulo carrinho vamos
+// identificar o compartilhamento do carrinho... separar em duas partes") — substitui os filtros
+// por aba (Todos/Rascunho/Aguardando Ana/Aguardando você/Com a Tesla) por duas seções fixas.
+// Definição confirmada com o usuário, mesma que o Quadro do Radar já usava antes de ser removido:
+// "compartilhado" = pedido.status !== 'rascunho' (o outro lado já vê e pode mexer); "não
+// compartilhado" = ainda em rascunho, só quem monta vê.
+function ehCompartilhado(pedido: Pedido): boolean {
+  return pedido.status !== 'rascunho'
 }
 
-const EXPIRA_APOS_DIAS = 7
+// Tag simplificada pro representante dentro de "Compartilhados" (out/2026, pedido do usuário:
+// "no compartilhado vale uma tag, aguardando o cliente, ou finalizado pelo cliente") — "cliente" é
+// o lojista do ponto de vista dela. Resume os 3 status não-rascunho em 2 estados: a bola está com
+// o lojista (precisa decidir ou pagar) ou ele já fez a parte dele (mandou pra revisão, ou já
+// pagou). Só faz sentido pro representante — o lojista não tem "cliente" aqui, continua vendo o
+// `pedidoStatusBadge` de sempre (mais granular, já testado).
+function clienteTag(pedido: Pedido): { label: string; tone: 'warn' | 'positive' } {
+  const aguardandoCliente = (pedido.status === 'aguardando' && pedido.suggestedBy === 'representante') || pedido.status === 'aprovado'
+  return aguardandoCliente ? { label: 'Aguardando o cliente', tone: 'warn' } : { label: 'Finalizado pelo cliente', tone: 'positive' }
+}
 
 export function MeusCarrinhos() {
   const navigate = useNavigate()
@@ -55,7 +64,6 @@ export function MeusCarrinhos() {
   const lojistas = useAppStore((s) => s.lojistas)
   const activeLojistaId = useAppStore((s) => s.activeLojistaId)
   const lojistaAtiva = lojistas.find((l) => l.id === activeLojistaId)
-  const [filter, setFilter] = useState<(typeof filters)[number]>(filters[0])
   // "Editar no drawer" num pedido "Aguardando Ana" reabre a aprovação (ver commitCartToCarrinho em
   // store.ts) — avisa antes de deixar entrar. Guarda o carrinho pendente de confirmação (não um
   // bool solto) porque a lista tem N linhas e cada uma pode disparar essa mesma confirmação.
@@ -68,27 +76,8 @@ export function MeusCarrinhos() {
   // acabou de clicar, então um toast a mais seria redundante.
   const [sendToast, setSendToast] = useState<{ title: string; sub: string } | null>(null)
 
-  const rows = carrinhos
-    .map((c) => {
-      const status =
-        c.pedido.status === 'pago'
-          ? 'confirmado'
-          : c.pedido.status === 'aguardando'
-            ? c.pedido.suggestedBy === 'representante'
-              ? 'aguardando-voce'
-              : 'aguardando-ana'
-            : 'rascunho'
-      const totalItems = pedidoPares(c.pedido)
-      const totalValue = c.pedido.total
-      return { cart: c, status, totalItems, totalValue }
-    })
-    .filter((r) => {
-      if (filter === 'Todos') return true
-      if (filter === 'Rascunho') return r.status === 'rascunho'
-      if (filter === 'Aguardando Ana') return r.status === 'aguardando-ana'
-      if (filter === 'Aguardando você') return r.status === 'aguardando-voce'
-      return r.status === 'confirmado'
-    })
+  const compartilhados = carrinhos.filter((c) => ehCompartilhado(c.pedido))
+  const naoCompartilhados = carrinhos.filter((c) => !ehCompartilhado(c.pedido))
 
   // Pedido em montagem no drawer (ainda não é um Pedido de verdade) — mostrado como pendente no
   // card do carrinho pra onde ele está indo, e somado no KPI "Em andamento" (mesma pergunta que o
@@ -140,121 +129,24 @@ export function MeusCarrinhos() {
     }
   }
 
-  return (
-    <DesktopPage>
-      <PersonaTopNav />
-      <Breadcrumb
-        items={
-          persona === 'representante'
-            ? [{ label: 'Radar', to: '/rep/radar' }, { label: 'Carrinhos', to: '/rep/carrinhos' }, { label: lojistaAtiva?.name ?? '' }]
-            : [{ label: 'Radar', to: '/radar' }, { label: 'Meus Carrinhos' }]
-        }
-      />
-      <div className="web-main" style={{ paddingTop: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <div>
-            <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--text-primary)' }}>
-              {persona === 'representante' ? `Carrinhos de ${lojistaAtiva?.name ?? 'carregando...'}` : 'Meus carrinhos'}
-            </h1>
-            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
-              {persona === 'representante' ? (
-                <>
-                  {carrinhos.length} carrinhos abertos nessa loja · Em andamento: {formatBRL(emAndamento)} ·{' '}
-                  <span style={{ color: 'var(--info)', fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/rep/carrinhos')}>
-                    ← Ver carteira inteira
-                  </span>
-                </>
-              ) : (
-                <>
-                  {carrinhos.length} carrinhos abertos · Em andamento: {formatBRL(emAndamento)} · com Ana, sua representante
-                </>
-              )}
-            </div>
-          </div>
-          <div
-            className="btn-primary"
-            style={{ width: 180, cursor: 'pointer' }}
-            onClick={() => {
-              setActiveCarrinho(null)
-              navigate('/catalogo')
-            }}
-          >
-            Criar novo carrinho
-          </div>
+  // Uma seção (Compartilhados / Não compartilhados) — mesma linha `.cr-row` de sempre, só que
+  // agrupada em dois blocos em vez de filtrada por aba (ver `ehCompartilhado`/`clienteTag` no topo
+  // do arquivo). Cabeçalho com contagem pra cada bloco se identificar sozinho mesmo rolando a
+  // página.
+  function renderSecao(titulo: string, lista: Carrinho[], vazio: string) {
+    return (
+      <div style={{ marginTop: 28 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
+          <h2 style={{ fontFamily: 'var(--display)', fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{titulo}</h2>
+          <span className="cr-badge tone-neutral">{lista.length}</span>
         </div>
-
-        {/* "Enviar pro representante" é ação do lojista sobre o próprio rascunho — escondida da
-            Ana quando ela vê essa lista em modo loja (set/2026, mesmo princípio do `pedidoAction`
-            acima: ver nota ali). O bloco "Ana sugeriu..." continua, só com o texto/botão ajustados
-            pra quem está lendo (ver logo abaixo). */}
-        {((persona !== 'representante' && readyToSend.length > 0) || awaitingReview.length > 0) && (
-          <div className="bulkbar">
-            {persona !== 'representante' && readyToSend.length > 0 && (
-              <div className="bulkrow">
-                <div className="bicon">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4">
-                    <path d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div className="btext">
-                  <b>
-                    {readyToSend.length} pedido{readyToSend.length > 1 ? 's' : ''} já bate
-                    {readyToSend.length > 1 ? 'm' : ''} a grade mínima
-                  </b>{' '}
-                  e {readyToSend.length > 1 ? 'estão prontos' : 'está pronto'} — {readyToSend[0].c.name}
-                  {readyToSend.length > 1 ? ` e mais ${readyToSend.length - 1}` : ''}
-                </div>
-                <div
-                  className="bbtn"
-                  onClick={() => {
-                    readyToSend.forEach(({ c, p }) => sendPedidoToRepresentante(c.id, p.id))
-                    setSendToast({
-                      title: readyToSend.length > 1 ? `${readyToSend.length} pedidos enviados` : 'Pedido enviado',
-                      sub: `${readyToSend[0].c.representative} vai revisar e aprovar`,
-                    })
-                  }}
-                >
-                  Enviar pro representante
-                </div>
-              </div>
-            )}
-            {awaitingReview.length > 0 && (
-              <div className="bulkrow review">
-                <div className="bicon">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
-                    <circle cx="12" cy="8" r="3.4" />
-                    <path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6" />
-                  </svg>
-                </div>
-                <div className="btext">
-                  <b>
-                    {persona === 'representante' ? 'Você sugeriu' : 'Ana sugeriu'} {awaitingReview.length} pedido
-                    {awaitingReview.length > 1 ? 's' : ''} novo{awaitingReview.length > 1 ? 's' : ''}
-                  </b>{' '}
-                  — {awaitingReview[0].c.name}, {awaitingReview[0].c.daysSinceActivity > 0 ? `parado há ${awaitingReview[0].c.daysSinceActivity} dias` : 'agora'}{' '}
-                  {persona === 'representante' ? 'esperando revisão do lojista' : 'esperando sua revisão'}
-                </div>
-                <div className="bbtn" onClick={() => navigate(`/carrinhos/${awaitingReview[0].c.id}`)}>
-                  {persona === 'representante' ? 'Ver carrinho' : 'Revisar sugestão'}
-                </div>
-              </div>
-            )}
+        {lista.length === 0 ? (
+          <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-secondary)', padding: '32px 0', background: 'var(--surface-2)', borderRadius: 12 }}>
+            {vazio}
           </div>
-        )}
-
-        <div className="filterbar" style={{ marginTop: 20 }}>
-          {filters.map((f) => (
-            <div key={f} className={`chip ${filter === f ? 'selected' : ''}`} style={{ cursor: 'pointer' }} title={filterHint[f]} onClick={() => setFilter(f)}>
-              {f}
-            </div>
-          ))}
-        </div>
-
-        {rows.length === 0 ? (
-          <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-secondary)', padding: '64px 0' }}>Nenhum carrinho nessa categoria</div>
         ) : (
-          <div className="cr-list" style={{ maxWidth: 900, marginTop: 20 }}>
-            {rows.map(({ cart }) => {
+          <div className="cr-list" style={{ maxWidth: 900 }}>
+            {lista.map((cart) => {
               const pedido = cart.pedido
               const thumbIds = Array.from(new Set(pedido.items.map((i) => i.productId).filter((id) => products.some((pr) => pr.id === id))))
               const isDraftTarget = draftTargetId === cart.id
@@ -262,19 +154,24 @@ export function MeusCarrinhos() {
               const gradeOk = pares >= GRADE_MINIMA_PARES
               const gradePct = Math.min(100, Math.round((pares / GRADE_MINIMA_PARES) * 100))
               const action = pedidoAction(cart, pedido)
-              const statusBadge = pedidoStatusBadge(pedido, cart.representative, persona === 'representante')
+              // Tag simplificada "aguardando/finalizado pelo cliente" só pro representante, só nos
+              // já compartilhados — ver `clienteTag` no topo do arquivo. Em qualquer outro caso
+              // (lojista, ou rascunho ainda não compartilhado) continua o `pedidoStatusBadge` de
+              // sempre, mais granular.
+              const badge =
+                persona === 'representante' && ehCompartilhado(pedido) ? clienteTag(pedido) : pedidoStatusBadge(pedido, cart.representative, persona === 'representante')
               const parado = cart.daysSinceActivity >= EXPIRA_APOS_DIAS && pedido.status !== 'pago'
 
               return (
                 <div className="cr-row" key={cart.id} onClick={() => navigate(`/carrinhos/${cart.id}`)}>
                   <div className="cr-main">
-                    <div className={`cr-icon tone-${statusBadge.tone}`}>
+                    <div className={`cr-icon tone-${badge.tone}`}>
                       <CartIcon />
                     </div>
                     <div className="cr-info">
                       <div className="cr-nameline">
                         <span className="cr-name">{cart.name}</span>
-                        <span className={`cr-badge tone-${statusBadge.tone}`}>{statusBadge.label}</span>
+                        <span className={`cr-badge tone-${badge.tone}`}>{badge.label}</span>
                       </div>
                       <div className="cr-meta">
                         Representante: {cart.representative} · Atualizado {cart.updatedAt}
@@ -367,6 +264,113 @@ export function MeusCarrinhos() {
             })}
           </div>
         )}
+      </div>
+    )
+  }
+
+  return (
+    <DesktopPage>
+      <PersonaTopNav />
+      <Breadcrumb
+        items={
+          persona === 'representante'
+            ? [{ label: 'Radar', to: '/rep/radar' }, { label: lojistaAtiva?.name ?? '' }]
+            : [{ label: 'Radar', to: '/radar' }, { label: 'Meus Carrinhos' }]
+        }
+      />
+      <div className="web-main" style={{ paddingTop: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div>
+            <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--text-primary)' }}>
+              {persona === 'representante' ? `Carrinhos de ${lojistaAtiva?.name ?? 'carregando...'}` : 'Meus carrinhos'}
+            </h1>
+            <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
+              {persona === 'representante' ? (
+                <>{carrinhos.length} carrinhos abertos nessa loja · Em andamento: {formatBRL(emAndamento)}</>
+              ) : (
+                <>
+                  {carrinhos.length} carrinhos abertos · Em andamento: {formatBRL(emAndamento)} · com Ana, sua representante
+                </>
+              )}
+            </div>
+          </div>
+          <div
+            className="btn-primary"
+            style={{ width: 180, cursor: 'pointer' }}
+            onClick={() => {
+              setActiveCarrinho(null)
+              navigate('/catalogo')
+            }}
+          >
+            Criar novo carrinho
+          </div>
+        </div>
+
+        {/* "Enviar pro representante" é ação do lojista sobre o próprio rascunho — escondida da
+            Ana quando ela vê essa lista em modo loja (set/2026, mesmo princípio do `pedidoAction`
+            acima: ver nota ali). O bloco "Ana sugeriu..." continua, só com o texto/botão ajustados
+            pra quem está lendo (ver logo abaixo). */}
+        {((persona !== 'representante' && readyToSend.length > 0) || awaitingReview.length > 0) && (
+          <div className="bulkbar">
+            {persona !== 'representante' && readyToSend.length > 0 && (
+              <div className="bulkrow">
+                <div className="bicon">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4">
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div className="btext">
+                  <b>
+                    {readyToSend.length} pedido{readyToSend.length > 1 ? 's' : ''} já bate
+                    {readyToSend.length > 1 ? 'm' : ''} a grade mínima
+                  </b>{' '}
+                  e {readyToSend.length > 1 ? 'estão prontos' : 'está pronto'} — {readyToSend[0].c.name}
+                  {readyToSend.length > 1 ? ` e mais ${readyToSend.length - 1}` : ''}
+                </div>
+                <div
+                  className="bbtn"
+                  onClick={() => {
+                    readyToSend.forEach(({ c, p }) => sendPedidoToRepresentante(c.id, p.id))
+                    setSendToast({
+                      title: readyToSend.length > 1 ? `${readyToSend.length} pedidos enviados` : 'Pedido enviado',
+                      sub: `${readyToSend[0].c.representative} vai revisar e aprovar`,
+                    })
+                  }}
+                >
+                  Enviar pro representante
+                </div>
+              </div>
+            )}
+            {awaitingReview.length > 0 && (
+              <div className="bulkrow review">
+                <div className="bicon">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+                    <circle cx="12" cy="8" r="3.4" />
+                    <path d="M5 20c0-3.6 3-6 7-6s7 2.4 7 6" />
+                  </svg>
+                </div>
+                <div className="btext">
+                  <b>
+                    {persona === 'representante' ? 'Você sugeriu' : 'Ana sugeriu'} {awaitingReview.length} pedido
+                    {awaitingReview.length > 1 ? 's' : ''} novo{awaitingReview.length > 1 ? 's' : ''}
+                  </b>{' '}
+                  — {awaitingReview[0].c.name}, {awaitingReview[0].c.daysSinceActivity > 0 ? `parado há ${awaitingReview[0].c.daysSinceActivity} dias` : 'agora'}{' '}
+                  {persona === 'representante' ? 'esperando revisão do lojista' : 'esperando sua revisão'}
+                </div>
+                <div className="bbtn" onClick={() => navigate(`/carrinhos/${awaitingReview[0].c.id}`)}>
+                  {persona === 'representante' ? 'Ver carrinho' : 'Revisar sugestão'}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Compartilhados primeiro (zona ativa — pode precisar de ação de alguém agora), Não
+            compartilhados depois (zona quieta — rascunho, só quem monta vê). Cada seção é um
+            `.cr-list` próprio, não um único bloco contínuo — precisava ficar claro visualmente que
+            são dois lugares diferentes, não uma lista com subtítulos (pedido do usuário). */}
+        {renderSecao('Compartilhados', compartilhados, 'Nenhum carrinho compartilhado ainda — tudo ainda em rascunho.')}
+        {renderSecao('Não compartilhados', naoCompartilhados, 'Nenhum rascunho no momento — tudo já foi compartilhado.')}
       </div>
 
       {sendToast && <Toast title={sendToast.title} sub={sendToast.sub} onClose={() => setSendToast(null)} />}

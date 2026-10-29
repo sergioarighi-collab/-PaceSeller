@@ -125,7 +125,7 @@ export function CarrinhoDetail() {
       <Breadcrumb
         items={
           persona === 'representante'
-            ? [{ label: 'Radar', to: '/rep/radar' }, { label: 'Carrinhos', to: '/rep/carrinhos' }, { label: cart.name }]
+            ? [{ label: 'Radar', to: '/rep/radar' }, { label: lojistaAtivo?.name ?? 'Carrinhos', to: '/carrinhos' }, { label: cart.name }]
             : [{ label: 'Radar', to: '/radar' }, { label: 'Meus Carrinhos', to: '/carrinhos' }, { label: cart.name }]
         }
       />
