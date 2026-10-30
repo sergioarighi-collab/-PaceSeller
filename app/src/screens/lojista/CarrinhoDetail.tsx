@@ -34,6 +34,7 @@ export function CarrinhoDetail() {
   const addToCart = useAppStore((s) => s.addToCart)
   const sendPedidoToRepresentante = useAppStore((s) => s.sendPedidoToRepresentante)
   const aprovarPedido = useAppStore((s) => s.aprovarPedido)
+  const compartilharCarrinho = useAppStore((s) => s.compartilharCarrinho)
   const setRepCanEdit = useAppStore((s) => s.setRepCanEdit)
   const renameCarrinho = useAppStore((s) => s.renameCarrinho)
   const persona = useAppStore((s) => s.persona)
@@ -392,9 +393,36 @@ export function CarrinhoDetail() {
           )}
           <div className="stotal">{pares} pares</div>
           <div className="ssub">{formatBRL(pedido.total)}</div>
-          <div className="bubble">
-            O carrinho fecha e paga como um pedido só — na hora de pagar você pode dividir o valor entre mais de uma forma (parte no cartão, parte no PIX, por exemplo)
-          </div>
+          {/* Bubble de split de pagamento só pro lojista — quem de fato paga (out/2026, pedido do
+              usuário: "essa frase no carrinho de cada lojista dentro do perfil rep não precisa").
+              No lugar, do lado da representante: mensagem + toggle pra ela compartilhar o rascunho
+              com o lojista na hora (ver `compartilharCarrinho` em store.ts) — mesmo visual do
+              toggle `repCanEdit` logo abaixo (`.permswitch`/`.swtrack`), só que essa ação é de mão
+              única (liga = compartilha; desliga não volta pra rascunho, por isso o toggle já nasce
+              travado/ON quando o pedido sai de rascunho). */}
+          {persona !== 'representante' ? (
+            <div className="bubble">
+              O carrinho fecha e paga como um pedido só — na hora de pagar você pode dividir o valor entre mais de uma forma (parte no cartão, parte no PIX, por exemplo)
+            </div>
+          ) : (
+            <>
+              <div className="bubble">
+                {pedido.status === 'rascunho'
+                  ? `Esse carrinho ainda é só seu — compartilhe pra ${lojistaAtivo?.contactName ?? 'o lojista'} ver e decidir.`
+                  : `Compartilhado com ${lojistaAtivo?.contactName ?? 'o lojista'} — ele já pode ver e decidir.`}
+              </div>
+              <div
+                className="permswitch"
+                style={{ marginTop: 10, cursor: pedido.status === 'rascunho' ? 'pointer' : 'default' }}
+                onClick={() => pedido.status === 'rascunho' && compartilharCarrinho(cart.id)}
+              >
+                <div className={`swtrack ${pedido.status === 'rascunho' ? 'off' : ''}`}>
+                  <div className="knob" />
+                </div>
+                Compartilhar com {lojistaAtivo?.contactName ?? 'o lojista'}
+              </div>
+            </>
+          )}
 
           {/* Toggle/"Falar com"/"Salvar rascunho" são ações do LOJISTA sobre a relação com a
               representante (conceder permissão a ela, falar com ela, guardar o próprio rascunho) —

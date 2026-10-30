@@ -1858,6 +1858,22 @@ Ideia que o usuário tinha anotado pra depois, na mesma leva da remoção do lin
 
 Via Playwright nas duas personas: "Enviados" do lojista lista só "Giro Hertz Black" (`pago`) com badge "Com a Tesla" e botão "Reenviar"; clicar nele cria "Giro Hertz Black — novo pedido", navega direto pra lá, carrinho chega com os mesmos itens (6 pares, Tênis Tesla Hertz Black) em `rascunho`, "Ir para pagamento" desabilitado (abaixo da grade mínima, igual qualquer rascunho novo) — comportamento idêntico ao de um carrinho criado do zero, sem tratamento especial. Representante, dentro de Radical Skate, vê a mesma tela escopada pra loja (breadcrumb "Radar / Radical Skate / Enviados"). Regressão completa (as 3 suites de sempre) sem quebra. `tsc`/build limpos.
 
+## Toggle "Compartilhar com {lojista}" no lugar do bubble de split de pagamento (out/2026)
+
+Usuário, olhando o sidebar do carrinho do lado da representante: "'O carrinho fecha e paga como um pedido só — na hora de pagar você pode dividir o valor entre mais de uma forma (parte no cartão, parte no PIX, por exemplo)' essa frase no carrinho de cada lojista dentro do perfil rep não precisa. O que precisamos é uma mensagem que o REP pode compartilhar carrinho com o lojista, precisamos de um toogle ali para o rep poder compartilhar." A frase de split de pagamento é sobre COMO pagar — só faz sentido pra quem vai de fato pagar (o lojista); a representante nunca paga, então o bubble dela estava explicando um detalhe que não é problema dela.
+
+Antes de implementar, confirmado com o usuário (`AskUserQuestion`, mensagem original cortada em "Além disso,") o que o toggle faz de verdade: **liga = compartilha agora**, mesma transição que "Enviar"/"Fechar e enviar" já faziam (rascunho → aguardando), só que como switch em vez de botão — e via de mão única, igual qualquer outro "enviar" do app (desligar depois não volta pra rascunho).
+
+### Implementação
+
+- `.bubble` do sidebar agora é condicional por persona: `persona !== 'representante'` mantém a frase de split de pagamento, intocada. `persona === 'representante'` mostra uma mensagem diferente dependendo do status — `rascunho`: "Esse carrinho ainda é só seu — compartilhe pra {lojista} ver e decidir."; qualquer outro status: "Compartilhado com {lojista} — ele já pode ver e decidir." (`lojistaAtivo?.contactName`, já existia no componente pro CTA "Falar com").
+- Logo abaixo, um toggle novo — reaproveita o MESMO visual de `.permswitch`/`.swtrack`/`.knob` que o toggle `repCanEdit` (do lojista, "Ana pode editar este carrinho") já usava, pra ficar óbvio que é a mesma linguagem de controle, só que outro dono e outra ação. OFF quando `rascunho` (clicável, chama `compartilharCarrinho`), ON e sem handler quando já compartilhado (clique não faz nada — reflete a mão única, não existe "descompartilhar").
+- **`compartilharCarrinho(carrinhoId)`** (novo, `store.ts`) — muda `status: 'rascunho'` → `'aguardando'` com `suggestedBy: 'representante'`, igual `sendPedidoToRepresentante` faz do lado do lojista. Diferença de propósito: **sem trava de grade mínima** — de propósito, pra ela poder compartilhar um rascunho ainda incompleto e pedir a opinião do lojista no meio do caminho (confirmado que isso não é um bug: pagar continua bloqueado até bater a grade, ver `gradeOk` no footer, que não depende de como o pedido virou `aguardando`). Notifica o lojista (`withNotification`, mesmo padrão de `sugerirReposicao`).
+
+### Testado
+
+Via Playwright: lojista continua vendo a bubble de split de pagamento, sem nenhum toggle extra. Representante, num carrinho recém-criado com só 12 de 36 pares (bem abaixo da grade mínima, de propósito pra testar que não trava), vê a mensagem "ainda é só seu" + toggle OFF; clicar liga o toggle, muda a mensagem pra "Compartilhado com Carlos Andrade", e o badge do pedido vira "Aguardando o lojista — revisar" na hora, mesmo sem bater a grade. Clicar de novo no toggle (já ON) não muda nada — confirma a via de mão única. Regressão completa (as 3 suites de sempre) sem quebra. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

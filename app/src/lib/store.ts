@@ -157,6 +157,18 @@ interface AppState {
    */
   aprovarPedido: (carrinhoId: string) => void
   /**
+   * Ação da REPRESENTANTE (out/2026, pedido do usuário: "uma mensagem que o REP pode compartilhar
+   * carrinho com o lojista... um toggle ali pra o rep poder compartilhar") — toggle no lugar do
+   * bubble de split de pagamento (que só fazia sentido pro lojista, quem de fato paga). Liga =
+   * compartilha agora: muda um Pedido `rascunho` dela pra `aguardando` (`suggestedBy:
+   * 'representante'`) na hora, mesma transição que `sendPedidoToRepresentante` faz do lado dele —
+   * só que SEM trava de grade mínima: ela pode compartilhar um rascunho ainda incompleto de
+   * propósito, pra pedir opinião do lojista no meio do caminho (pagar continua bloqueado até bater
+   * a grade, ver `gradeOk` no footer — compartilhar cedo não pula essa trava). Via de mão única,
+   * como qualquer outro "enviar" do app: desligar o toggle depois não volta o pedido pra rascunho.
+   */
+  compartilharCarrinho: (carrinhoId: string) => void
+  /**
    * Ação do REPRESENTANTE (set/2026): monta e já encaminha pro lojista um pedido de reposição pra
    * um produto específico — nasce com `status: 'aguardando'` e `suggestedBy: 'representante'` (o
    * mesmo par de campos que o lado do lojista já sabia exibir desde que o modelo de dados existe,
@@ -629,6 +641,20 @@ export const useAppStore = create<AppState>((set, get) => ({
         return { ...c, pedido: { ...c.pedido, status: 'aprovado' } }
       }),
     })),
+  compartilharCarrinho: (carrinhoId) => {
+    const s = get()
+    const alvo = s.carrinhos.find((c) => c.id === carrinhoId)
+    if (!alvo || alvo.pedido.status !== 'rascunho') return
+    const notifications = withNotification(s.notifications, `Ana compartilhou um carrinho com você — ${alvo.name}`, carrinhoId)
+    set({
+      carrinhos: s.carrinhos.map((c) =>
+        c.id === carrinhoId
+          ? { ...c, updatedAt: 'agora', daysSinceActivity: 0, pedido: { ...c.pedido, status: 'aguardando', suggestedBy: 'representante' } }
+          : c,
+      ),
+      notifications,
+    })
+  },
   sugerirReposicao: (productId) => {
     const s = get()
     const product = products.find((p) => p.id === productId)
