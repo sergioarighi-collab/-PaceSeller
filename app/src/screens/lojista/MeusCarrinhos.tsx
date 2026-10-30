@@ -294,15 +294,24 @@ export function MeusCarrinhos() {
               )}
             </div>
           </div>
-          <div
-            className="btn-primary"
-            style={{ width: 180, cursor: 'pointer' }}
-            onClick={() => {
-              setActiveCarrinho(null)
-              navigate('/catalogo')
-            }}
-          >
-            Criar novo carrinho
+          <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+            {/* Módulo "Enviados" (out/2026, pedido do usuário) — página própria com só os carrinhos
+                `pago`, não mais uma 3ª seção aqui dentro: "Compartilhados" já mistura aguardando/
+                aprovado/pago, enfiar mais uma distinção ali ia poluir a tela que acabamos de
+                simplificar. Link secundário, não compete com "Criar novo carrinho". */}
+            <div className="btn-secondary" style={{ width: 150, cursor: 'pointer' }} onClick={() => navigate('/carrinhos/enviados')}>
+              Ver enviados
+            </div>
+            <div
+              className="btn-primary"
+              style={{ width: 180, cursor: 'pointer' }}
+              onClick={() => {
+                setActiveCarrinho(null)
+                navigate('/catalogo')
+              }}
+            >
+              Criar novo carrinho
+            </div>
           </div>
         </div>
 

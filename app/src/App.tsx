@@ -16,6 +16,7 @@ import { WizardStep2 } from './screens/lojista/WizardStep2'
 import { Radar } from './screens/lojista/Radar'
 import { Catalog } from './screens/lojista/Catalog'
 import { MeusCarrinhos } from './screens/lojista/MeusCarrinhos'
+import { Enviados } from './screens/lojista/Enviados'
 import { CarrinhoDetail } from './screens/lojista/CarrinhoDetail'
 import { Payment } from './screens/lojista/Payment'
 import { OrderConfirmed } from './screens/lojista/OrderConfirmed'
@@ -41,6 +42,7 @@ function comLojistaSelecionada<P extends object>(Component: ComponentType<P>) {
 
 const GatedCatalog = comLojistaSelecionada(Catalog)
 const GatedMeusCarrinhos = comLojistaSelecionada(MeusCarrinhos)
+const GatedEnviados = comLojistaSelecionada(Enviados)
 const GatedCarrinhoDetail = comLojistaSelecionada(CarrinhoDetail)
 const GatedChat = comLojistaSelecionada(Chat)
 
@@ -66,6 +68,7 @@ function App() {
         <Route path="/colecoes/fusion" element={<Colecao />} />
 
         <Route path="/carrinhos" element={<GatedMeusCarrinhos />} />
+        <Route path="/carrinhos/enviados" element={<GatedEnviados />} />
         <Route path="/carrinhos/:cartId" element={<GatedCarrinhoDetail />} />
         <Route path="/carrinhos/:cartId/:pedidoId/pagamento" element={<Payment />} />
         <Route path="/carrinhos/:cartId/:pedidoId/confirmado" element={<OrderConfirmed />} />

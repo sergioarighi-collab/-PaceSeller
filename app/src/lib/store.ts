@@ -178,6 +178,17 @@ interface AppState {
    */
   sugerirParaCarteira: (productId: string, lojistaIds: string[]) => void
 
+  /**
+   * Reenviar um carrinho já finalizado (`status: 'pago'`) pra refazer o pedido (out/2026, pedido do
+   * usuário: "um módulo de enviados... podendo reenviar o carrinho para refazer o pedido" — ver
+   * `screens/lojista/Enviados.tsx`). Duplica os itens do pedido original num Carrinho NOVO
+   * (`status: 'rascunho'`, mesmo ponto de partida de qualquer carrinho criado do zero) — não reabre
+   * nem muda o pedido original, que continua `pago`/histórico. Opera sobre `carrinhos` (igual
+   * `sugerirReposicao`) — retorna o id do carrinho novo (pra navegar direto pra ele) ou `null` se o
+   * carrinho original não existir mais.
+   */
+  reenviarCarrinho: (carrinhoId: string) => string | null
+
   /** Notificações do sino (WebTopNav) — comentário do representante, mudança de status, insight
    * do Radar. Gap mapeado desde `analise-ux-gaps-atrito-venda.md`, implementado ago/2026. */
   notifications: NotificationItem[]
@@ -636,6 +647,40 @@ export const useAppStore = create<AppState>((set, get) => ({
         lojistaIds.includes(l.id) ? { ...l, carrinhos: [...l.carrinhos, buildReposicaoCarrinho(product, l.id)] } : l,
       ),
     })
+  },
+  reenviarCarrinho: (carrinhoId) => {
+    const s = get()
+    const original = s.carrinhos.find((c) => c.id === carrinhoId)
+    if (!original) return null
+    const key = `${Date.now()}`
+    const op = original.pedido
+    const novoPedido: Pedido = {
+      id: `pedido-${key}`,
+      label: 'Pedido',
+      status: 'rascunho',
+      items: op.items.map((i) => ({ ...i })),
+      subtotal: op.subtotal,
+      discount: op.discount,
+      total: op.total,
+      marginPct: op.marginPct,
+      paymentCondition: op.paymentCondition,
+      deliveryEstimateDays: op.deliveryEstimateDays,
+      suggestedBy: s.persona === 'representante' ? 'representante' : undefined,
+    }
+    const novoCarrinho: Carrinho = {
+      id: `carrinho-${key}`,
+      name: `${original.name} — novo pedido`,
+      representative: original.representative,
+      updatedAt: 'agora',
+      daysSinceActivity: 0,
+      repCanEdit: true,
+      autoSendOnGradeMinima: false,
+      pedido: novoPedido,
+    }
+    const notifications =
+      s.persona === 'representante' ? withNotification(s.notifications, `Ana reenviou um pedido — ${novoCarrinho.name}`, novoCarrinho.id) : s.notifications
+    set({ carrinhos: [...s.carrinhos, novoCarrinho], notifications })
+    return novoCarrinho.id
   },
 
   notifications: initialNotifications,
