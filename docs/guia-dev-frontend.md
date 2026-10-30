@@ -1874,6 +1874,19 @@ Antes de implementar, confirmado com o usuário (`AskUserQuestion`, mensagem ori
 
 Via Playwright: lojista continua vendo a bubble de split de pagamento, sem nenhum toggle extra. Representante, num carrinho recém-criado com só 12 de 36 pares (bem abaixo da grade mínima, de propósito pra testar que não trava), vê a mensagem "ainda é só seu" + toggle OFF; clicar liga o toggle, muda a mensagem pra "Compartilhado com Carlos Andrade", e o badge do pedido vira "Aguardando o lojista — revisar" na hora, mesmo sem bater a grade. Clicar de novo no toggle (já ON) não muda nada — confirma a via de mão única. Regressão completa (as 3 suites de sempre) sem quebra. `tsc`/build limpos.
 
+## Switcher de carrinhos removido do Detalhe do carrinho (out/2026)
+
+Usuário, logo depois do toggle de compartilhar: "e quando entro dentro do carrinho do lojista não preciso ter o nome dos outros carrinhos acima, é repetitivo, posso voltar pelo breadcrumb". Referência é `.cartswitcher` — a fileira de abas ("Coleção Inverno" / "Giro Hertz Black" / "Coil Verão" / "+ Novo carrinho") logo abaixo do breadcrumb em `CarrinhoDetail.tsx`, que deixava trocar de carrinho sem sair da tela. Com o breadcrumb já voltando pra Meus Carrinhos/Carrinhos da loja (de onde dá pra abrir qualquer outro carrinho, inclusive criar um novo), a lista duplicada ali em cima era redundante — mesmo raciocínio já aplicado a outras simplificações desta leva (filtros por aba → seções, link de pagamento → compartilhar direto).
+
+### Implementação
+
+- Bloco `.cartswitcher` (JSX + `.map` sobre `carrinhos`) removido de `CarrinhoDetail.tsx` — nada ficou em aberto: a aba "+ Novo carrinho" que vivia ali também tinha equivalente em Meus Carrinhos ("Criar novo carrinho"). `web-content` volta a usar o padding padrão (24px no topo) em vez do `marginTop` que o switcher adicionava.
+- CSS morto removido de `mockup.css`: `.cartswitcher`/`.cartswitcher .tab`/`.tab.active`/`.tab.new` (confirmado via grep, sem nenhum outro uso no app).
+
+### Testado
+
+Via Playwright: `.cartswitcher` com contagem 0; breadcrumb continua refletendo o nome do carrinho (inclusive depois de renomear, reconferido já que o teste antigo checava o nome pela aba ativa do switcher removido). Regressão completa sem quebra. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

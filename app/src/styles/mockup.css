@@ -297,10 +297,6 @@
   .bg-behind{filter:blur(1.5px);opacity:0.5;}
 
   /* MULTI-CARRINHO E COLABORACAO */
-  .cartswitcher{display:flex;gap:8px;margin-bottom:18px;overflow-x:auto;}
-  .cartswitcher .tab{font-size:12px;padding:8px 14px;border-radius:4px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-secondary);white-space:nowrap;flex-shrink:0;}
-  .cartswitcher .tab.active{background:var(--surface);border-color:var(--black);color:var(--text-primary);font-weight:600;}
-  .cartswitcher .tab.new{border-style:dashed;color:var(--text-tertiary);}
   /* Sem quadro cinza (set/2026, pedido do usuário) — avatar + texto direto no fundo da página,
      sem background/borda destacando um "card" pra um aviso que hoje é só informativo (não pede
      nenhuma ação). */
@@ -698,9 +694,8 @@
      no Playwright (tab bar improvisada trocando display de blocos reais) e aprovado. Antes os
      combos ficavam sempre depois da grade de produtos inteira; com os cards maiores/verticais do
      redesenho (ver "Card de linha de produto vertical/minimalista"), isso passou a exigir bastante
-     rolagem — fácil de nunca notar que existiam. Sublinhado em vez do estilo pill de
-     `.cartswitcher .tab` (usado em Meus Carrinhos/drawer) — são conceitos diferentes: aqui é
-     navegação entre 2 visões da mesma página, não um filtro de estado. */
+     rolagem — fácil de nunca notar que existiam. Sublinhado em vez de pill — aqui é navegação
+     entre 2 visões da mesma página, não um filtro de estado. */
   /* `justify-content:space-between`/`align-items:flex-end` (set/2026, pedido do usuário: "subirmos
      a busca pro lado direito, acima dos filtros, fazendo alinhamento com... Produtos e Combos
      sugeridos") — a busca entrou como segundo filho de `.cattabs` (`.cattabs-tabs` de um lado, o

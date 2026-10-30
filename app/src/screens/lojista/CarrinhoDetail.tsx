@@ -125,26 +125,13 @@ export function CarrinhoDetail() {
             : [{ label: 'Radar', to: '/radar' }, { label: 'Meus Carrinhos', to: '/carrinhos' }, { label: cart.name }]
         }
       />
+      {/* Switcher de carrinhos (abas "Coleção Inverno"/"Giro Hertz Black"/...) removido daqui
+          (out/2026, pedido do usuário: "não preciso ter o nome dos outros carrinhos acima, é
+          repetitivo, posso voltar pelo breadcrumb") — o breadcrumb logo acima já volta pra Meus
+          Carrinhos/Carrinhos da loja, de onde dá pra abrir qualquer outro carrinho (inclusive criar
+          um novo, via "Criar novo carrinho" lá). */}
       <div className="web-app-layout">
         <div className="web-content">
-          <div className="cartswitcher" style={{ marginTop: 16 }}>
-            {carrinhos.map((c) => (
-              <div key={c.id} className={`tab ${c.id === cart.id ? 'active' : ''}`} style={{ cursor: 'pointer' }} onClick={() => navigate(`/carrinhos/${c.id}`)}>
-                {c.name}
-              </div>
-            ))}
-            <div
-              className="tab new"
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                setActiveCarrinho(null)
-                navigate('/catalogo')
-              }}
-            >
-              + Novo carrinho
-            </div>
-          </div>
-
           {persona !== 'representante' && (
             <div className="sharebanner">
               <div className="avatar">AN</div>
