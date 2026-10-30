@@ -70,7 +70,13 @@ export function CarrinhoDetail() {
   const [confirmEditAguardando, setConfirmEditAguardando] = useState(false)
 
   function handleEditarNoDrawer() {
-    if (pedido.status === 'aguardando' || pedido.status === 'aprovado') setConfirmEditAguardando(true)
+    // Só avisa antes de editar quando o commit vai de fato voltar o pedido pra rascunho (mesma
+    // condição de `commitCartToCarrinho` em store.ts) — um pedido "aguardando" que é sugestão da
+    // própria representante (suggestedBy === 'representante', aguardando o CLIENTE decidir) não
+    // reseta ao editar, então nem precisa do aviso (out/2026, ela editando o próprio carrinho
+    // depois de já ter compartilhado com o lojista).
+    const vaiResetarPraRascunho = (pedido.status === 'aguardando' || pedido.status === 'aprovado') && !pedido.suggestedBy
+    if (vaiResetarPraRascunho) setConfirmEditAguardando(true)
     else startEditPedido(cart.id, pedido.id)
   }
 
@@ -154,8 +160,11 @@ export function CarrinhoDetail() {
                   // Ações do REPRESENTANTE (set/2026, "modo loja"): "Aprovar pedido" quando se
                   // aplica, mais "Falar com {lojista}" (set/2026, pedido do usuário — antes ela não
                   // tinha nenhum jeito de abrir essa conversa, só o lojista tinha o CTA equivalente;
-                  // ver Chat.tsx, que agora é ciente de persona). Comentar/editar em nome do lojista
-                  // fica pra uma próxima leva, ver guia-dev-frontend.md.
+                  // ver Chat.tsx, que agora é ciente de persona). "Editar no drawer" (out/2026, pedido
+                  // do usuário: "o REP tb pode editar o carrinho do lojista e os próprios carrinhos
+                  // que ele fizer") funciona tanto pra editar o carrinho do lojista quanto os próprios
+                  // carrinhos que ela monta pra encaminhar — mesmo `handleEditarNoDrawer`/
+                  // `pedidoActionKind` de baixo, já persona-agnósticos.
                   <>
                     {pedidoAguardandoAprovacaoRep(pedido) && (
                       <span
@@ -163,6 +172,14 @@ export function CarrinhoDetail() {
                         onClick={() => aprovarPedido(cart.id)}
                       >
                         Aprovar pedido
+                      </span>
+                    )}
+                    {pedidoActionKind(pedido) !== 'acompanhar' && (
+                      <span
+                        style={{ fontSize: 11.5, color: 'var(--info)', fontWeight: 500, cursor: 'pointer' }}
+                        onClick={handleEditarNoDrawer}
+                      >
+                        Editar no drawer
                       </span>
                     )}
                     <span
@@ -467,9 +484,18 @@ export function CarrinhoDetail() {
         <ConfirmModal
           title={pedido.status === 'aprovado' ? 'Editar pedido já aprovado' : 'Editar pedido aguardando aprovação'}
           message={
-            pedido.status === 'aprovado'
-              ? `${cart.representative} já aprovou esse pedido. Editar agora volta ele pra rascunho — você vai precisar enviar de novo depois de ajustar.`
-              : `Esse pedido está aguardando aprovação de ${cart.representative}. Editar agora volta ele pra rascunho — você vai precisar enviar de novo depois de ajustar.`
+            // Esse ConfirmModal só aparece quando `pedido.suggestedBy` não é da representante (ver
+            // `vaiResetarPraRascunho` em handleEditarNoDrawer) — ou seja, é sempre um pedido que
+            // nasceu do LOJISTA, nunca um carrinho que a própria Ana montou. Por isso o texto do
+            // lado dela fala em primeira pessoa ("você já aprovou"), nunca `cart.representative`
+            // (que é o nome dela mesma) — ver pedido do usuário, out/2026.
+            persona === 'representante'
+              ? pedido.status === 'aprovado'
+                ? `Você já aprovou esse pedido. Editar agora volta ele pra rascunho — ${lojistaAtivo?.contactName ?? 'o lojista'} vai precisar enviar de novo pra você revisar.`
+                : `Esse pedido está aguardando sua aprovação. Editar agora volta ele pra rascunho — ${lojistaAtivo?.contactName ?? 'o lojista'} vai precisar enviar de novo depois de ajustar.`
+              : pedido.status === 'aprovado'
+                ? `${cart.representative} já aprovou esse pedido. Editar agora volta ele pra rascunho — você vai precisar enviar de novo depois de ajustar.`
+                : `Esse pedido está aguardando aprovação de ${cart.representative}. Editar agora volta ele pra rascunho — você vai precisar enviar de novo depois de ajustar.`
           }
           confirmLabel="Editar mesmo assim"
           onCancel={() => setConfirmEditAguardando(false)}

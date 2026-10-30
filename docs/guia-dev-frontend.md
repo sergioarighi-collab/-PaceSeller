@@ -1887,6 +1887,24 @@ Usuário, logo depois do toggle de compartilhar: "e quando entro dentro do carri
 
 Via Playwright: `.cartswitcher` com contagem 0; breadcrumb continua refletendo o nome do carrinho (inclusive depois de renomear, reconferido já que o teste antigo checava o nome pela aba ativa do switcher removido). Regressão completa sem quebra. `tsc`/build limpos.
 
+## "Editar no drawer" liberado pra representante — carrinho do lojista e os próprios (out/2026)
+
+Usuário notou, direto na tela: "temos botão de editar no modulo carrinho né??" — do lado da representante não tinha nenhum jeito de editar um pedido, só "Aprovar pedido"/"Falar com {lojista}". Confirmado que o fluxo era "abro o drawer e edito" (mesmo padrão que o lojista já tem) e o porquê: "o editar é importante, o REP tb pode editar o carrinho do lojista e os próprios carrinhos que ele fizer para encaminhar para o lojista" — ou seja, precisa funcionar nos dois casos: um pedido que o LOJISTA começou (ela ajusta antes de aprovar, ou corrige depois de já ter aprovado) e um pedido que ELA MESMA montou pra encaminhar (ainda rascunho, ou já compartilhado e aguardando o cliente decidir).
+
+### Implementação
+
+- `handleEditarNoDrawer`/`startEditPedido`/`commitCartToCarrinho` (store.ts) já eram persona-agnósticos de antes — bastou reaproveitar: adicionado um `<span>` "Editar no drawer" no branch `persona === 'representante'` do `og-head` em `CarrinhoDetail.tsx`, com o mesmo gate que o lado do lojista já usa (`pedidoActionKind(pedido) !== 'acompanhar'` — só esconde quando já `pago`).
+- **Ajuste fino em `handleEditarNoDrawer`**: o aviso antes de editar (`confirmEditAguardando`, ConfirmModal "isso vai voltar pro rascunho") só deve aparecer quando o commit *de fato* reseta o pedido pra rascunho — e isso só acontece quando `suggestedBy` não é da representante (mesma condição de `commitCartToCarrinho`, linha ~474 de store.ts: `(status === 'aguardando' || status === 'aprovado') && !suggestedBy`). Um pedido `aguardando` que é sugestão da própria Ana (`suggestedBy === 'representante'`, ou seja "aguardando o cliente decidir") **não** reseta ao editar — ela só está ajustando um carrinho que já compartilhou, o conteúdo atualiza na hora sem reabrir nenhum processo de aprovação (não existe aprovação do lado dela pros próprios carrinhos). Testado e confirmado contra o código antes de implementar — virou a condição `vaiResetarPraRascunho`, substituindo o check antigo (`status === 'aguardando' || status === 'aprovado'`, sem olhar pra `suggestedBy`) que ia disparar o aviso errado (ou de menos) pro caso novo.
+- **Texto do ConfirmModal também ficou persona-aware** — ele só aparece hoje pra pedido que nasceu do LOJISTA (ver ajuste acima), mas o texto antigo falava sempre na 3ª pessoa (`"{cart.representative} já aprovou..."`, ou seja "Ana já aprovou" — que faz sentido pro lojista lendo sobre ela, mas ficaria estranho/errado na tela da própria Ana, que É a `cart.representative`). Agora: `persona === 'representante'` lê em 1ª pessoa ("Você já aprovou esse pedido" / "Esse pedido está aguardando sua aprovação"), e o "quem vai precisar re-enviar" também vira `{lojista}` em vez de "você" (do lado dela é o lojista que vai ter que mandar de novo, não ela).
+
+### Testado
+
+Via Playwright, 3 cenários isolados (contextos de browser separados, pra não misturar efeito de um teste no outro):
+1. Rep edita carrinho do LOJISTA "aguardando" (Loja Vertex/Giro TG II, suggestedBy indefinido) — modal confirma com "Esse pedido está aguardando sua aprovação", drawer abre, salvar reseta pra `rascunho` (confirmado pelo badge).
+2. Mesmo carrinho, agora `aprovado` (clicou "Aprovar pedido" antes) — modal confirma com "Você já aprovou esse pedido", salvar reseta pra `rascunho` também.
+3. Rep edita o PRÓPRIO carrinho (Radical Skate) — rascunho abaixo da grade: "Editar no drawer" abre direto, sem modal. Depois de compartilhar (toggle) e virar `aguardando` com `suggestedBy` dela: "Editar no drawer" ainda abre direto sem modal (confirma `vaiResetarPraRascunho === false` nesse caso), e salvar mantém o status `aguardando` (não reseta).
+Regressão completa (as 4 suites de sempre) sem quebra. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
