@@ -1905,19 +1905,19 @@ Via Playwright, 3 cenários isolados (contextos de browser separados, pra não m
 3. Rep edita o PRÓPRIO carrinho (Radical Skate) — rascunho abaixo da grade: "Editar no drawer" abre direto, sem modal. Depois de compartilhar (toggle) e virar `aguardando` com `suggestedBy` dela: "Editar no drawer" ainda abre direto sem modal (confirma `vaiResetarPraRascunho === false` nesse caso), e salvar mantém o status `aguardando` (não reseta).
 Regressão completa (as 4 suites de sempre) sem quebra. `tsc`/build limpos.
 
-## Divisão visual mais clara entre Compartilhados/Não compartilhados (nov/2026)
+## Divisão visual mais clara entre os CARRINHOS, não entre as seções (nov/2026)
 
-Usuário, olhando Meus Carrinhos: "quero que acha um leve separação entre os carrinho, uma divisão mais clara entre eles". As duas seções (ver "Radar do representante simplificado..." acima, onde esse split foi introduzido) já eram dois `.cr-list` fisicamente separados, mas um embaixo do outro, mesmo fundo da página, só um `<h2>` de intervalo — pouco contraste pra ficar óbvio que são dois grupos diferentes, não uma lista única com subtítulos.
+Primeira tentativa (revertida): "quero que acha um leve separação entre os carrinho, uma divisão mais clara entre eles" foi lido como pedido de separação entre as seções Compartilhados/Não compartilhados — painel recuado (`.cr-section-muted`) só em "Não compartilhados". Usuário corrigiu: "nao era isso, o problema não era entre o compartilhado e o não compartilhado, pode voltar como estava, o problema é entre os carrinhos" — a separação que faltava era entre as LINHAS dentro de cada `.cr-list` (cada carrinho), não entre os dois blocos (que já eram fisicamente separados desde a leva anterior, isso nunca foi o problema).
 
 ### Implementação
 
-- `renderSecao` (`MeusCarrinhos.tsx`) ganhou um 4º parâmetro opcional `muted` — quando `true` (só em "Não compartilhados"), a seção inteira (header + lista) entra num painel recuado.
-- CSS novo em `mockup.css`: `.cr-section` (wrapper neutro, só o espaçamento de sempre) + `.cr-section + .cr-section` (linha fina `border-top` entre duas seções consecutivas — pega só a partir da 2ª, não precisa de condicional no JSX) + `.cr-section-muted` (fundo `--surface-2`, cantos arredondados, padding — mesmo tom neutro já usado em cards secundários no resto do app, nada de cor nova).
-- Reforça o mesmo raciocínio que já estava só em comentário no código ("Compartilhados = zona ativa", "Não compartilhados = zona quieta") — agora com um sinal visual de verdade: o grupo ativo fica no fundo normal da página, o quieto (rascunho, só quem monta vê) fica recolhido num painel.
+- Revertido: `renderSecao` perdeu o parâmetro `muted`, `.cr-section`/`.cr-section-muted` saíram do `mockup.css` — Meus Carrinhos voltou a ter as duas seções no mesmo fundo da página, só separadas pelo `<h2>` de cada uma (como era antes dessa leva).
+- Separação de verdade, em `mockup.css`: `.cr-list` deixou de ser um card único com `border-bottom` entre as linhas (`overflow:hidden` + bordas internas) e virou um `display:flex;flex-direction:column;gap:10px` — cada `.cr-row` agora é seu próprio cartão (`background`/`border`/`border-radius` que antes só existiam no `.cr-list` pai), com 10px de respiro entre um carrinho e o seguinte. `:hover` ganhou também `border-color:var(--border-strong)` (antes só mudava o fundo) pra reforçar o contorno do cartão sob o cursor.
+- `Enviados.tsx` reaproveita as mesmas classes (`.cr-list`/`.cr-row`) — ganhou a separação de graça, sem precisar tocar no componente.
 
 ### Testado
 
-Via Playwright (lojista e representante): `.cr-section-muted` aparece exatamente 1x em cada persona (só em "Não compartilhados"), screenshot full-page conferido visualmente — painel cinza-claro com borda superior separando os dois grupos, mantendo os `.cr-row` de dentro com a mesma aparência de sempre. Regressão completa (as 4 suites de sempre) sem quebra. `tsc`/build limpos.
+Via Playwright (lojista e representante): `.cr-section-muted` voltou a 0 ocorrências (confirma o revert). Screenshot full-page conferido visualmente — cada carrinho agora é um retângulo com borda própria, com espaço visível entre um e outro, dentro das mesmas duas seções de antes (sem painel extra entre elas). Regressão completa (as 4 suites de sempre, incluindo `test-enviados`) sem quebra. `tsc`/build limpos.
 
 ## Regras de negócio confirmadas (não são chute)
 
