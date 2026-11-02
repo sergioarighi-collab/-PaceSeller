@@ -1905,6 +1905,20 @@ Via Playwright, 3 cenários isolados (contextos de browser separados, pra não m
 3. Rep edita o PRÓPRIO carrinho (Radical Skate) — rascunho abaixo da grade: "Editar no drawer" abre direto, sem modal. Depois de compartilhar (toggle) e virar `aguardando` com `suggestedBy` dela: "Editar no drawer" ainda abre direto sem modal (confirma `vaiResetarPraRascunho === false` nesse caso), e salvar mantém o status `aguardando` (não reseta).
 Regressão completa (as 4 suites de sempre) sem quebra. `tsc`/build limpos.
 
+## Divisão visual mais clara entre Compartilhados/Não compartilhados (nov/2026)
+
+Usuário, olhando Meus Carrinhos: "quero que acha um leve separação entre os carrinho, uma divisão mais clara entre eles". As duas seções (ver "Radar do representante simplificado..." acima, onde esse split foi introduzido) já eram dois `.cr-list` fisicamente separados, mas um embaixo do outro, mesmo fundo da página, só um `<h2>` de intervalo — pouco contraste pra ficar óbvio que são dois grupos diferentes, não uma lista única com subtítulos.
+
+### Implementação
+
+- `renderSecao` (`MeusCarrinhos.tsx`) ganhou um 4º parâmetro opcional `muted` — quando `true` (só em "Não compartilhados"), a seção inteira (header + lista) entra num painel recuado.
+- CSS novo em `mockup.css`: `.cr-section` (wrapper neutro, só o espaçamento de sempre) + `.cr-section + .cr-section` (linha fina `border-top` entre duas seções consecutivas — pega só a partir da 2ª, não precisa de condicional no JSX) + `.cr-section-muted` (fundo `--surface-2`, cantos arredondados, padding — mesmo tom neutro já usado em cards secundários no resto do app, nada de cor nova).
+- Reforça o mesmo raciocínio que já estava só em comentário no código ("Compartilhados = zona ativa", "Não compartilhados = zona quieta") — agora com um sinal visual de verdade: o grupo ativo fica no fundo normal da página, o quieto (rascunho, só quem monta vê) fica recolhido num painel.
+
+### Testado
+
+Via Playwright (lojista e representante): `.cr-section-muted` aparece exatamente 1x em cada persona (só em "Não compartilhados"), screenshot full-page conferido visualmente — painel cinza-claro com borda superior separando os dois grupos, mantendo os `.cr-row` de dentro com a mesma aparência de sempre. Regressão completa (as 4 suites de sempre) sem quebra. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

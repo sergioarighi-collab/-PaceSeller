@@ -133,9 +133,9 @@ export function MeusCarrinhos() {
   // agrupada em dois blocos em vez de filtrada por aba (ver `ehCompartilhado`/`clienteTag` no topo
   // do arquivo). Cabeçalho com contagem pra cada bloco se identificar sozinho mesmo rolando a
   // página.
-  function renderSecao(titulo: string, lista: Carrinho[], vazio: string) {
+  function renderSecao(titulo: string, lista: Carrinho[], vazio: string, muted = false) {
     return (
-      <div style={{ marginTop: 28 }}>
+      <div className={`cr-section ${muted ? 'cr-section-muted' : ''}`}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
           <h2 style={{ fontFamily: 'var(--display)', fontSize: 16, fontWeight: 700, color: 'var(--text-primary)' }}>{titulo}</h2>
           <span className="cr-badge tone-neutral">{lista.length}</span>
@@ -376,10 +376,12 @@ export function MeusCarrinhos() {
 
         {/* Compartilhados primeiro (zona ativa — pode precisar de ação de alguém agora), Não
             compartilhados depois (zona quieta — rascunho, só quem monta vê). Cada seção é um
-            `.cr-list` próprio, não um único bloco contínuo — precisava ficar claro visualmente que
-            são dois lugares diferentes, não uma lista com subtítulos (pedido do usuário). */}
+            `.cr-list` próprio, não um único bloco contínuo. Divisão entre as duas (nov/2026, pedido
+            do usuário: "uma divisão mais clara entre eles") — linha fina + painel recuado
+            (`.cr-section-muted`, ver mockup.css) só na 2ª, reforçando visualmente que são dois
+            lugares diferentes, não uma lista com subtítulos. */}
         {renderSecao('Compartilhados', compartilhados, 'Nenhum carrinho compartilhado ainda — tudo ainda em rascunho.')}
-        {renderSecao('Não compartilhados', naoCompartilhados, 'Nenhum rascunho no momento — tudo já foi compartilhado.')}
+        {renderSecao('Não compartilhados', naoCompartilhados, 'Nenhum rascunho no momento — tudo já foi compartilhado.', true)}
       </div>
 
       {sendToast && <Toast title={sendToast.title} sub={sendToast.sub} onClose={() => setSendToast(null)} />}
