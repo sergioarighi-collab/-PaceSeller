@@ -44,9 +44,11 @@ export function RepRadar() {
   const enterLojista = useAppStore((s) => s.enterLojista)
   const sugerirReposicao = useAppStore((s) => s.sugerirReposicao)
   const sugerirParaCarteira = useAppStore((s) => s.sugerirParaCarteira)
+  const aprovarPedidosEmLote = useAppStore((s) => s.aprovarPedidosEmLote)
   const [lojistaFiltro, setLojistaFiltro] = useState<string | null>(null)
   const [timeframeFiltro, setTimeframeFiltro] = useState<SinalTimeframe>('hoje')
   const [oportunidadeToast, setOportunidadeToast] = useState<string | null>(null)
+  const [aprovarToast, setAprovarToast] = useState<string | null>(null)
 
   // Oportunidade de carteira (set/2026, pedido do usuário: "sugestões inteligentes de carrinhos
   // específicos para lojistas específicos") — recalculada a cada render a partir de `lojistas`, não
@@ -73,6 +75,24 @@ export function RepRadar() {
 
   const comSinais = ranqueada.filter((x) => x.topSinal)
   const porPeriodo = (tf: SinalTimeframe) => comSinais.filter((x) => x.topSinal!.timeframe === tf)
+
+  // Ação em lote pra carteira INTEIRA (nov/2026, pedido do usuário: "levar as ações em lote pra
+  // carteira inteira" — antes esse banner só existia dentro de Meus Carrinhos de UMA loja já
+  // aberta; pra aprovar pedidos de lojas diferentes ela precisava entrar em cada uma). Achatado a
+  // partir de `ranqueada` (já calculado ao vivo acima) — cada item carrega o `lojista` junto porque
+  // `aprovarPedidosEmLote` precisa saber de qual loja é cada `cartId` (carrinhos de lojas
+  // diferentes convivem em coleções separadas do store, ver nota em store.ts).
+  const pendenciasAprovacao = ranqueada.flatMap(({ lojista, sinais }) =>
+    sinais.filter((sinal) => sinal.kind === 'revisao' && sinal.cartId).map((sinal) => ({ lojista, sinal })),
+  )
+
+  function aprovarTodasPendencias() {
+    if (pendenciasAprovacao.length === 0) return
+    aprovarPedidosEmLote(pendenciasAprovacao.map((p) => ({ lojistaId: p.lojista.id, carrinhoId: p.sinal.cartId! })))
+    setAprovarToast(
+      pendenciasAprovacao.length > 1 ? `${pendenciasAprovacao.length} pedidos aprovados` : '1 pedido aprovado',
+    )
+  }
 
   // Selecionar uma loja específica é um filtro mais forte que o período — faz sentido ela aparecer
   // mesmo que o sinal principal dela não seja "de hoje", já que o pedido foi por ela especificamente.
@@ -165,6 +185,31 @@ export function RepRadar() {
           ))}
         </div>
 
+        {/* Banner de lote (nov/2026) — mesmo `.bulkbar`/`.bulkrow`/`.bbtn` que Meus Carrinhos já usa
+            pra "X pedidos já batem a grade mínima"/"Ana sugeriu N pedidos", reaproveitado aqui pra
+            cobrir a carteira inteira de uma vez (ver `pendenciasAprovacao` acima). */}
+        {pendenciasAprovacao.length > 0 && (
+          <div className="bulkbar">
+            <div className="bulkrow review">
+              <div className="bicon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4">
+                  <path d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div className="btext">
+                <b>
+                  {pendenciasAprovacao.length} pedido{pendenciasAprovacao.length > 1 ? 's' : ''} aguardando sua aprovação
+                </b>{' '}
+                — {pendenciasAprovacao[0].lojista.name}
+                {pendenciasAprovacao.length > 1 ? ` e mais ${pendenciasAprovacao.length - 1}` : ''}
+              </div>
+              <div className="bbtn" onClick={aprovarTodasPendencias}>
+                Aprovar tod{pendenciasAprovacao.length > 1 ? 'os' : 'o'}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Oportunidade de carteira (set/2026) — banner de largura total, fora da grade de cards.
             Reaproveita a cor tone-black
             do Radar do lojista (mesma natureza "Oportunidade"), só em layout horizontal (ver
@@ -250,6 +295,7 @@ export function RepRadar() {
       {oportunidadeToast && (
         <Toast title="Reposição sugerida" sub={oportunidadeToast} onClose={() => setOportunidadeToast(null)} />
       )}
+      {aprovarToast && <Toast title={aprovarToast} sub="O lojista já pode pagar quando quiser" onClose={() => setAprovarToast(null)} />}
     </div>
   )
 }

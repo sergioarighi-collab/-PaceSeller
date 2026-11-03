@@ -1964,6 +1964,22 @@ Regressão completa (as 6 suites de sempre) sem quebra. `tsc`/build limpos.
 
 Via Playwright: logada como representante, ainda no Radar (sem ter entrado em nenhuma loja), o sino já mostra "1" — o "Giro TG II" da Loja Vertex aguardando aprovação dela. Abrir o dropdown mostra o texto certo + o nome da loja. Clicar no item entra em modo loja na Loja Vertex e abre o carrinho certo direto (confirmado pela URL e pelo header "Atendendo: Loja Vertex"). Aprovar o pedido ali zera o contador. Regressão completa (as 7 suites de sempre) sem quebra. `tsc`/build limpos.
 
+## Aprovação em lote pra carteira inteira, no Radar (nov/2026)
+
+4º ponto da lista de melhorias do handoff. `MeusCarrinhos.tsx` já tinha banners de lote ("X pedidos já batem a grade mínima"/"Ana sugeriu N pedidos") — mas só apareciam depois de entrar numa loja específica. Pra aprovar pedidos de lojas DIFERENTES, ela precisava entrar em cada uma, uma de cada vez. A ideia era levar esse tipo de ação pra fora, pro Radar, cobrindo a carteira inteira de uma vez.
+
+### Implementação
+
+- **`aprovarPedidosEmLote(items: { lojistaId, carrinhoId }[])`** (novo, `store.ts`) — diferente de `aprovarPedido` (que só mexe em `s.carrinhos`, a loja ativa), esse recebe o `lojistaId` de cada item porque os alvos podem estar espalhados entre `s.carrinhos` (se um deles for a loja ativa agora) E `s.lojistas` (todo o resto) — mesma dualidade de sempre entre as duas coleções (ver `enterLojista`/`lojistasAoVivo`). Função curried `aprovarSeAlvo(lojistaId)` reaproveitada nas duas escritas, pra não duplicar a lógica de match.
+- `RepRadar` (`screens/representante/Radar.tsx`) ganhou `pendenciasAprovacao` — achatado a partir de `ranqueada` (já calculado ao vivo pra ranquear os cards), filtrando só sinais `'revisao'`. Um banner `.bulkbar`/`.bulkrow.review` (MESMAS classes que `MeusCarrinhos.tsx` já usa — nenhum CSS novo) aparece no topo da página, antes do banner de oportunidade, com "Aprovar todos" chamando `aprovarPedidosEmLote` com a lista inteira de uma vez. Toast de confirmação no mesmo padrão dos outros toasts da tela.
+- O sino (seção anterior) e esse banner leem a MESMA fonte (`lojistaSinais` filtrado por `'revisao'`) — aprovar pelo banner zera o sino também, sem nenhuma lógica extra de sincronia entre os dois.
+
+### Testado
+
+Via Playwright: logada como representante, direto no Radar (sem entrar em nenhuma loja), o banner já mostra "1 pedido aguardando sua aprovação — Loja Vertex" com botão "Aprovar todo" (singular, concordância de verbo cuidada pro caso de 1 item só). Clicar aprova de verdade — confirmado entrando na Loja Vertex depois e vendo o badge "Aprovado — aguardando pagamento do lojista" (não só o banner sumindo da tela). Banner e sino zeram juntos. Regressão completa (as 8 suites de sempre) sem quebra. `tsc`/build limpos.
+
+**Nota pro colega**: só dava pra testar com 1 pendência de verdade nessa leva (só existe 1 lojista com login direto no protótipo — Carlos/Radical Skate — então não dá pra fabricar uma 2ª pendência "aguardando aprovação" de outra loja sem mudar o mock; só o lojista consegue criar esse sinal, mandando um pedido pra revisão). A lógica em si é genérica pra N itens de N lojistas — revisada por leitura de código, não só pelo teste ao vivo.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

@@ -157,6 +157,15 @@ interface AppState {
    */
   aprovarPedido: (carrinhoId: string) => void
   /**
+   * Aprova vários pedidos de uma vez, possivelmente de lojistas DIFERENTES (nov/2026, pedido do
+   * usuário: "levar as ações em lote pra carteira inteira" — antes só dava pra aprovar 1 de cada
+   * vez, entrando loja por loja). Diferente de `aprovarPedido` (que só mexe em `s.carrinhos`, a
+   * loja ativa), precisa escrever tanto em `s.carrinhos` (se um dos itens for da loja ativa agora)
+   * quanto em `s.lojistas` (todo o resto) — usa o mesmo `lojistaId` de cada item pra saber onde
+   * cada `carrinhoId` mora.
+   */
+  aprovarPedidosEmLote: (items: { lojistaId: string; carrinhoId: string }[]) => void
+  /**
    * Fecha o pagamento de verdade (nov/2026, correção de gap: `Payment.tsx` "Confirmar pedido" só
    * navegava pra tela de sucesso, nunca gravava `status: 'pago'` no store — nenhum carrinho pago
    * nascia organicamente numa sessão ao vivo, "Enviados"/badge "Com a Tesla" só existiam pros
@@ -658,6 +667,15 @@ export const useAppStore = create<AppState>((set, get) => ({
         return { ...c, pedido: { ...c.pedido, status: 'aprovado' } }
       }),
     })),
+  aprovarPedidosEmLote: (items) => {
+    const alvos = new Set(items.map((i) => `${i.lojistaId}:${i.carrinhoId}`))
+    const aprovarSeAlvo = (lojistaId: string) => (c: Carrinho) =>
+      alvos.has(`${lojistaId}:${c.id}`) && pedidoAguardandoAprovacaoRep(c.pedido) ? { ...c, pedido: { ...c.pedido, status: 'aprovado' as const } } : c
+    set((s) => ({
+      carrinhos: s.carrinhos.map(aprovarSeAlvo(s.activeLojistaId ?? '')),
+      lojistas: s.lojistas.map((l) => ({ ...l, carrinhos: l.carrinhos.map(aprovarSeAlvo(l.id)) })),
+    }))
+  },
   confirmarPagamento: (carrinhoId, pedidoId, condition, split) =>
     set((s) => ({
       carrinhos: s.carrinhos.map((c) => {
