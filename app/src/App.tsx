@@ -65,7 +65,7 @@ function App() {
         <Route path="/catalogo" element={<GatedCatalog />} />
         <Route path="/catalogo/:id" element={<GatedCatalog />} />
         <Route path="/fidelizacao" element={<Loyalty />} />
-        <Route path="/colecoes/fusion" element={<Colecao />} />
+        <Route path="/colecoes/:collectionId" element={<Colecao />} />
 
         <Route path="/carrinhos" element={<GatedMeusCarrinhos />} />
         <Route path="/carrinhos/enviados" element={<GatedEnviados />} />

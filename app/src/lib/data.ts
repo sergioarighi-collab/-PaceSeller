@@ -178,9 +178,14 @@ interface RawProduct {
   pricePdv?: number
 }
 
-const collectionMeta: Record<
+// `isNewLaunch` (nov/2026) — diferente de `premium` em `RawProduct` (que marca uma COR/peça
+// específica como edição limitada, usado em várias linhas: COIL, HERTZ, FUSION...), isso marca a
+// LINHA inteira como lançamento recente. Hoje só FUSION; usado por `Colecao.tsx` (genérica por
+// `:collectionId`, ver `screens/lojista/Colecao.tsx`) pra decidir se mostra o enquadramento de
+// "lançamento, ainda não chegou no seu mix" ou um texto neutro de linha já estabelecida.
+export const collectionMeta: Record<
   RawProduct['collection'],
-  { category: string; line: string; blurb: string; baseFactory: number }
+  { category: string; line: string; blurb: string; baseFactory: number; isNewLaunch?: boolean }
 > = {
   COIL: {
     category: 'Calçados · Linha Coil',
@@ -217,6 +222,7 @@ const collectionMeta: Record<
     line: 'fusion',
     blurb: 'lançamento mais recente, entressola tecnológica',
     baseFactory: 300,
+    isNewLaunch: true,
   },
   'TG II': {
     category: 'Calçados · Linha TG II',
@@ -689,17 +695,8 @@ export const initialNotifications: NotificationItem[] = [
   { id: 'n4', kind: 'insight', text: 'Novo insight de alta prioridade no Radar', timeLabel: 'há 2 dias', read: true },
 ]
 
-// Prazo real confirmado com o cliente: ~15 dias corridos até a entrega (não 7).
-export const trackingSteps = [
-  { id: 't1', status: 'done' as const, title: 'Pedido confirmado', date: '12 jul, 09:40' },
-  {
-    id: 't2',
-    status: 'current' as const,
-    title: 'Em produção',
-    date: 'Previsão: 18 jul',
-    desc: 'Fábrica está separando e produzindo os itens do pedido',
-  },
-  { id: 't3', status: 'pending' as const, title: 'Enviado', date: 'Previsão: 24 jul' },
-  { id: 't4', status: 'pending' as const, title: 'Entregue na loja', date: 'Previsão: 27 jul' },
-]
+// `trackingSteps` (constante fixa, mesma data calendário pra qualquer pedido — "12 jul"/"18 jul"...
+// sempre, não importa quando o pedido foi pago nem o prazo real dele) virou `buildTrackingSteps`
+// (store.ts, nov/2026, ajuste de realismo da lista do handoff) — gera a timeline a partir do
+// `deliveryEstimateDays` de CADA pedido, mesmo campo que `CarrinhoDetail`/`Payment` já usam.
 

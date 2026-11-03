@@ -2,8 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
 import { WebTopNav } from '../../components/desktop/WebTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
-import { trackingSteps } from '../../lib/data'
-import { useAppStore } from '../../lib/store'
+import { useAppStore, buildTrackingSteps } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
 
 export function Tracking() {
@@ -13,6 +12,7 @@ export function Tracking() {
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
   const pedido = cart.pedido
   const conditionLabel = pedido.paymentCondition === 'a-vista' ? 'Boleto à vista −3%' : '30/60/90 dias'
+  const trackingSteps = buildTrackingSteps(pedido, cart.updatedAt)
 
   return (
     <DesktopPage>

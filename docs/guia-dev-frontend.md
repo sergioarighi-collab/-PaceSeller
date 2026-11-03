@@ -1995,6 +1995,25 @@ Via Playwright: logada como representante, direto no Radar (sem entrar em nenhum
 
 Via Playwright, fluxo real (não direto pela URL): login do lojista → Radar → aba "Nos próximos 30 dias" → card "Sem contato há 90+ dias" → "Ver clientes" → chega em `/fidelizacao` com o visual desktop (3 cards de insight, 4 tiles de carteira com os valores certos — 5/8/6/4). Clicar num CTA sem destino real mostra o toast "em breve". Regressão completa (as 9 suites de sempre) sem quebra. `tsc`/build limpos (74 módulos, 5 a menos que antes).
 
+## Ajustes de realismo: `Colecao.tsx` genérica, `Tracking.tsx` por pedido (nov/2026)
+
+6º e último ponto da lista de melhorias do handoff — os dois achados de menor prioridade, ambos sobre telas que pareciam "sempre a mesma coisa" independente de qual coleção/pedido o usuário estava olhando.
+
+### `Colecao.tsx` (rota `/colecoes/:collectionId`, antes fixa em `/colecoes/fusion`)
+
+Era hardcoded pra Fusion: `productIds` fixos, rota fixa, texto/badge de "Lançamento" sempre presentes. Virou genérica por `collectionId` (slug derivado de `collectionTitle`, ex: `'tg-ii'` ↔ `'TG II'`, sem precisar manter um 2º mapa à mão):
+- Produtos/stats (contagem, crescimento médio) vêm de verdade de `products.filter(p => p.collection === key)`, não de uma lista fixa de 3 ids.
+- **Achado no meio do caminho**: minha 1ª tentativa de decidir "é lançamento?" usava o badge `Lançamento` por produto (`premium` em `RawProduct`) — errado, porque esse badge marca uma COR/peça específica como edição limitada, usado em várias linhas (COIL e HERTZ também têm produtos `premium: true`), não a linha inteira. Corrigido com um campo novo, `collectionMeta[key].isNewLaunch` (só `true` pra FUSION) — marca a LINHA como lançamento recente, conceito diferente do badge por produto. `collectionMeta` precisou virar `export` (era interno a `data.ts`).
+- O único link que leva aqui hoje (Radar do lojista, CTA "Ver coleção") continua apontando pra Fusion — é a única com `isNewLaunch` no mock —, mas a PÁGINA em si não assume mais isso: visitar `/colecoes/coil` mostra a Linha Coil de verdade, sem o enquadramento de lançamento.
+
+### `Tracking.tsx` (timeline de acompanhamento)
+
+`trackingSteps` era uma constante fixa em `data.ts` — mesma data de calendário ("12 jul, 09:40"/"18 jul"/"24 jul"/"27 jul") pra QUALQUER pedido, não importava quando foi pago nem o prazo real dele. Virou **`buildTrackingSteps(pedido, cartUpdatedAt)`** (store.ts, substituindo a constante): usa `deliveryEstimateDays` — o mesmo campo que `CarrinhoDetail`/`Payment` já mostram — pra gerar texto relativo ("Previsão: até N dias úteis", concordância tratada pro caso de 1 dia), não uma data de calendário inventada (mesma convenção do resto do app, onde tempo é string solta tipo "há 2h", não `Date` calculável — ver limitações mais abaixo). "Pedido confirmado" usa `cart.updatedAt` de verdade em vez de uma data fixa. `deliveryEstimateDays === 0` (entrega imediata) vira uma timeline de 2 passos só, sem fase de produção fictícia — nenhum pedido do mock usa isso hoje, mas o código trata o caso.
+
+### Testado
+
+Via Playwright: fluxo real (Radar → "Ver coleção") chega em Fusion com a tag "Lançamento" e stats reais (4 produtos, +24% crescimento médio); visitar `/colecoes/coil` direto mostra "Linha Coil" sem a tag, com stats próprios (16 produtos, +15%); `/colecoes/inexistente` mostra "Coleção não encontrada." em vez de quebrar. Comparei dois pedidos pagos com prazos bem diferentes (Giro Hertz Black, 2 dias vs. Coleção Hertz da Casa Esporte, 10 dias) — a timeline de cada um reflete o prazo certo, genuinamente diferente uma da outra (antes seriam idênticas). Regressão completa (as 12 suites de sempre, toda a leva desta sessão) sem quebra. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

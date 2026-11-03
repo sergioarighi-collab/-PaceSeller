@@ -1007,6 +1007,45 @@ export interface PedidoStatusBadge {
   tone: 'neutral' | 'info' | 'positive'
 }
 
+export interface TrackingStep {
+  id: string
+  status: 'done' | 'current' | 'pending'
+  title: string
+  date: string
+  desc?: string
+}
+
+// Timeline de acompanhamento (`Tracking.tsx`), gerada por pedido em vez de uma constante fixa
+// (nov/2026, ajuste de realismo — antes `trackingSteps` era um array estático com data calendário
+// fixa, "12 jul"/"18 jul"..., igual pra QUALQUER pedido, não importa quando foi pago nem o prazo
+// real dele). Usa `deliveryEstimateDays`, o mesmo campo que `CarrinhoDetail`/`Payment` já mostram —
+// sem inventar um novo campo de data real (datas no resto do app são strings soltas tipo "há 2h",
+// não `Date` calculável, ver limitações no fim deste guia; esta função segue a mesma convenção, só
+// com texto relativo ao prazo do pedido em vez de uma data de calendário inventada).
+export function buildTrackingSteps(pedido: Pedido, cartUpdatedAt: string): TrackingStep[] {
+  const confirmadoEm = cartUpdatedAt === 'agora' ? 'Agora' : `Atualizado ${cartUpdatedAt}`
+  if (pedido.deliveryEstimateDays === 0) {
+    return [
+      { id: 't1', status: 'done', title: 'Pedido confirmado', date: confirmadoEm },
+      {
+        id: 't2',
+        status: 'current',
+        title: 'Entrega imediata',
+        date: 'Já disponível na loja',
+        desc: 'Pedido de pronta entrega — sem etapa de produção na fábrica',
+      },
+    ]
+  }
+  const envioDias = Math.max(1, Math.round(pedido.deliveryEstimateDays * 0.7))
+  const diasUteis = (n: number) => (n === 1 ? '1 dia útil' : `${n} dias úteis`)
+  return [
+    { id: 't1', status: 'done', title: 'Pedido confirmado', date: confirmadoEm },
+    { id: 't2', status: 'current', title: 'Em produção', date: `Previsão: até ${diasUteis(envioDias)}`, desc: 'Fábrica está separando e produzindo os itens do pedido' },
+    { id: 't3', status: 'pending', title: 'Enviado', date: `Previsão: até ${diasUteis(envioDias)}` },
+    { id: 't4', status: 'pending', title: 'Entregue na loja', date: `Previsão: até ${diasUteis(pedido.deliveryEstimateDays)}` },
+  ]
+}
+
 // Rótulo/tom do badge de status pensado em "de quem é a vez agora" — os dois casos de
 // `status === 'aguardando'` mostravam o mesmo texto genérico ("Aguardando aprovação"), mas são
 // exatamente opostos: o lojista mandou o pedido e está esperando a Ana aprovar (bola com ela,
@@ -1020,7 +1059,7 @@ export interface PedidoStatusBadge {
 export function pedidoStatusBadge(pedido: Pedido, representativeName: string, viewerIsRep = false): PedidoStatusBadge {
   // "Com a Tesla" (não "Confirmado" nem "Enviado") — pago já saiu da mão do lojista e da
   // representante, mas ainda tem processo interno de fábrica antes de virar produção de verdade
-  // (ver trackingSteps em data.ts: confirmado → em produção → enviado → entregue). "Confirmado"
+  // (ver buildTrackingSteps acima: confirmado → em produção → enviado → entregue). "Confirmado"
   // soava igual ao botão "Confirmar pedido" do pagamento; "Enviado" colidiria com a etapa de
   // tracking que já significa "saiu da fábrica pra loja" — daí um rótulo neutro sobre posse, não
   // sobre etapa de produção.
