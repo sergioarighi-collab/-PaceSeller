@@ -1980,6 +1980,21 @@ Via Playwright: logada como representante, direto no Radar (sem entrar em nenhum
 
 **Nota pro colega**: só dava pra testar com 1 pendência de verdade nessa leva (só existe 1 lojista com login direto no protótipo — Carlos/Radical Skate — então não dá pra fabricar uma 2ª pendência "aguardando aprovação" de outra loja sem mudar o mock; só o lojista consegue criar esse sinal, mandando um pedido pra revisão). A lógica em si é genérica pra N itens de N lojistas — revisada por leitura de código, não só pelo teste ao vivo.
 
+## `Loyalty.tsx` migrada pro padrão desktop — stack mobile antiga removida (nov/2026)
+
+5º ponto da lista de melhorias do handoff (dívida técnica, prioridade mais baixa que os 4 anteriores, que mudavam produto). `screens/lojista/Loyalty.tsx` (rota `/fidelizacao`) era a ÚNICA tela do app ainda na stack mobile antiga — `components/layout/AppShell` + `components/ui/*` (Button, InsightCard, ListGroup, TileGrid...), classes Tailwind (`px-4.5 md:px-8`, etc.), nada do padrão `DesktopPage`/`WebTopNav`/`.web-icard` que o resto do app usa desde a migração geral pro desktop. Não era tela morta — alcançável de verdade pelo lojista via o card "Ver clientes" do Radar (`screens/lojista/Radar.tsx`), só visualmente destoante (acabava num layout mobile estreito, dentro do app desktop).
+
+### Implementação
+
+- Reescrita com os mesmos padrões já estabelecidos: `DesktopPage`/`WebTopNav`/`Breadcrumb` (Radar / Fidelização), cards de insight em `.web-icard`/`.kicon`/`.eyebrow`/`.cta` (mesmo princípio de `cardVisual`/`ToneIcon` que `screens/lojista/Radar.tsx` já usa — versão simplificada aqui, porque os cards de fidelização não têm o conceito de "resolvido"/`suggestedQty` que os do Radar têm).
+- "Sua carteira de clientes" (os 4 tiles de contagem — aniversariantes, sem contato, recompra, avaliações) virou `.tile`/`.tlabel`/`.tval`, classes que já existiam em `mockup.css` (usadas antes só dentro do `GradeEditAllModal`, mas genéricas o bastante pra reaproveitar aqui sem CSS novo).
+- CTAs sem tela de verdade por trás ("Reativar", "Ver detalhes", "Enviar campanha personalizada") mostram toast "em breve" — mesmo padrão já usado em outros CTAs do app sem backend real. "Ver clientes" (único com destino real) volta pro Radar.
+- **`components/layout/` e `components/ui/` inteiros removidos** (`AppShell`, `icons.tsx`, `Button`, `Badge`, `Tile`, `Avatar`, `InsightCard`, `ListGroup`, `Timeline`, `Chip`) — confirmado via grep que nada mais no app importava de nenhum dos dois diretórios depois da migração (essa tela era o único consumidor restante). Bundle final: 5 módulos a menos, CSS ~9KB mais leve (menos classes Tailwind compiladas).
+
+### Testado
+
+Via Playwright, fluxo real (não direto pela URL): login do lojista → Radar → aba "Nos próximos 30 dias" → card "Sem contato há 90+ dias" → "Ver clientes" → chega em `/fidelizacao` com o visual desktop (3 cards de insight, 4 tiles de carteira com os valores certos — 5/8/6/4). Clicar num CTA sem destino real mostra o toast "em breve". Regressão completa (as 9 suites de sempre) sem quebra. `tsc`/build limpos (74 módulos, 5 a menos que antes).
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

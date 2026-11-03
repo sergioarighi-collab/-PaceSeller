@@ -1,37 +1,133 @@
-import { AppShell } from '../../components/layout/AppShell'
-import { InsightCard } from '../../components/ui/InsightCard'
-import { ListGroup, TileGrid } from '../../components/ui/ListGroup'
-import { Button } from '../../components/ui/Button'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { DesktopPage } from '../../components/desktop/DesktopPage'
+import { WebTopNav } from '../../components/desktop/WebTopNav'
+import { Breadcrumb } from '../../components/desktop/Breadcrumb'
+import { Toast } from '../../components/desktop/Toast'
 import { loyaltyInsights, loyaltyPanel } from '../../lib/data'
 
-export function Loyalty() {
-  return (
-    <AppShell>
-      <div className="px-4.5 md:px-8 pt-4 md:pt-8 pb-4">
-        <div className="text-[13px] text-text-secondary">Seus clientes</div>
-        <h2 className="font-display text-[22px] md:text-2xl font-bold text-text-primary mt-1">
-          32 consumidores cadastrados
-        </h2>
-        <div className="text-[13px] text-text-secondary mt-1.5">3 oportunidades de fidelização hoje</div>
+type CardTone = 'black' | 'risk' | 'info' | 'positive'
 
-        <div className="flex md:grid md:grid-cols-3 gap-2.5 overflow-x-auto no-scrollbar mt-4 -mx-4.5 px-4.5 md:mx-0 md:px-0">
-          {loyaltyInsights.map((c) => (
-            <InsightCard key={c.id} data={c} />
+// Mesmo princípio de severidade do Radar do lojista (tone preenche o card inteiro, ver .web-icard
+// em mockup.css) — simplificado aqui porque os cards de fidelização não têm o conceito de
+// "resolvido"/`suggestedQty` que o Radar tem (nenhum deles é "Repor agora").
+function cardTone(card: (typeof loyaltyInsights)[number]): CardTone {
+  if (card.opportunity) return 'black'
+  if (card.severity === 'risk') return 'risk'
+  if (card.severity === 'info') return 'info'
+  return 'positive'
+}
+
+function ToneIcon({ tone }: { tone: CardTone }) {
+  if (tone === 'black') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2l2.9 6.9 7.4.6-5.6 4.9 1.7 7.3L12 17.9 5.6 21.7l1.7-7.3-5.6-4.9 7.4-.6L12 2z" />
+      </svg>
+    )
+  }
+  if (tone === 'risk') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+      </svg>
+    )
+  }
+  if (tone === 'info') {
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8h.01M11 11h1v5h1" />
+      </svg>
+    )
+  }
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+      <path d="M12 2v20M2 12h20" />
+    </svg>
+  )
+}
+
+const tileColor: Record<(typeof loyaltyPanel)[number]['tone'], string> = {
+  positive: 'var(--positive)',
+  risk: 'var(--risk)',
+  info: 'var(--info)',
+  neutral: 'var(--text-primary)',
+}
+
+// Migrada pro padrão desktop (nov/2026, ajuste de realismo da lista de melhorias do handoff) —
+// era a única tela do app ainda na stack mobile antiga (`AppShell`/`components/ui`, classes
+// Tailwind), herdada de antes da migração geral pro desktop e nunca atualizada. Alcançável de
+// verdade pelo lojista via o card "Ver clientes" do Radar (`screens/lojista/Radar.tsx`) — não era
+// uma tela morta, só visualmente destoante do resto do app.
+export function Loyalty() {
+  const navigate = useNavigate()
+  const [toast, setToast] = useState<{ title: string; sub: string } | null>(null)
+
+  return (
+    <DesktopPage>
+      <WebTopNav />
+      <Breadcrumb items={[{ label: 'Radar', to: '/radar' }, { label: 'Fidelização' }]} />
+      <div className="web-main" style={{ paddingTop: 20 }}>
+        <div>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Seus clientes</div>
+          <h1 style={{ fontFamily: 'var(--display)', fontSize: 26, fontWeight: 700, color: 'var(--text-primary)', marginTop: 4 }}>
+            32 consumidores cadastrados
+          </h1>
+          <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 6 }}>
+            {loyaltyInsights.length} oportunidades de fidelização hoje
+          </div>
+        </div>
+
+        <div className="radar-grid" style={{ marginTop: 20 }}>
+          {loyaltyInsights.map((card) => {
+            const tone = cardTone(card)
+            return (
+              <div className={`web-icard tone-${tone}`} key={card.id}>
+                <div className="kicon">
+                  <ToneIcon tone={tone} />
+                </div>
+                <div className="eyebrow">{card.opportunity ? `Oportunidade · ${card.eyebrow}` : card.eyebrow}</div>
+                <h3>{card.title}</h3>
+                <p>{card.text}</p>
+                <div
+                  className="cta"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => (card.cta === 'Ver clientes' ? navigate('/radar') : setToast({ title: `${card.cta} — em breve`, sub: 'Essa área ainda não existe neste protótipo' }))}
+                >
+                  {card.cta} →
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--text-tertiary)', marginTop: 28, marginBottom: 12 }}>
+          Sua carteira de clientes
+        </div>
+        <div style={{ display: 'flex', gap: 10, maxWidth: 700 }}>
+          {loyaltyPanel.map((p) => (
+            <div className="tile" key={p.id}>
+              <div className="tlabel">{p.label}</div>
+              <div className="tval" style={{ color: tileColor[p.tone] }}>
+                {p.count}
+              </div>
+            </div>
           ))}
         </div>
 
-        <div className="text-[11px] font-mono uppercase tracking-wide text-text-tertiary mt-5 mb-1">
-          Sua carteira de clientes
-        </div>
-        <ListGroup rows={loyaltyPanel} />
-        <TileGrid rows={loyaltyPanel} />
-
-        <div className="mt-6 md:mt-8">
-          <Button variant="primary" className="w-full md:w-auto">
+        <div style={{ marginTop: 28 }}>
+          <div
+            className="btn-primary"
+            style={{ width: 260, cursor: 'pointer' }}
+            onClick={() => setToast({ title: 'Campanha — em breve', sub: 'Essa área ainda não existe neste protótipo' })}
+          >
             Enviar campanha personalizada
-          </Button>
+          </div>
         </div>
       </div>
-    </AppShell>
+
+      {toast && <Toast title={toast.title} sub={toast.sub} onClose={() => setToast(null)} />}
+    </DesktopPage>
   )
 }
