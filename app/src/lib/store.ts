@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Persona, Carrinho, Pedido, PedidoItem, NotificationItem, Lojista, Product } from './types'
+import type { Persona, Carrinho, Pedido, PedidoItem, NotificationItem, Lojista, Product, PaymentCondition, PaymentAllocation, CartComment } from './types'
 import { GRADE_MINIMA_PARES } from './types'
 import { products, initialCarrinhos, initialLojistas, initialNotifications, combos } from './data'
 import { comboPrice, distributeSizesExact, suggestedGradeQty } from './productLines'
@@ -156,6 +156,23 @@ interface AppState {
    * lojista certo, ver `enterLojista`), não sobre `lojistas` direto.
    */
   aprovarPedido: (carrinhoId: string) => void
+  /**
+   * Fecha o pagamento de verdade (nov/2026, correção de gap: `Payment.tsx` "Confirmar pedido" só
+   * navegava pra tela de sucesso, nunca gravava `status: 'pago'` no store — nenhum carrinho pago
+   * nascia organicamente numa sessão ao vivo, "Enviados"/badge "Com a Tesla" só existiam pros
+   * pedidos que já vinham `pago` do mock em `data.ts`). Grava a condição e o split de pagamento
+   * escolhidos na tela junto com o status, pra ficar coerente com o que foi exibido lá.
+   */
+  confirmarPagamento: (carrinhoId: string, pedidoId: string, condition: PaymentCondition, split: PaymentAllocation[]) => void
+  /**
+   * Comentário de verdade na thread do carrinho (nov/2026, substituiu o chat roteirizado de
+   * `Chat.tsx` e o par fixo `lastComment`/`clientReply`) — persona-agnóstica: o autor (`by`/
+   * `author`) sai de `s.persona` no momento do envio, não de um parâmetro, mesmo princípio de
+   * `sugerirReposicao` já hardcodar "Ana" nas notificações que ela gera. Lojista e representante
+   * leem o MESMO `cart.comments` (mesma ressalva de sincronização entre `s.carrinhos`/`s.lojistas`
+   * que já existe pro resto do carrinho em "modo loja" — ver `enterLojista`).
+   */
+  adicionarComentario: (carrinhoId: string, text: string) => void
   /**
    * Ação da REPRESENTANTE (out/2026, pedido do usuário: "uma mensagem que o REP pode compartilhar
    * carrinho com o lojista... um toggle ali pra o rep poder compartilhar") — toggle no lugar do
@@ -641,6 +658,30 @@ export const useAppStore = create<AppState>((set, get) => ({
         return { ...c, pedido: { ...c.pedido, status: 'aprovado' } }
       }),
     })),
+  confirmarPagamento: (carrinhoId, pedidoId, condition, split) =>
+    set((s) => ({
+      carrinhos: s.carrinhos.map((c) => {
+        if (c.id !== carrinhoId || c.pedido.id !== pedidoId || c.pedido.status === 'pago') return c
+        return {
+          ...c,
+          updatedAt: 'agora',
+          daysSinceActivity: 0,
+          pedido: { ...c.pedido, status: 'pago', paymentCondition: condition, paymentSplit: split },
+        }
+      }),
+    })),
+  adicionarComentario: (carrinhoId, text) => {
+    const trimmed = text.trim()
+    if (!trimmed) return
+    set((s) => {
+      const by = s.persona === 'representante' ? 'representante' : 'lojista'
+      const author = by === 'representante' ? 'Ana' : 'Carlos'
+      const comment: CartComment = { id: `comentario-${Date.now()}`, by, author, text: trimmed, timeLabel: 'agora' }
+      return {
+        carrinhos: s.carrinhos.map((c) => (c.id === carrinhoId ? { ...c, comments: [...(c.comments ?? []), comment] } : c)),
+      }
+    })
+  },
   compartilharCarrinho: (carrinhoId) => {
     const s = get()
     const alvo = s.carrinhos.find((c) => c.id === carrinhoId)

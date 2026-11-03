@@ -321,29 +321,19 @@ export function CarrinhoDetail() {
             )}
           </div>
 
-          {cart.lastComment && (
-            <div className="activitynote">
-              <div className="aavatar">{iniciais(cart.lastComment.author)}</div>
+          {/* Thread de comentários (nov/2026, substituiu o par fixo lastComment/clientReply — ver
+              `Carrinho.comments` em types.ts) — mesma estrutura visual de antes, agora pra N
+              mensagens em vez de só 2. Link "Falar com" no og-head leva pro Chat.tsx, que lê/escreve
+              nessa mesma lista. */}
+          {(cart.comments ?? []).map((comment) => (
+            <div className="activitynote" key={comment.id}>
+              <div className="aavatar">{iniciais(comment.author)}</div>
               <div className="atext">
-                <span className="aname">{cart.lastComment.author}:</span> {cart.lastComment.text}
-                <div className="atime">{cart.lastComment.timeLabel}</div>
+                <span className="aname">{comment.author}:</span> {comment.text}
+                <div className="atime">{comment.timeLabel}</div>
               </div>
             </div>
-          )}
-
-          {/* Resposta do lojista (set/2026, pedido do usuário: "uma linha tb no comentário com a
-              resposta do cliente") — mesma estrutura visual do comentário da Ana, logo abaixo,
-              formando uma mini-conversa de 2 linhas (pergunta + resposta), não uma thread genérica
-              (ver nota em `Carrinho.clientReply`, types.ts). */}
-          {cart.clientReply && (
-            <div className="activitynote">
-              <div className="aavatar">{iniciais(cart.clientReply.author)}</div>
-              <div className="atext">
-                <span className="aname">{cart.clientReply.author}:</span> {cart.clientReply.text}
-                <div className="atime">{cart.clientReply.timeLabel}</div>
-              </div>
-            </div>
-          )}
+          ))}
 
           {hasStockShortfall && (
             <div className="qualitybox">

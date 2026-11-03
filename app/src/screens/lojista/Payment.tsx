@@ -33,11 +33,11 @@ function distributeEvenly(total: number, methods: PaymentMethod[]): Record<Payme
 
 export function Payment() {
   const navigate = useNavigate()
-  const { cartId, pedidoId } = useParams()
+  const { cartId } = useParams()
   const carrinhos = useAppStore((s) => s.carrinhos)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
   const pedido = cart.pedido
-  void pedidoId
+  const confirmarPagamento = useAppStore((s) => s.confirmarPagamento)
 
   const [condition, setCondition] = useState<PaymentCondition>(pedido.paymentCondition ?? '30')
   // Formas de pagamento ativas pro pedido — dividir o valor entre mais de uma (ex: parte no
@@ -423,7 +423,12 @@ export function Payment() {
               <div
                 className="btn-primary"
                 style={canConfirm ? { flex: 1, cursor: 'pointer' } : { flex: 1, cursor: 'not-allowed', opacity: 0.5 }}
-                onClick={() => canConfirm && navigate(`/carrinhos/${cart.id}/${pedido.id}/confirmado`)}
+                onClick={() => {
+                  if (!canConfirm) return
+                  const split = activeMethods.map((m) => ({ method: m, amount: amounts[m] || 0 }))
+                  confirmarPagamento(cart.id, pedido.id, condition, split)
+                  navigate(`/carrinhos/${cart.id}/${pedido.id}/confirmado`)
+                }}
               >
                 Confirmar pedido
               </div>

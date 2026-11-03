@@ -1919,6 +1919,36 @@ Primeira tentativa (revertida): "quero que acha um leve separação entre os car
 
 Via Playwright (lojista e representante): `.cr-section-muted` voltou a 0 ocorrências (confirma o revert). Screenshot full-page conferido visualmente — cada carrinho agora é um retângulo com borda própria, com espaço visível entre um e outro, dentro das mesmas duas seções de antes (sem painel extra entre elas). Regressão completa (as 4 suites de sempre, incluindo `test-enviados`) sem quebra. `tsc`/build limpos.
 
+## Fechando os pontos do handoff: pagamento real, chat real (nov/2026)
+
+Depois de publicar um doc de handoff pro Sérgio (análise do fluxo lojista/representante + uma lista priorizada do que melhoraria), ele pediu pra implementar os pontos listados e depois tirá-los do documento ("quero fazer os pontos das melhorias e depois retirá-las do documento"). Esta seção cobre os dois primeiros, os de maior prioridade na lista original.
+
+### 1. `Payment.tsx` nunca gravava `status: 'pago'`
+
+Gap real, não uma limitação de mock documentada de propósito: "Confirmar pedido" só fazia `navigate()` pra tela de sucesso — nenhuma store action mudava o `Pedido.status`. Resultado: nenhum carrinho pago nascia organicamente numa sessão ao vivo, só os que já vinham `pago` do mock em `data.ts`; o módulo Enviados nunca ganhava entrada nova, o badge "Com a Tesla" nunca aparecia de verdade numa demo.
+
+- **`confirmarPagamento(carrinhoId, pedidoId, condition, split)`** (novo, `store.ts`) — muda `status` pra `'pago'` e grava `paymentCondition`/`paymentSplit` com o que foi escolhido na tela (condição 30/60/90 ou à vista, divisão entre PIX/cartão/boleto já calculada em `Payment.tsx`).
+- `Payment.tsx` chama essa action antes do `navigate()` de "Confirmar pedido". `pedidoId` saiu dos params da rota (não era mais usado — `void pedidoId` virou `pedido.id`, lido direto do carrinho já resolvido por `cartId`).
+
+**Testado**: via Playwright, fechou o pagamento de "Coleção Inverno" (grade batida) — status virou "Com a Tesla" de verdade (conferido voltando pra Meus Carrinhos, não só na tela de sucesso), e a entrada apareceu em Enviados ao lado de "Giro Hertz Black" (que já vinha pago do mock). Regressão completa sem quebra.
+
+### 2. Chat real entre lojista e representante, no lugar do roteiro fixo
+
+`Chat.tsx` tinha um roteiro de texto hardcoded por persona (um específico pra "pedido #4790"/Hertz Rose do lado do lojista, um genérico do lado da Ana) — nenhum dos dois era de verdade: o que cada um digitava (`myMessages`, `useState` local) só se somava na própria tela, nunca aparecia pro outro lado, nem sobrevivia a sair da tela. `Carrinho.lastComment`/`clientReply` (o resumo que aparecia no Detalhe do Carrinho e em Meus Carrinhos) também era um par fixo — a nota antiga em `types.ts` já dizia "se precisar de mais de 1 troca no futuro, aí sim vale virar lista".
+
+- **`Carrinho.comments?: CartComment[]`** (novo, `types.ts`) substituiu `lastComment`/`clientReply` — `{ id, by: 'lojista' | 'representante', author, text, timeLabel }`, ordem cronológica. O mock de "Coleção Inverno" virou uma lista de 2 (a pergunta da Ana + a resposta do Carlos que já existiam).
+- **`adicionarComentario(carrinhoId, text)`** (novo, `store.ts`) — persona-agnóstica: `by`/`author` saem de `s.persona` no momento do envio (`'Ana'`/`'Carlos'`, mesmo princípio de `sugerirReposicao` já hardcodar "Ana" nas notificações que ela gera — só existe 1 representante e 1 lojista de verdade neste protótipo).
+- `Chat.tsx` reescrito: lê `cart.comments` (a MESMA lista que `CarrinhoDetail.tsx`/`MeusCarrinhos.tsx` já mostravam resumida) em vez de um roteiro local; `mine` por linha é `comment.by === persona`. Carrinho sem nenhum comentário ainda mostra "Nenhuma mensagem ainda — escreva a primeira" em vez de inventar conteúdo. O cartão "Pedido referenciado" que ficava no meio do roteiro falso virou um cabeçalho fixo da conversa (não fazia sentido como mensagem quando as mensagens já são de verdade).
+- `CarrinhoDetail.tsx`/`MeusCarrinhos.tsx` passaram a mapear `cart.comments` (todos / só o último) em vez de ler os 2 campos fixos — mesma estrutura visual (`.activitynote`/`.cr-sub`) de antes, agora genérica pra N mensagens. `MeusCarrinhos.tsx` ganhou seu próprio `iniciais()` (o avatar do último comentário não é mais sempre "AN" fixo — agora pode ser o Carlos também).
+
+**Ressalva importante, testada e confirmada, não um bug novo**: comentários são compartilhados de verdade DENTRO da mesma "lente" de `s.carrinhos` que o resto do carrinho já usa — ou seja, a mesma limitação de sincronização entre `s.carrinhos`/`s.lojistas` que já existia pra status/edição de pedido (ver comentário em `initialLojistas`, data.ts: "cópias independentes... não existe backend real") também vale aqui. Testado via Playwright, 1 sessão só, trocando de persona pelo menu do avatar ("Sair", não reload de página — `page.goto()` reseta o store em memória, que não persiste):
+- Carlos (lojista) escreve uma mensagem nova → aparece na thread, no Detalhe do Carrinho e em Meus Carrinhos, tudo na hora.
+- Ana entra em modo loja em Radical Skate PELA PRIMEIRA VEZ nessa sessão (`enterLojista` sem `activeLojistaId` anterior) → **não** vê a mensagem do Carlos ainda (gap pré-existente: sem ter entrado em modo loja antes, não há nada que sincronize `s.carrinhos` → `s.lojistas` antes da troca). Ana responde mesmo assim.
+- Ana sai do modo loja (`exitLojista`, que sincroniza de volta) e troca pra sessão do Carlos → ele VÊ a resposta dela (essa direção sincroniza, porque `exitLojista` já grava `s.carrinhos` de volta em `s.lojistas` antes da troca de persona).
+Isso é estritamente melhor que antes (0% de visibilidade cruzada, em qualquer direção, nunca) mas não é 100% em tempo real em toda sequência possível — mesmo teto que qualquer outra mutação de carrinho já tinha, não uma regressão nova do chat.
+
+Regressão completa (as 6 suites de sempre) sem quebra. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

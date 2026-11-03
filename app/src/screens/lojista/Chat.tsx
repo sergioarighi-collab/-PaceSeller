@@ -11,12 +11,6 @@ function iniciais(name: string): string {
   return palavras.length === 1 ? palavras[0].slice(0, 2).toUpperCase() : (palavras[0][0] + palavras[1][0]).toUpperCase()
 }
 
-// Nome completo da Ana, só usado aqui (set/2026) — `cart.representative` guarda só "Ana" (usado em
-// textos curtos pelo resto do app, ex: "Representante: Ana"), mas o chat do lado do lojista sempre
-// mostrou o nome completo. Perdido por um instante ao tornar a tela ciente de persona (regressão
-// pega testando do lado do lojista) — resgatado como constante pra não depender de `cart.representative`.
-const ANA_NOME_COMPLETO = 'Ana Ferreira'
-
 export function Chat() {
   const navigate = useNavigate()
   const { cartId } = useParams()
@@ -24,23 +18,24 @@ export function Chat() {
   const persona = useAppStore((s) => s.persona)
   const lojistas = useAppStore((s) => s.lojistas)
   const activeLojistaId = useAppStore((s) => s.activeLojistaId)
+  const adicionarComentario = useAppStore((s) => s.adicionarComentario)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
   const pedido = cart.pedido
 
-  // Falar com o lojista (set/2026, pedido do usuário: "troca de mensagens com o lojista" — antes
-  // essa tela só existia do ponto de vista dele, a Ana não tinha CTA nenhum pra chegar aqui). Mesmo
+  // Falar com o lojista (set/2026, pedido do usuário: "troca de mensagens com o lojista") — mesmo
   // componente, ciente de persona: quando é ela quem olha, "a outra pessoa" vira o lojista ativo
-  // (nome/avatar/texto do campo), não ela mesma. O roteiro de mensagens específico (pedido #4790,
-  // Hertz Rose...) é o que já existia e continua só do lado do lojista — reescrever ele genérico pra
-  // qualquer loja ia descaracterizar uma conversa que faz sentido pro contexto dela. Do lado da Ana,
-  // a conversa é mais simples e usa o nome/carrinho reais (funciona pra qualquer loja da carteira).
+  // (nome/avatar/texto do campo), não ela mesma.
   const lojistaAtivo = lojistas.find((l) => l.id === activeLojistaId)
-  const outraPessoa = persona === 'representante' ? (lojistaAtivo?.contactName ?? cart.representative) : ANA_NOME_COMPLETO
+  const outraPessoa = persona === 'representante' ? (lojistaAtivo?.contactName ?? cart.representative) : 'Ana Ferreira'
 
-  // Thread é um roteiro fixo (não é chat de verdade, não tem backend) — mensagens novas só se somam
-  // localmente ao final, pra "Enviar" deixar de ser um botão decorativo sem virar um chat real (que
-  // exigiria um backend que este protótipo não tem).
-  const [myMessages, setMyMessages] = useState<string[]>([])
+  // Chat de verdade (nov/2026, substituiu o roteiro fixo por persona que existia aqui antes — cada
+  // lado tinha sua própria história hardcoded, e o que cada um digitava ficava só na própria tela,
+  // nunca aparecia pro outro). Agora lê/escreve em `cart.comments` (ver `adicionarComentario` em
+  // store.ts) — a MESMA thread que aparece resumida no Detalhe do Carrinho e em Meus Carrinhos, não
+  // um histórico paralelo. Sem mensagem nenhuma ainda (a maioria dos carrinhos nasce sem nenhum
+  // comentário no mock), a tela começa vazia — comportamento correto de um chat de verdade, não um
+  // problema a esconder com texto inventado.
+  const comments = cart.comments ?? []
   const [draft, setDraft] = useState('')
   const threadEndRef = useRef<HTMLDivElement>(null)
 
@@ -48,12 +43,12 @@ export function Chat() {
   // própria mensagem que acabou de ser mandada fica invisível abaixo da dobra.
   useEffect(() => {
     threadEndRef.current?.scrollIntoView({ block: 'end' })
-  }, [myMessages])
+  }, [comments.length])
 
   function sendMessage() {
     const text = draft.trim()
     if (!text) return
-    setMyMessages((m) => [...m, text])
+    adicionarComentario(cart.id, text)
     setDraft('')
   }
 
@@ -91,118 +86,38 @@ export function Chat() {
             </div>
 
             <div className="chat-thread">
-              <div className="chat-day">Hoje</div>
+              <div
+                className="msg-context-card"
+                style={{ cursor: 'pointer', margin: '0 0 14px' }}
+                onClick={() => navigate(`/carrinhos/${cart.id}`)}
+              >
+                <div className="mc-label">Conversa sobre</div>
+                <div className="mc-title">
+                  {cart.name} — {pedido.label} · {formatBRL(pedido.total)}
+                </div>
+              </div>
 
-              {persona === 'representante' ? (
-                // Roteiro genérico (set/2026) — diferente do roteiro específico abaixo (que
-                // referencia pedido/produto de uma loja em particular), esse precisa funcionar pra
-                // QUALQUER lojista da carteira da Ana, não só Radical Skate — por isso usa só nome e
-                // carrinho reais, sem inventar número de pedido ou produto específico.
-                <>
-                  <div className="msg-row">
-                    <div className="msg-avatar">{iniciais(outraPessoa)}</div>
-                    <div>
-                      <div className="msg-bubble">Oi Ana, bom dia!</div>
-                      <div className="msg-time">09:12</div>
-                    </div>
-                  </div>
-
-                  <div className="msg-row mine">
-                    <div className="msg-avatar">AN</div>
-                    <div>
-                      <div className="msg-bubble">Bom dia, {outraPessoa.split(' ')[0]}! Alguma dúvida sobre o carrinho "{cart.name}"?</div>
-                      <div className="msg-time">09:13</div>
-                    </div>
-                  </div>
-
-                  <div className="msg-row">
-                    <div className="msg-avatar">{iniciais(outraPessoa)}</div>
-                    <div
-                      className="msg-context-card"
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => navigate(`/carrinhos/${cart.id}`)}
-                    >
-                      <div className="mc-label">Pedido referenciado</div>
-                      <div className="mc-title">
-                        {cart.name} — {pedido.label} · {formatBRL(pedido.total)}
-                      </div>
-                    </div>
-                    <div className="msg-time">09:14</div>
-                  </div>
-
-                  <div className="msg-row">
-                    <div className="msg-avatar">{iniciais(outraPessoa)}</div>
-                    <div>
-                      <div className="msg-bubble">Vou dar uma olhada com calma e te aviso.</div>
-                      <div className="msg-time">09:14</div>
-                    </div>
-                  </div>
-                </>
+              {comments.length === 0 ? (
+                <div style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--text-tertiary)', padding: '24px 0' }}>
+                  Nenhuma mensagem ainda — escreva a primeira.
+                </div>
               ) : (
                 <>
-                  <div className="msg-row">
-                    <div className="msg-avatar">AN</div>
-                    <div>
-                      <div className="msg-bubble">
-                        Bom dia, Carlos! Vi que o pedido #4790 atrasou — já cobrei a fábrica, deve normalizar até amanhã.
+                  <div className="chat-day">Conversa</div>
+                  {comments.map((comment) => {
+                    const mine = comment.by === persona
+                    return (
+                      <div className={`msg-row ${mine ? 'mine' : ''}`} key={comment.id}>
+                        <div className="msg-avatar">{iniciais(comment.author)}</div>
+                        <div>
+                          <div className="msg-bubble">{comment.text}</div>
+                          <div className="msg-time">{comment.timeLabel}</div>
+                        </div>
                       </div>
-                      <div className="msg-time">09:12</div>
-                    </div>
-                  </div>
-
-                  <div className="msg-row mine">
-                    <div className="msg-avatar">CA</div>
-                    <div>
-                      <div className="msg-bubble">Valeu por avisar! E sobre o carrinho da Coleção Inverno, a Hertz Rose que eu queria pagar à vista?</div>
-                      <div className="msg-time">09:15</div>
-                    </div>
-                  </div>
-
-                  <div className="msg-row">
-                    <div className="msg-avatar">AN</div>
-                    <div>
-                      <div className="msg-bubble">
-                        Dá pra fazer isso direto na hora de pagar — você pode dividir o pagamento do pedido, uma parte à vista
-                        pra Hertz Rose e o resto no prazo normal. Dá uma olhada quando puder.
-                      </div>
-                      <div className="msg-time">09:16</div>
-                    </div>
-                  </div>
-
-                  <div className="msg-row">
-                    <div className="msg-avatar">AN</div>
-                    <div
-                      className="msg-context-card"
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => navigate(`/carrinhos/${cart.id}`)}
-                    >
-                      <div className="mc-label">Pedido referenciado</div>
-                      <div className="mc-title">
-                        {cart.name} — {pedido.label} · {formatBRL(pedido.total)}
-                      </div>
-                    </div>
-                    <div className="msg-time">09:16</div>
-                  </div>
-
-                  <div className="msg-row mine">
-                    <div className="msg-avatar">CA</div>
-                    <div>
-                      <div className="msg-bubble">Perfeito, faz sentido. Pode confirmar assim mesmo.</div>
-                      <div className="msg-time">09:41</div>
-                    </div>
-                  </div>
+                    )
+                  })}
                 </>
               )}
-
-              {myMessages.map((text, i) => (
-                <div className="msg-row mine" key={i}>
-                  <div className="msg-avatar">{persona === 'representante' ? 'AN' : 'CA'}</div>
-                  <div>
-                    <div className="msg-bubble">{text}</div>
-                    <div className="msg-time">agora</div>
-                  </div>
-                </div>
-              ))}
               <div ref={threadEndRef} />
             </div>
 

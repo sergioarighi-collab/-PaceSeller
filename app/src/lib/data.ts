@@ -439,18 +439,24 @@ export const initialCarrinhos: Carrinho[] = [
     daysSinceActivity: 0,
     repCanEdit: true,
     autoSendOnGradeMinima: true,
-    lastComment: {
-      author: 'Ana',
-      text: 'separei a Hertz Rose com desconto à vista — as outras formas de pagamento ficam a seu critério na hora de fechar, tudo bem?',
-      timeLabel: 'há 40 min',
-    },
-    // Exemplo de resposta do lojista (set/2026) — Carlos é o contato da Radical Skate (mesma loja
-    // desse carrinho, ver `contactName` logo abaixo em `initialLojistas`).
-    clientReply: {
-      author: 'Carlos',
-      text: 'Fechado, pode deixar assim. Só confirma o prazo de entrega pra mim depois.',
-      timeLabel: 'há 12 min',
-    },
+    // Carlos é o contato da Radical Skate (mesma loja desse carrinho, ver `contactName` logo
+    // abaixo em `initialLojistas`).
+    comments: [
+      {
+        id: 'c-4821-1',
+        by: 'representante',
+        author: 'Ana',
+        text: 'separei a Hertz Rose com desconto à vista — as outras formas de pagamento ficam a seu critério na hora de fechar, tudo bem?',
+        timeLabel: 'há 40 min',
+      },
+      {
+        id: 'c-4821-2',
+        by: 'lojista',
+        author: 'Carlos',
+        text: 'Fechado, pode deixar assim. Só confirma o prazo de entrega pra mim depois.',
+        timeLabel: 'há 12 min',
+      },
+    ],
     // Antes da simplificação, a Hertz Rose vivia num 2º pedido "à vista −3%" só pra separar a
     // condição de pagamento das outras duas linhas; com 1 pedido por carrinho isso vira split de
     // pagamento (ver Payment.tsx), não outro pedido — por isso os 3 itens somam num pedido só,

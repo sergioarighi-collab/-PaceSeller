@@ -45,6 +45,13 @@ function clienteTag(pedido: Pedido): { label: string; tone: 'warn' | 'positive' 
   return aguardandoCliente ? { label: 'Aguardando o cliente', tone: 'warn' } : { label: 'Finalizado pelo cliente', tone: 'positive' }
 }
 
+// Avatar do último comentário (nov/2026, `cart.comments` virou thread de verdade — antes o avatar
+// era "AN" fixo, porque só a Ana comentava; agora o lojista também pode ser o último a falar).
+function iniciais(name: string): string {
+  const palavras = name.trim().split(/\s+/)
+  return palavras.length === 1 ? palavras[0].slice(0, 2).toUpperCase() : (palavras[0][0] + palavras[1][0]).toUpperCase()
+}
+
 export function MeusCarrinhos() {
   const navigate = useNavigate()
   const carrinhos = useAppStore((s) => s.carrinhos)
@@ -161,6 +168,7 @@ export function MeusCarrinhos() {
               const badge =
                 persona === 'representante' && ehCompartilhado(pedido) ? clienteTag(pedido) : pedidoStatusBadge(pedido, cart.representative, persona === 'representante')
               const parado = cart.daysSinceActivity >= EXPIRA_APOS_DIAS && pedido.status !== 'pago'
+              const lastComment = cart.comments && cart.comments.length > 0 ? cart.comments[cart.comments.length - 1] : null
 
               return (
                 <div className="cr-row" key={cart.id} onClick={() => navigate(`/carrinhos/${cart.id}`)}>
@@ -240,13 +248,13 @@ export function MeusCarrinhos() {
                     </div>
                   )}
 
-                  {(cart.lastComment || pedido.suggestedBy === 'representante') && (
+                  {(lastComment || pedido.suggestedBy === 'representante') && (
                     <div className="cr-sub">
-                      <div className="cr-avatar">AN</div>
-                      {cart.lastComment ? (
+                      <div className="cr-avatar">{lastComment ? iniciais(lastComment.author) : 'AN'}</div>
+                      {lastComment ? (
                         <span>
-                          <b>{cart.lastComment.author}:</b> {cart.lastComment.text}{' '}
-                          <span style={{ color: 'var(--text-tertiary)' }}>· {cart.lastComment.timeLabel}</span>
+                          <b>{lastComment.author}:</b> {lastComment.text}{' '}
+                          <span style={{ color: 'var(--text-tertiary)' }}>· {lastComment.timeLabel}</span>
                         </span>
                       ) : persona === 'representante' ? (
                         <span>

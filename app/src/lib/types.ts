@@ -148,12 +148,22 @@ export interface Carrinho {
   // "aguardando" (aprovação da Ana) ao ser salvo — não pula a aprovação humana, só tira o clique
   // manual de "Enviar pro representante".
   autoSendOnGradeMinima: boolean
-  lastComment?: { author: string; text: string; timeLabel: string }
-  // Resposta do lojista ao `lastComment` (set/2026, pedido do usuário: "uma linha tb no comentário
-  // com a resposta do cliente") — campo separado, não um array de thread genérico: só cobre o caso
-  // de 1 pergunta da Ana + 1 resposta do lojista, que é o que a tela mostra. Se precisar de mais de
-  // uma troca de mensagem no futuro, aí sim vale virar uma lista de verdade.
-  clientReply?: { author: string; text: string; timeLabel: string }
+  // Thread de comentários do carrinho, compartilhada de verdade entre lojista e representante
+  // (nov/2026 — substituiu `lastComment`/`clientReply`, o par fixo de "1 pergunta da Ana + 1
+  // resposta do lojista" que a nota antiga já previa que viraria lista se precisasse de mais de 1
+  // troca; ver `adicionarComentario` em store.ts e `Chat.tsx`, que agora lê/escreve aqui em vez de
+  // ter um roteiro local por persona). Ordem cronológica, mais recente por último.
+  comments?: CartComment[]
+}
+
+export interface CartComment {
+  id: string
+  /** Quem escreveu — não precisa bater com `persona` de quem está LENDO agora (ela pode ser
+   * qualquer uma das duas, olhando a mesma thread). */
+  by: 'lojista' | 'representante'
+  author: string
+  text: string
+  timeLabel: string
 }
 
 // Dropdown do sino no WebTopNav (ago/2026) — 3 tipos de evento mapeados desde
