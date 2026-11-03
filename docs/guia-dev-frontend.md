@@ -1949,6 +1949,21 @@ Isso é estritamente melhor que antes (0% de visibilidade cruzada, em qualquer d
 
 Regressão completa (as 6 suites de sempre) sem quebra. `tsc`/build limpos.
 
+## Sino de notificação pro representante (nov/2026)
+
+3º ponto da lista de melhorias do handoff. Até aqui, só o lojista tinha sino — `RepTopNav.tsx` nem tinha o conceito (comentário antigo no arquivo dizia isso explicitamente: "não existe `notifications` do lado do representante ainda"). Ela só descobria o que precisava de atenção entrando no Radar e lendo os cards. A ideia do handoff era reaproveitar o sinal `'revisao'` (`lojistaSinais`, já calculado ao vivo pro Radar — pedido que o lojista mandou, aguardando aprovação dela) num contador simples, sem precisar de nenhum `notifications`/infraestrutura de evento nova.
+
+### Implementação
+
+- Mesmo ícone/posição/visual do sino do lojista (`.navicon`/`.notif-menu`/`.nm-*`, classes já existentes em `mockup.css`, reaproveitadas 1:1) — consistência de linguagem visual entre os dois lados.
+- **Fonte dos dados**: não é uma lista de eventos registrados (não existe equivalente a `notifications` do lado dela) — é `lojistaSinais(lojista).filter(kind === 'revisao')` rodado pra CADA lojista da carteira (`lojistasAoVivo(lojistas, activeLojistaId, carrinhos)`, a mesma função que o Radar já usa pra não mostrar dado desatualizado quando ela está em modo loja numa loja específica), achatado numa lista única. O contador é simplesmente o tamanho dessa lista — sempre correto porque deriva do mesmo estado que já alimenta o Radar, não duplica nada.
+- Clicar num item do dropdown chama `enterLojista(lojistaId)` + navega direto pro carrinho (`/carrinhos/:cartId`) — mesmo padrão de `executarSinal` no Radar, só que acessível de qualquer tela (o sino fica no nav, não só na home).
+- Contador cai sozinho assim que ela aprova o pedido (ou o lojista edita e ele volta pra rascunho) — não precisa de nenhuma lógica de "marcar como lido", porque não é um registro de evento, é um reflexo do estado atual.
+
+### Testado
+
+Via Playwright: logada como representante, ainda no Radar (sem ter entrado em nenhuma loja), o sino já mostra "1" — o "Giro TG II" da Loja Vertex aguardando aprovação dela. Abrir o dropdown mostra o texto certo + o nome da loja. Clicar no item entra em modo loja na Loja Vertex e abre o carrinho certo direto (confirmado pela URL e pelo header "Atendendo: Loja Vertex"). Aprovar o pedido ali zera o contador. Regressão completa (as 7 suites de sempre) sem quebra. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

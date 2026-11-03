@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useAppStore, cartSummary, comboSummary } from '../../lib/store'
+import { useAppStore, cartSummary, comboSummary, lojistaSinais, lojistasAoVivo } from '../../lib/store'
 import { Toast } from './Toast'
 
 // Nav do representante (set/2026, primeiro passo do fluxo desktop dele — ver guia-dev-frontend.md).
-// Deliberadamente mais simples que o WebTopNav do lojista: sem sino de notificação (não existe
-// `notifications` do lado do representante ainda). O ícone de sacola/pedido em montagem (abaixo,
+// Sino de notificação adicionado nov/2026 (pedido do usuário: "deixa mais... integrativo" — o
+// lojista sempre teve sino, ela não tinha nenhum aviso proativo, só descobria coisas entrando no
+// Radar). Não é uma lista de eventos registrados tipo `notifications` do lojista (não existe esse
+// conceito do lado dela) — é o sinal 'revisao' (`lojistaSinais`, já calculado ao vivo pro Radar)
+// agregado pra carteira INTEIRA, não só a loja ativa. O ícone de sacola/pedido em montagem (abaixo,
 // "Acesso ao drawer") só aparece em modo loja — fora disso não tem pedido em montagem nenhum pra
 // mostrar (ver `enterLojista`/`exitLojista` em store.ts: `cartItems`/`cartCombos` sempre zeram ao
 // trocar de loja ou sair dela).
@@ -19,11 +22,14 @@ import { Toast } from './Toast'
 // `MeusCarrinhos.tsx` que o lojista usa, já escopado sozinho pra loja ativa.
 export function RepTopNav() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
   const [comingSoon, setComingSoon] = useState<string | null>(null)
   const navigate = useNavigate()
   const lojistas = useAppStore((s) => s.lojistas)
   const activeLojistaId = useAppStore((s) => s.activeLojistaId)
+  const carrinhos = useAppStore((s) => s.carrinhos)
   const exitLojista = useAppStore((s) => s.exitLojista)
+  const enterLojista = useAppStore((s) => s.enterLojista)
   const toggleOrderDrawer = useAppStore((s) => s.toggleOrderDrawer)
   const cartItems = useAppStore((s) => s.cartItems)
   const cartCombos = useAppStore((s) => s.cartCombos)
@@ -31,6 +37,22 @@ export function RepTopNav() {
   const { totalItems: itemsQty } = cartSummary(cartItems)
   const { totalItems: combosQty } = comboSummary(cartCombos)
   const bagCount = itemsQty + combosQty
+
+  // "Aguardando você" da carteira inteira, não só da loja ativa — mesmo sinal 'revisao' que o Radar
+  // já ranqueia por loja, só que achatado numa lista única pra caber num dropdown de sino.
+  // `lojistasAoVivo` garante que, se ela estiver em modo loja agora, o sinal reflita `s.carrinhos`
+  // (o que está na tela) em vez da cópia potencialmente desatualizada em `s.lojistas`.
+  const pendencias = lojistasAoVivo(lojistas, activeLojistaId, carrinhos).flatMap((l) =>
+    lojistaSinais(l)
+      .filter((sinal) => sinal.kind === 'revisao')
+      .map((sinal) => ({ ...sinal, lojista: l })),
+  )
+
+  function abrirPendencia(lojistaId: string, cartId?: string) {
+    setNotifOpen(false)
+    enterLojista(lojistaId)
+    navigate(cartId ? `/carrinhos/${cartId}` : '/carrinhos')
+  }
   const navItems = [
     { to: '/rep/radar', label: 'Radar', enabled: true },
     { to: '/catalogo', label: 'Catálogo', enabled: true },
@@ -62,6 +84,63 @@ export function RepTopNav() {
         </div>
       </div>
       <div className="navright">
+        <div className="avatar-wrap">
+          <div
+            className="navicon"
+            style={{ cursor: 'pointer', position: 'relative' }}
+            onClick={() => setNotifOpen((o) => !o)}
+            title="Aguardando você"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+            </svg>
+            {pendencias.length > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  minWidth: 16,
+                  height: 16,
+                  padding: '0 3px',
+                  borderRadius: 8,
+                  background: 'var(--risk)',
+                  color: '#fff',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  lineHeight: '16px',
+                  textAlign: 'center',
+                }}
+              >
+                {pendencias.length}
+              </span>
+            )}
+          </div>
+          {notifOpen && (
+            <>
+              <div style={{ position: 'fixed', inset: 0, zIndex: 9 }} onClick={() => setNotifOpen(false)} />
+              <div className="notif-menu">
+                <div className="nm-head">
+                  <span className="nm-title">Aguardando você</span>
+                </div>
+                {pendencias.length === 0 ? (
+                  <div className="nm-empty">Tudo em dia na sua carteira</div>
+                ) : (
+                  pendencias.map((p, i) => (
+                    <div className="nm-item" key={i} onClick={() => abrirPendencia(p.lojista.id, p.cartId)}>
+                      <span className="nm-dot insight" />
+                      <div>
+                        <div className="nm-text">{p.text}</div>
+                        <div className="nm-time">{p.lojista.name}</div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </div>
         {lojistaAtiva && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12, marginRight: 4 }}>
             <span style={{ color: 'var(--text-secondary)' }}>
