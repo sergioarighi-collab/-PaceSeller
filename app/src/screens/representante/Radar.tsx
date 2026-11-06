@@ -13,10 +13,15 @@ const timeframeLabel: Record<SinalTimeframe, string> = {
   '30dias': 'Nos próximos 30 dias',
 }
 
+// "Agendar visita" (até nov/2026) prometia uma agenda/calendário que não existe nesse protótipo —
+// o clique só abria o catálogo da loja, igual a qualquer outro sinal sem ação de sistema por trás.
+// Renomeado pra "Preparar visita": mesmo destino, rótulo honesto sobre o que de fato acontece
+// (pedido do usuário: todo botão do Radar precisa levar pra algum lugar que faça sentido com o que
+// promete).
 const sinalCta: Record<LojistaSinal['kind'], string> = {
   revisao: 'Revisar pedido',
   estoque: 'Sugerir reposição',
-  visita: 'Agendar visita',
+  visita: 'Preparar visita',
   parado: 'Retomar carrinho',
 }
 
@@ -112,13 +117,16 @@ export function RepRadar() {
   // ação... até mesmo para jogar para o carrinho e encaminhar para o cliente"):
   // - 'revisao': o pedido já existe, só falta aprovar — vai direto pro CarrinhoDetail com o botão
   //   "Aprovar pedido" (ver aprovarPedido em store.ts).
-  // - 'estoque': joga o produto num carrinho novo e já encaminha pro lojista (`sugerirReposicao`
-  //   em store.ts — mesmo par `status: 'aguardando'` + `suggestedBy: 'representante'` que o lado do
-  //   lojista já sabia exibir), e abre esse carrinho pra confirmar o que foi enviado.
+  // - 'estoque': joga o produto num carrinho novo (`sugerirReposicao` em store.ts) e abre esse
+  //   carrinho — nasce `rascunho` (nov/2026: antes nascia já `aguardando`, enviada sem ela ver;
+  //   pedido do usuário, "levar para o carrinho... para revisar e encaminhar para o lojista"), ela
+  //   revisa e só então compartilha de fato pelo toggle "Compartilhar com {lojista}" que já existe
+  //   ali (ver `compartilharCarrinho`).
   // - 'parado' (adaptado do inventário "Radar Integrado pro Varejista"): mesmo destino de 'revisao'
   //   — o carrinho já existe, só precisa de uma olhada/empurrão, não de uma ação de sistema nova.
   // - 'visita': não tem um carrinho/produto por trás, é um sinal sobre a loja como um todo — não dá
-  //   pra "executar" sozinho, então abre a loja no catálogo pra o representante decidir o que levar.
+  //   pra "executar" sozinho, então abre a loja no catálogo pra o representante decidir o que levar
+  //   (CTA "Preparar visita", não "Agendar" — não existe agenda/calendário nesse protótipo).
   function executarSinal(lojistaId: string, sinal: LojistaSinal) {
     enterLojista(lojistaId)
     if ((sinal.kind === 'revisao' || sinal.kind === 'parado') && sinal.cartId) {

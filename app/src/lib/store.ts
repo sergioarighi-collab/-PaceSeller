@@ -195,15 +195,17 @@ interface AppState {
    */
   compartilharCarrinho: (carrinhoId: string) => void
   /**
-   * Ação do REPRESENTANTE (set/2026): monta e já encaminha pro lojista um pedido de reposição pra
-   * um produto específico — nasce com `status: 'aguardando'` e `suggestedBy: 'representante'` (o
-   * mesmo par de campos que o lado do lojista já sabia exibir desde que o modelo de dados existe,
-   * ver `pedidoActionKind`/`pedidoStatusBadge`, só que até agora nada do lado do representante
-   * realmente criava um pedido assim). É a ação de verdade por trás do "Falar agora" do sinal de
-   * estoque no Radar: em vez de só abrir o catálogo, já joga o produto num carrinho novo e manda
-   * pro lojista revisar. Opera sobre `carrinhos` (modo loja já aponta pro lojista certo, ver
-   * `enterLojista`) — retorna o id do carrinho criado (pra navegar direto pra ele) ou `null` se o
-   * produto não existir.
+   * Ação do REPRESENTANTE (set/2026): monta um pedido de reposição pra um produto específico e
+   * leva ela pro carrinho pra revisar antes de compartilhar — nasce com `status: 'rascunho'` e
+   * `suggestedBy: 'representante'` já marcado (nov/2026: antes nascia direto `aguardando`, já
+   * encaminhado sem ela ver; pedido do usuário, "levar para o carrinho com a reposição sugerida
+   * para revisar e encaminhar para o lojista" — revisar e só então encaminhar são 2 passos
+   * distintos, não 1). Compartilhar de fato usa o mesmo toggle "Compartilhar com {lojista}" que
+   * qualquer rascunho dela já tinha (ver `compartilharCarrinho`), nenhuma UI nova precisou existir
+   * pra isso. É a ação de verdade por trás do sinal de estoque no Radar: em vez de só abrir o
+   * catálogo, já joga o produto num carrinho novo. Opera sobre `carrinhos` (modo loja já aponta pro
+   * lojista certo, ver `enterLojista`) — retorna o id do carrinho criado (pra navegar direto pra
+   * ele) ou `null` se o produto não existir.
    */
   sugerirReposicao: (productId: string) => string | null
   /**
@@ -241,8 +243,15 @@ interface AppState {
 // só que um por lojista em vez de um só. `idSuffix` garante ids únicos quando chamado em sequência
 // rápida pra vários lojistas (ex: `.map` do `sugerirParaCarteira` — `Date.now()` sozinho podia
 // colidir entre duas chamadas no mesmo milissegundo); `sugerirReposicao` (chamada única) não precisa
-// disso.
-function buildReposicaoCarrinho(product: Product, idSuffix?: string): Carrinho {
+// disso. `status` (nov/2026): `sugerirParaCarteira` continua mandando `'aguardando'` direto pras N
+// lojas de uma vez (broadcast, sem uma revisão individual que fizesse sentido aqui); `sugerirReposicao`
+// passa `'rascunho'` — ela erra pro carrinho pra revisar/ajustar ANTES de compartilhar (toggle
+// "Compartilhar com {lojista}" já existente no CarrinhoDetail, ver `compartilharCarrinho` — mesmo
+// mecanismo de qualquer rascunho dela, nenhuma UI nova precisou ser criada pra isso). `suggestedBy`
+// já nasce marcado nos dois casos (mesmo princípio do branch "carrinho novo" de
+// `commitCartToCarrinho`: o lojista precisa saber que foi ela quem começou isso, mesmo antes de
+// compartilhar).
+function buildReposicaoCarrinho(product: Product, idSuffix?: string, status: 'rascunho' | 'aguardando' = 'aguardando'): Carrinho {
   const key = idSuffix ? `${Date.now()}-${idSuffix}` : `${Date.now()}`
   const { qty } = suggestedGradeQty(product)
   const value = product.priceFactory * qty
@@ -252,7 +261,7 @@ function buildReposicaoCarrinho(product: Product, idSuffix?: string): Carrinho {
   const pedido: Pedido = {
     id: `pedido-${key}`,
     label: 'Pedido',
-    status: 'aguardando',
+    status,
     items: [item],
     subtotal: value,
     discount: 0,
@@ -728,9 +737,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     const s = get()
     const product = products.find((p) => p.id === productId)
     if (!product) return null
-    const novoCarrinho = buildReposicaoCarrinho(product)
-    const notifications = withNotification(s.notifications, `Ana sugeriu um novo pedido — ${novoCarrinho.name}`, novoCarrinho.id)
-    set({ carrinhos: [...s.carrinhos, novoCarrinho], notifications })
+    // Nasce `rascunho` (nov/2026, pedido do usuário: "levar para o carrinho com a reposição
+    // sugerida para revisar e encaminhar para o lojista") — sem notificação aqui, ainda não foi
+    // compartilhado com ninguém; a notificação "Ana compartilhou..." só dispara quando ela de fato
+    // compartilha (toggle no CarrinhoDetail, ver `compartilharCarrinho`).
+    const novoCarrinho = buildReposicaoCarrinho(product, undefined, 'rascunho')
+    set({ carrinhos: [...s.carrinhos, novoCarrinho] })
     return novoCarrinho.id
   },
   sugerirParaCarteira: (productId, lojistaIds) => {
@@ -1087,17 +1099,24 @@ export function pedidoStatusBadge(pedido: Pedido, representativeName: string, vi
     }
     return viewerIsRep ? { label: 'Aguardando você — revisar', tone: 'info' } : { label: `Aguardando ${representativeName}`, tone: 'neutral' }
   }
+  // Rascunho da própria Ana (set/2026, ver commitCartToCarrinho; nov/2026, ver sugerirReposicao) —
+  // checado ANTES do branch de grade mínima abaixo, de propósito: um rascunho dela pode nascer já
+  // acima da grade (ex: reposição sugerida com quantidade boa de cara) e ainda assim ser só dela,
+  // ninguém "enviou" nada ainda — bug relatado pelo usuário ao testar a reposição em rascunho, a
+  // ordem antiga dava "Rascunho do lojista" (rótulo da linha de baixo, que assume que é um rascunho
+  // DELE) num rascunho que era dela mesma. Dá pra distinguir "estou montando"/"já bate, mas ainda
+  // só eu vejo" de um rascunho qualquer do lojista, sem inventar texto novo pro lado dele (que
+  // continua vendo só "Rascunho"/"Pronto pra enviar", igual sempre viu).
+  if (pedido.status === 'rascunho' && pedido.suggestedBy === 'representante' && viewerIsRep) {
+    return pedidoPares(pedido) >= GRADE_MINIMA_PARES
+      ? { label: 'Seu rascunho — pronto pra compartilhar', tone: 'positive' }
+      : { label: 'Seu rascunho — ainda montando', tone: 'neutral' }
+  }
   // (set/2026, bug relatado pelo usuário) Único branch que faltava olhar `viewerIsRep` — "Pronto
   // pra enviar" é instrução pro LOJISTA (só ele tem o botão "Enviar pro representante"); mostrado
   // assim pra Ana soava como se fosse ação dela, que ela não tem como executar num rascunho alheio.
   if (pedido.status === 'rascunho' && pedidoPares(pedido) >= GRADE_MINIMA_PARES) {
     return viewerIsRep ? { label: 'Rascunho do lojista — já bate a grade mínima', tone: 'neutral' } : { label: 'Pronto pra enviar', tone: 'positive' }
-  }
-  // Rascunho da própria Ana, ainda sem bater a grade mínima (set/2026, ver commitCartToCarrinho) —
-  // só pra ela: dá pra distinguir "estou montando" de um rascunho qualquer do lojista, sem inventar
-  // texto novo pro lado dele (que continua vendo só "Rascunho", igual sempre viu).
-  if (pedido.status === 'rascunho' && pedido.suggestedBy === 'representante' && viewerIsRep) {
-    return { label: 'Seu rascunho — ainda montando', tone: 'neutral' }
   }
   return { label: 'Rascunho', tone: 'neutral' }
 }

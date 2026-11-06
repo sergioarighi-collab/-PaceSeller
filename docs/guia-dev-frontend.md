@@ -2060,6 +2060,26 @@ Antes de implementar, perguntei se "fechar" deveria ser um atalho de 1 clique (m
 
 Via Playwright (`test-fechar-rep.mjs`): representante entra em modo loja (Loja Vertex) pelo sino, aprova o pedido, CTA "Fechar pedido pro lojista" aparece e leva pro `Payment.tsx` — breadcrumb mostra o nome da loja (não "Meus Carrinhos"), bubble fala em 1ª pessoa; completa o pagamento (PIX, condição default); `OrderConfirmed.tsx` fala que o lojista foi avisado (não "saiu da sua mão"); "Voltar ao radar" vai pra `/rep/radar`; troca de persona (mesma sessão, sem reload) pro lojista — sino mostra a notificação certa. Regressão completa (as 13 suites de sempre) sem quebra. `tsc`/build limpos.
 
+## Radar da representante: toda ação precisa levar pra algum lugar que faça sentido (nov/2026)
+
+Pedido do usuário: "no radar revisar os botões e sempre tem que levar para algum lugar, por exemplo, o agendar visita, nesse momento não faz sentido. E sempre que sugerir reposição levar para o carrinho com a reposição sugerida para revisar e encaminhar para o lojista". Dois pontos distintos, confirmados via pergunta antes de implementar (ver respostas abaixo).
+
+### "Agendar visita" → "Preparar visita"
+
+O sinal de "loja sem visita recente" nunca teve uma agenda/calendário por trás (não existe esse conceito no protótipo) — clicar só abria o catálogo da loja, igual qualquer outro sinal sem ação de sistema (ver comentário em `executarSinal`, `screens/representante/Radar.tsx`). O rótulo "Agendar visita" prometia mais do que a ação fazia. Perguntado se o caminho certo era trocar o rótulo (mesma ação, texto honesto) ou remover o sinal inteiro — usuário escolheu trocar o rótulo. `sinalCta.visita` (mesmo arquivo) virou "Preparar visita" — mesmo destino (catálogo da loja, pra ela decidir o que levar), só o texto deixou de prometer uma agenda que não existe.
+
+### "Sugerir reposição" → nasce rascunho, ela revisa e só então compartilha
+
+Até essa leva, clicar em "Sugerir reposição" (sinal de estoque, `executarSinal` → `sugerirReposicao` em store.ts) já criava o carrinho E já marcava `status: 'aguardando'` na hora — ela só caía no carrinho pra VER a confirmação do que tinha acabado de ser enviado, não pra decidir se enviava. Perguntado se isso batia com o que o usuário queria ou se devia cair como rascunho pra revisar antes — escolheu rascunho.
+
+- **`buildReposicaoCarrinho`** (store.ts) ganhou um 3º parâmetro `status` (`'rascunho' | 'aguardando'`, default `'aguardando'`) — `sugerirParaCarteira` (broadcast pra VÁRIAS lojas de uma vez, sem uma revisão individual que fizesse sentido aqui) continua chamando sem passar nada, comportamento intocado. `sugerirReposicao` (ação de 1 loja só, a que o pedido do usuário mirava) agora passa `'rascunho'` e não dispara mais a notificação na hora (não tem o que notificar — ainda não foi compartilhado com ninguém).
+- **Nenhuma UI nova** — o carrinho criado em rascunho já cai no mesmo toggle "Compartilhar com {lojista}" que qualquer rascunho dela sempre teve (`compartilharCarrinho`, seção "Toggle 'Compartilhar com {lojista}'..." acima). Ela revisa o conteúdo no `CarrinhoDetail.tsx`, liga o toggle quando decidir, e SÓ ENTÃO o pedido vira `aguardando` + a notificação "Ana compartilhou um carrinho com você — {nome}" dispara pro lojista — exatamente o par "revisar e encaminhar" pedido.
+- **Bug encontrado testando**: `pedidoStatusBadge` (store.ts) checava o branch "rascunho que já bate a grade mínima" ANTES do branch "rascunho da própria Ana" — então um rascunho dela que já nascesse acima da grade (como a reposição sugerida, que já vem com uma quantidade boa) mostrava "Rascunho do lojista — já bate a grade mínima" pra ELA MESMA, como se fosse um rascunho dele. Não dava pra reproduzir antes porque o único jeito de ela ter um rascunho próprio até agora (`commitCartToCarrinho`) manda pro `aguardando` automaticamente no instante em que bate a grade — nunca ficava "parado" em rascunho nesse estado pra expor o bug. Corrigido invertendo a ordem dos branches; o rótulo pra ela agora distingue os dois momentos: "Seu rascunho — ainda montando" (abaixo da grade) e "Seu rascunho — pronto pra compartilhar" (acima).
+
+### Testado
+
+Via Playwright (`test-reposicao-rascunho.mjs`): "Preparar visita" aparece no lugar de "Agendar visita" na linha da Carteira; clicar em "Sugerir reposição" cria o carrinho em `rascunho` (badge "Seu rascunho — pronto pra compartilhar", sem notificação ainda); ligar o toggle "Compartilhar com {lojista}" muda pra `aguardando` e dispara a notificação certa, confirmada do lado do lojista (sino, mesma sessão, troca de persona sem reload). Regressão completa (as 13 suites de sempre, mais `test-fechar-rep.mjs` da leva anterior) sem quebra. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).
