@@ -277,16 +277,17 @@ export function CarrinhoDetail() {
                     const fecharCartaoPropria = pedido.suggestedBy === 'representante' && pedido.status === 'aguardando'
                     if (!gradeOk || (!jaAprovado && !fecharCartaoPropria)) return null
                     return (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                         <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>
                           Aguardando {lojistaAtivo?.contactName ?? 'o lojista'} pagar
                         </span>
-                        <span
-                          style={{ fontSize: 13, color: 'var(--info)', fontWeight: 600, cursor: 'pointer' }}
+                        <div
+                          className="btn-primary"
+                          style={{ width: 210, cursor: 'pointer' }}
                           onClick={() => navigate(`/carrinhos/${cart.id}/${pedido.id}/pagamento`)}
                         >
-                          Fechar pedido pro lojista →
-                        </span>
+                          Fechar pedido pro lojista
+                        </div>
                       </div>
                     )
                   })()
