@@ -15,6 +15,10 @@ const timeframeLabel: Record<Timeframe, string> = {
   '15dias': 'Em 15 dias',
   '30dias': 'Nos próximos 30 dias',
 }
+// Tom do badge de contagem de cada widget de prazo — não é a severidade dos itens (cada item já
+// tem a própria, ver `cardVisual`), é só uma pista visual de urgência por PERÍODO (hoje > 15 dias >
+// 30 dias), mesma lógica de cor que o chip de resumo do hero usa.
+const timeframeTone: Record<Timeframe, 'risk' | 'warn' | 'positive'> = { hoje: 'risk', '15dias': 'warn', '30dias': 'positive' }
 
 type CardTone = 'black' | 'risk' | 'info' | 'positive'
 type CardIcon = 'star' | 'warning' | 'compare' | 'plus' | 'check'
@@ -72,7 +76,6 @@ export function Radar() {
   const onboardingSkipped = useAppStore((s) => s.onboardingSkipped)
   const dismissOnboardingNotice = useAppStore((s) => s.dismissOnboardingNotice)
 
-  const [activeTimeframe, setActiveTimeframe] = useState<Timeframe>('hoje')
   const [toast, setToast] = useState<{ title: string; sub: string } | null>(null)
   const [repostos, setRepostos] = useState<Set<string>>(new Set())
 
@@ -84,55 +87,58 @@ export function Radar() {
   const groups: Record<Timeframe, InsightCardData[]> = { hoje: [], '15dias': [], '30dias': [] }
   for (const card of lojistaRadarInsights) groups[card.timeframe ?? 'hoje'].push(card)
 
-  function renderInsightCard(card: InsightCardData) {
+  // Linha compacta dentro de um widget de prazo (nov/2026, "Radar em widgets" — testado antes como
+  // protótipo visual, aprovado pelo usuário) — mesma informação/ações do card cheio de antes
+  // (`cardVisual`/CTAs idênticos), só empilhada numa lista densa em vez de 1 card grande por item.
+  // Os 3 prazos agora ficam visíveis ao mesmo tempo (ver `.radar-widgets` abaixo), então não precisa
+  // mais do grid só do prazo selecionado numa aba.
+  function renderWidgetItem(card: InsightCardData) {
     const resolved = card.cta === 'Repor agora' && repostos.has(card.title)
     const { tone, icon } = cardVisual(card, resolved)
     return (
-      <div className={`web-icard tone-${tone}`} key={card.id}>
-        <div className="kicon">
+      <div className="radar-widget-item" key={card.id}>
+        <div className={`rw-icon tone-${tone}`}>
           <ToneIcon icon={icon} />
         </div>
-        <div className="eyebrow">{card.opportunity ? `Oportunidade · ${card.eyebrow}` : card.eyebrow}</div>
-        {card.stat && <div className="stat">{card.stat}</div>}
-        <h3>{card.title}</h3>
-        <p>{card.text}</p>
-        {card.suggestedQty && !resolved && (
-          <div style={{ fontFamily: 'var(--mono)', fontSize: 12, fontWeight: 600, marginTop: 8 }}>
-            Sugestão: repor {card.suggestedQty} unidades
-          </div>
-        )}
-        {card.cta === 'Repor agora' ? (
-          resolved ? (
-            <div className="cta">✓ Reposto</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="rw-title2">{card.title}</div>
+          <div className="rw-desc">{card.text}</div>
+          {card.suggestedQty && !resolved && (
+            <div className="rw-desc" style={{ fontFamily: 'var(--mono)', fontWeight: 600 }}>
+              Sugestão: repor {card.suggestedQty} unidades
+            </div>
+          )}
+          {card.cta === 'Repor agora' ? (
+            resolved ? (
+              <div className="rw-cta">✓ Reposto</div>
+            ) : (
+              <div
+                className="rw-cta"
+                onClick={() => {
+                  addToCart(card.productId ?? card.id, card.suggestedQty)
+                  handleRepor(card.title, card.suggestedQty ?? 0)
+                }}
+              >
+                Repor agora →
+              </div>
+            )
           ) : (
             <div
-              className="cta"
-              style={{ cursor: 'pointer' }}
+              className="rw-cta"
               onClick={() => {
-                addToCart(card.productId ?? card.id, card.suggestedQty)
-                handleRepor(card.title, card.suggestedQty ?? 0)
+                if (card.cta === 'Ver produto' && card.productId) navigate(`/catalogo/${card.productId}`)
+                else if (card.cta === 'Comparar') navigate('/catalogo?contexto=benchmark')
+                else if (card.cta === 'Ver coleção') navigate('/colecoes/fusion')
+                else if (card.cta === 'Ver pedido') navigate('/carrinhos/reposicao-rapida/4790-1/acompanhamento')
+                else if (card.cta === 'Ver clientes') navigate('/fidelizacao')
+                else if (card.cta === 'Ver carrinhos') navigate('/carrinhos')
+                else navigate('/catalogo')
               }}
             >
-              Repor agora →
+              {card.cta} →
             </div>
-          )
-        ) : (
-          <div
-            className="cta"
-            style={{ cursor: 'pointer' }}
-            onClick={() => {
-              if (card.cta === 'Ver produto' && card.productId) navigate(`/catalogo/${card.productId}`)
-              else if (card.cta === 'Comparar') navigate('/catalogo?contexto=benchmark')
-              else if (card.cta === 'Ver coleção') navigate('/colecoes/fusion')
-              else if (card.cta === 'Ver pedido') navigate('/carrinhos/reposicao-rapida/4790-1/acompanhamento')
-              else if (card.cta === 'Ver clientes') navigate('/fidelizacao')
-              else if (card.cta === 'Ver carrinhos') navigate('/carrinhos')
-              else navigate('/catalogo')
-            }}
-          >
-            {card.cta} →
-          </div>
-        )}
+          )}
+        </div>
       </div>
     )
   }
@@ -168,24 +174,35 @@ export function Radar() {
       <div className="web-hero-band">
         <div className="whgreet">Bom dia, Carlos</div>
         <h1>Sua loja está saudável</h1>
-        <div className="whsub">{lojistaRadarInsights.length} pendências no total — filtre por prazo pra ver cada uma</div>
-      </div>
-
-      <div className="web-main">
-        <div className="tl-filters">
+        <div className="radar-stat-chips">
           {timeframeOrder.map((tf) => (
-            <div
-              key={tf}
-              className={`chip ${activeTimeframe === tf ? 'selected' : ''}`}
-              style={{ cursor: 'pointer' }}
-              onClick={() => setActiveTimeframe(tf)}
-            >
-              {timeframeLabel[tf]} <span className="n">{groups[tf].length}</span>
+            <div className="radar-stat-chip" key={tf}>
+              <span className="dot" style={{ background: `var(--${timeframeTone[tf]})` }} />
+              <span>{timeframeLabel[tf]}</span>
+              <span className="n">{groups[tf].length}</span>
             </div>
           ))}
         </div>
-        <div className="grid4" style={{ marginTop: 20 }}>
-          {groups[activeTimeframe].map(renderInsightCard)}
+      </div>
+
+      <div className="web-main">
+        {/* Os 3 prazos ficam visíveis ao mesmo tempo, cada um seu próprio widget (nov/2026,
+            substituiu as abas Hoje/15/30 dias que só mostravam 1 prazo por vez atrás de 1 grid só —
+            "Radar em widgets", pedido do usuário, testado antes como protótipo visual). */}
+        <div className="radar-widgets">
+          {timeframeOrder.map((tf) => (
+            <div className="radar-widget" key={tf}>
+              <div className="radar-widget-head">
+                <span className="rw-title">{timeframeLabel[tf]}</span>
+                <span className={`rw-count tone-${timeframeTone[tf]}`}>{groups[tf].length}</span>
+              </div>
+              {groups[tf].length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--text-tertiary)', padding: '8px 0' }}>Nada por aqui — tudo em dia.</div>
+              ) : (
+                groups[tf].map(renderWidgetItem)
+              )}
+            </div>
+          ))}
         </div>
 
         <div className="web-section-title">Destaque da semana</div>

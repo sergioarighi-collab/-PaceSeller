@@ -321,15 +321,11 @@
   .bulkrow .bbtn{background:transparent;color:var(--positive);border:1.5px solid var(--positive);font-size:12px;font-weight:700;padding:7px 14px;border-radius:4px;white-space:nowrap;cursor:pointer;}
   .bulkrow.review .bbtn{color:var(--info);border-color:var(--info);}
 
-  /* Cards do Radar do representante (set/2026, revisado depois — pedido do usuário: "o radar do rep
-     deveria estar mais parecido com o do lojista... tem bastante contraste") — reaproveitam
-     literalmente `.web-icard`/`.kicon`/`.eyebrow`/`.cta` do Radar do lojista, não uma classe própria
-     (a versão anterior, `.radar-card`, tinha fundo colorido igual mas uma estrutura bem diferente:
-     ícone depois do nome em vez de antes, CTA em pílula sólida em vez de link de texto — exatamente
-     o "contraste" apontado). `.radar-grid` continua com grade própria (4 colunas) em vez de
-     `.grid4` porque já tinha `margin-top` embutido e nenhum dos dois ganha nada sendo renomeado. */
+  /* Grade própria (4 colunas, com `margin-top` embutido) em vez de `.grid4` — usada pelos cards de
+     insight de `Loyalty.tsx` hoje (o Radar do representante usava isso também até virar widgets,
+     ver "Radar em widgets" mais abaixo — `.web-icard`/`.kicon`/`.eyebrow`/`.cta` continuam o
+     vocabulário visual padrão de card com severidade em qualquer lugar do app que precisar dele). */
   .radar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:20px;}
-  .radar-more{font-size:11px;color:var(--text-secondary);margin-top:8px;}
 
   /* Lista da `LojistaGate.tsx` (redesign set/2026, pedido do usuário: o `.web-icard`/`.gate-pick`
      antigo, colorido por severidade igual ao Radar, "está muito parecido com o radar podendo
@@ -358,17 +354,54 @@
   .gate-divider{width:1px;align-self:stretch;background:var(--border);flex-shrink:0;}
   .gate-chevron{width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:var(--text-tertiary);flex-shrink:0;}
 
-  /* Hierarquia entre filtro de loja (primário) e de período (secundário) no Radar do representante
-     (set/2026) — mesmo `.chip`/`.tl-filters` da base, só com modificadores: loja fica maior e
-     preenchida quando selecionada (como um filtro "de verdade"); período vira link de texto puro,
-     sem fundo nem borda, pra não brigar visualmente com o que já tem precedência na lógica
-     (escolher uma loja ignora a aba de período, ver Radar.tsx). */
-  .radar-filterlabel{font-family:var(--mono);font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
-  .radar-filter-primary .chip{font-size:13px;padding:9px 16px;font-weight:600;}
-  .radar-filter-primary .chip.selected{background:var(--black);color:#fff;border-color:var(--black);}
-  .radar-filter-secondary{gap:14px;}
-  .radar-filter-secondary .chip{font-size:11.5px;padding:0;border:none;background:transparent;color:var(--text-tertiary);border-radius:0;}
-  .radar-filter-secondary .chip.selected{background:transparent;border:none;color:var(--text-primary);font-weight:600;}
+  /* Radar em widgets (nov/2026, pedido do usuário: "transformar o radar em widgets" — testado antes
+     como protótipo visual, Artifact "Radar em widgets", aprovado pelo usuário) — painéis menores e
+     focados em vez de 1 grid homogêneo atrás de abas/filtros: no lojista, os 3 prazos (Hoje/15/30
+     dias) viram 3 widgets simultâneos em vez de só o prazo selecionado na aba; no representante,
+     "Aguardando você"/"Oportunidade"/"Carteira" cada um vira seu próprio painel. Reaproveita os
+     tokens de cor de sempre (--risk/--warn/--info/--positive/--black), nenhuma cor nova.
+  --- */
+  .radar-widgets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:20px;}
+  .radar-widgets.two-col{grid-template-columns:1.1fr 1fr;align-items:stretch;}
+  .radar-widget{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;display:flex;flex-direction:column;}
+  .radar-widget.tone-black{background:var(--black);color:#fff;}
+  .radar-widget-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
+  .radar-widget-head .rw-title{font-family:var(--display);font-size:14.5px;font-weight:700;}
+  .radar-widget-head .rw-count{font-size:11px;font-weight:700;border-radius:10px;padding:3px 9px;flex-shrink:0;}
+  .radar-widget-head .rw-count.tone-risk{background:var(--risk-dim);color:var(--risk);}
+  .radar-widget-head .rw-count.tone-warn{background:var(--warn-dim);color:var(--warn);}
+  .radar-widget-head .rw-count.tone-positive{background:var(--positive-dim);color:var(--positive);}
+  .radar-widget-head .rw-count.tone-info{background:var(--info-dim);color:var(--info);}
+  .radar-widget-head .rw-filters{display:flex;gap:8px;flex-wrap:wrap;}
+  /* Item empilhado (ícone → título/descrição → cta embaixo) — widgets de prazo do lojista. */
+  .radar-widget-item{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--border-soft);}
+  .radar-widget-item:first-of-type{border-top:none;padding-top:0;}
+  .radar-widget-item .rw-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .radar-widget-item .rw-icon.tone-risk{background:var(--risk);color:#fff;}
+  .radar-widget-item .rw-icon.tone-warn{background:var(--warn);color:#fff;}
+  .radar-widget-item .rw-icon.tone-info{background:var(--info-dim);color:var(--info);}
+  .radar-widget-item .rw-icon.tone-positive{background:var(--positive-dim);color:var(--positive);}
+  .radar-widget-item .rw-icon.tone-black{background:var(--black);color:#fff;}
+  .radar-widget-item .rw-icon.tone-neutral{background:var(--surface-3);color:var(--text-secondary);}
+  .radar-widget-item .rw-title2{font-size:12.5px;font-weight:600;color:var(--text-primary);}
+  .radar-widget-item .rw-desc{font-size:11px;color:var(--text-secondary);margin-top:2px;}
+  .radar-widget-item .rw-cta{font-size:11.5px;font-weight:700;display:inline-block;margin-top:5px;cursor:pointer;color:var(--text-primary);}
+  /* Linha com ação à direita (ícone → título/subtítulo → cta alinhado) — "Aguardando você" e
+     "Carteira" do representante: mesma informação que os cards cheios já mostravam, só compacta. */
+  .radar-widget-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--border-soft);cursor:pointer;}
+  .radar-widget-row:first-of-type{border-top:none;padding-top:0;}
+  .radar-widget-row .rw-info{flex:1;min-width:0;}
+  .radar-widget-row .rw-name{font-size:13px;font-weight:600;color:var(--text-primary);}
+  .radar-widget-row .rw-meta{font-size:11px;color:var(--text-secondary);margin-top:2px;}
+  .radar-widget-row .rw-action{font-size:12px;font-weight:700;color:var(--info);flex-shrink:0;}
+  .radar-widget-row .rw-action:hover{text-decoration:underline;}
+  .radar-widget-footer-cta{margin-top:12px;align-self:flex-start;font-size:12px;font-weight:700;color:var(--info);cursor:pointer;}
+  /* Chips de resumo no hero do lojista (substituem a frase "N pendências... filtre por prazo" —
+     não faz mais sentido falar em "filtrar" quando os 3 prazos já ficam visíveis ao mesmo tempo). */
+  .radar-stat-chips{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+  .radar-stat-chip{display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:7px 14px;font-size:12.5px;color:var(--text-secondary);}
+  .radar-stat-chip .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+  .radar-stat-chip .n{font-family:var(--mono);font-weight:600;color:var(--text-primary);}
 
   /* Lista de carrinhos redesenhada (set/2026, pedido do usuário: "o botão... me incomoda... podemos
      pensar em outra forma de organizar... a carrinho como um todo menos linhas e mais sólido") —
@@ -576,13 +609,9 @@
   .web-hero-band .whsub{font-size:14px;color:var(--text-secondary);margin-top:8px;}
   .web-main{padding:8px 48px 56px;}
   .web-section-title{font-size:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;color:var(--text-tertiary);margin:36px 0 16px;}
-  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
 
-  /* Grupos por prazo do Radar (Hoje / Em 15 dias / Nos próximos 30 dias) — "Hoje" fica sempre
-     aberto, os outros dois são acordeão (fechados por padrão, clique no header pra expandir). */
-  /* Filtro por prazo do Radar (Hoje / Em 15 dias / Nos próximos 30 dias) — reaproveita literalmente
-     o .chip do filtro do Catálogo, só com uma contagem (.n) dentro de cada chip. */
-  .tl-filters{display:flex;gap:8px;margin-top:8px;}
+  /* `.n`, a contagem dentro de um `.chip` (reaproveitado pelos chips de período do widget "Carteira"
+     do representante, ver "Radar em widgets" mais abaixo). */
   .chip .n{font-family:var(--mono);}
   .chip.selected .n{color:var(--text-tertiary);}
 
@@ -629,14 +658,11 @@
   .web-icard.tone-warn p{color:var(--text-secondary);}
   .web-icard.tone-warn .cta{color:var(--warn);}
 
-  /* Banner de oportunidade de carteira (set/2026) — largura total, fora da grade, reaproveita a cor
-     tone-black de sempre (mesma natureza "Oportunidade" do Radar do lojista), só com o conteúdo em
-     linha (ícone → texto → CTA) em vez de empilhado como o resto dos `.web-icard`. */
-  .web-icard.opp-banner{flex-direction:row;align-items:center;gap:20px;margin-top:20px;}
-  .web-icard.opp-banner .eyebrow{margin-top:0;}
+  /* Pílulas de loja do widget "Oportunidade na carteira" do representante (nov/2026, "Radar em
+     widgets" — antes era um banner de largura total, `.opp-banner`/`.opp-cta`, removidos quando
+     virou widget vertical; `.opp-lojas`/`.opp-lojapill` sobrevivem porque o conteúdo é o mesmo). */
   .opp-lojas{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
   .opp-lojapill{font-size:11px;background:rgba(255,255,255,.12);padding:4px 9px;border-radius:20px;color:rgba(255,255,255,.85);}
-  .opp-cta{margin-left:auto;background:#fff;color:var(--text-primary);font-size:12.5px;font-weight:700;padding:10px 16px;border-radius:5px;white-space:nowrap;cursor:pointer;flex-shrink:0;}
 
   .cta{font-weight:700;margin-top:auto;padding-top:16px;display:flex;align-items:center;gap:6px;}
 

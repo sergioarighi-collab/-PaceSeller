@@ -2014,6 +2014,34 @@ Era hardcoded pra Fusion: `productIds` fixos, rota fixa, texto/badge de "Lançam
 
 Via Playwright: fluxo real (Radar → "Ver coleção") chega em Fusion com a tag "Lançamento" e stats reais (4 produtos, +24% crescimento médio); visitar `/colecoes/coil` direto mostra "Linha Coil" sem a tag, com stats próprios (16 produtos, +15%); `/colecoes/inexistente` mostra "Coleção não encontrada." em vez de quebrar. Comparei dois pedidos pagos com prazos bem diferentes (Giro Hertz Black, 2 dias vs. Coleção Hertz da Casa Esporte, 10 dias) — a timeline de cada um reflete o prazo certo, genuinamente diferente uma da outra (antes seriam idênticas). Regressão completa (as 12 suites de sempre, toda a leva desta sessão) sem quebra. `tsc`/build limpos.
 
+## Radar em widgets — lojista e representante (nov/2026)
+
+Pedido do usuário: "transformar o radar em widgets". Testado antes como protótipo visual (Artifact "Radar em widgets", canvas com os 2 Radares lado a lado, cores/fontes reais do app) — aprovado com uma rodada de ajuste ("gostei do lojista, mas não a do REP" → depois de olhar de novo: "vamos implementar para todos"). Ideia central: painéis menores e focados (cada tipo de informação em seu próprio bloco) em vez de 1 grid homogêneo atrás de abas/filtros que escondiam tudo que não fosse a aba ativa.
+
+### Radar do lojista (`screens/lojista/Radar.tsx`)
+
+- As abas Hoje/15/30 dias (`activeTimeframe`, só 1 grupo visível por vez) viraram **3 widgets simultâneos** — `renderWidgetItem` (nova, versão compacta do antigo `renderInsightCard`) dentro de `.radar-widget`/`.radar-widget-item`. Os 3 prazos ficam visíveis ao mesmo tempo, sem precisar clicar em nada pra ver os outros.
+- Hero: a frase "N pendências no total — filtre por prazo" não fazia mais sentido (não tem mais o que "filtrar", os 3 já aparecem) — virou 3 chips de resumo (`.radar-stat-chips`, só leitura, sem clique) com contagem por prazo.
+- Cada item compacto mantém a mesma ação/lógica de antes (`cardVisual`, `addToCart` pro "Repor agora", as mesmas rotas por `cta`) — só a casca visual mudou, nenhuma regra de negócio.
+- "Destaque da semana" ficou como estava (banner full-width), não virou widget — já era um bloco próprio antes, não tinha o problema que motivou a mudança (conteúdo escondido atrás de aba).
+
+### Radar do representante (`screens/representante/Radar.tsx`)
+
+- **"Aguardando você"** — o banner de lote de largura total (`.bulkbar`/`.bulkrow`) virou um widget com cada pendência numa linha própria (`.radar-widget-row`). A ação por linha ("Revisar pedido →") e o corpo da linha fazem a MESMA coisa — `executarSinal`, leva pro carrinho — não aprovam direto; só o "Aprovar todos" no rodapé do widget aprova em lote de verdade (`aprovarPedidosEmLote` com a lista inteira). Ajuste feito depois do primeiro corte, pedido do usuário ("não aprovar direto, mas levar o rep para o carrinho") — a 1ª versão tinha um "Aprovar" por linha que chamava `aprovarPedidosEmLote` com 1 item só, sem entrar no pedido pra olhar antes; fazia sentido só como atalho em lote de verdade (quando ela já confia e quer liberar tudo de uma vez), não item a item sem revisar.
+- **"Oportunidade na carteira"** — o banner horizontal full-width (`.opp-banner`) virou um widget vertical (`tone-black`), ao lado do "Aguardando você". Lógica (`carteiraOportunidade`, `sugerirOportunidadeParaCarteira`) intocada.
+- Os dois widgets do topo só formam grade de 2 colunas (`.radar-widgets.two-col`) quando os DOIS existem ao mesmo tempo — só 1 dos dois vira 1 coluna só (`style={{gridTemplateColumns:'1fr'}}` inline), pra não esticar sozinho numa grade pensada pra 2.
+- **"Carteira"** — os cards cheios por loja (`.web-icard`, grid de 4 colunas) viraram linhas compactas (`.radar-widget-row`, reaproveita `SinalIcon` — mesmo ícone por tipo de sinal que `LojistaGate.tsx` já usava) dentro de 1 widget só. O filtro de período entrou no próprio cabeçalho do widget (`.rw-filters`) em vez de uma barra de filtro à parte acima da grade.
+- **Filtro de loja removido** — existia antes como filtro primário (chip por loja, "Todas" como opção). Como a lista inteira de lojas já fica visível de cara dentro do widget "Carteira" (não precisa mais entrar numa aba pra ver), pivotar por 1 loja específica virou só clicar na linha dela — o filtro ficou redundante. `lojistaFiltro` (estado) removido.
+- **Filtro de período ganhou "Todas"** (antes só Hoje/15/30 dias, default "Hoje") — `timeframeFiltro` agora é `SinalTimeframe | 'todas'`, default `'todas'`: mostra a carteira inteira de cara (antes, por padrão, uma loja com pendência só pra daqui 15 dias ficava escondida até trocar de aba — achado ao desenhar o widget "Carteira", não reportado pelo usuário).
+
+### Limpeza
+
+CSS órfão removido de `mockup.css` depois de confirmado via grep que nada mais usa: `.opp-banner`/`.opp-cta` (banner antigo, `.opp-lojas`/`.opp-lojapill` sobrevivem — mesmo conteúdo dentro do widget novo), `.radar-filterlabel`/`.radar-filter-primary`/`.radar-filter-secondary` (filtro de loja+período antigo), `.tl-filters`/`.grid4`/`.radar-more` (abas do lojista + "+N outras pendências" que a versão compacta não mostra mais). `.radar-grid` sobrevive — `Loyalty.tsx` ainda usa.
+
+### Testado
+
+Via Playwright, nas duas personas: lojista — os 3 widgets de prazo aparecem juntos com os itens certos, fluxo real "Radar → card 'Ver clientes' → Fidelização" e "Radar → card 'Ver coleção' → Colecao.tsx" continuam funcionando (só o seletor mudou, de `.cta` pra `.radar-widget-item .rw-cta`, sem clicar em aba antes). Representante — widget "Aguardando você": a ação por linha leva pro carrinho SEM aprovar (confirmado entrando lá e vendo "Aprovar pedido" ainda disponível, status ainda `aguardando`), "Aprovar todos" no rodapé aprova em lote de verdade e o widget some sozinho quando zera (sino do `RepTopNav` zera junto); widget "Oportunidade" em coluna única quando é o único presente; filtro de período no cabeçalho da "Carteira" funciona (`Hoje` reduz a lista, contagem dos chips bate). Regressão completa (as 13 suites de sempre — 3 precisaram de ajuste de seletor pra seguir a mudança de marcação, não indicavam bug: `.web-icard`→`.radar-widget-row`, abas removidas→sem clique prévio) sem quebra. `tsc`/build limpos.
+
 ## Regras de negócio confirmadas (não são chute)
 
 - Grade de numeração: 34 a 44 (`buildSizes()` em `data.ts`).

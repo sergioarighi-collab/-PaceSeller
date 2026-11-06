@@ -45,8 +45,11 @@ export function RepRadar() {
   const sugerirReposicao = useAppStore((s) => s.sugerirReposicao)
   const sugerirParaCarteira = useAppStore((s) => s.sugerirParaCarteira)
   const aprovarPedidosEmLote = useAppStore((s) => s.aprovarPedidosEmLote)
-  const [lojistaFiltro, setLojistaFiltro] = useState<string | null>(null)
-  const [timeframeFiltro, setTimeframeFiltro] = useState<SinalTimeframe>('hoje')
+  // 'todas' (nov/2026, "Radar em widgets") é o padrão agora — sem o filtro de loja de antes (a
+  // lista inteira já fica visível no próprio widget "Carteira", pivotar por 1 loja específica é só
+  // clicar na linha dela), um período sozinho (ex: só "Hoje") escondia lojas com pendência pra
+  // depois sem necessidade; "Todas" mostra a carteira inteira de cara, os outros filtram por prazo.
+  const [timeframeFiltro, setTimeframeFiltro] = useState<SinalTimeframe | 'todas'>('todas')
   const [oportunidadeToast, setOportunidadeToast] = useState<string | null>(null)
   const [aprovarToast, setAprovarToast] = useState<string | null>(null)
 
@@ -94,10 +97,8 @@ export function RepRadar() {
     )
   }
 
-  // Selecionar uma loja específica é um filtro mais forte que o período — faz sentido ela aparecer
-  // mesmo que o sinal principal dela não seja "de hoje", já que o pedido foi por ela especificamente.
   const visiveis = ranqueada.filter((x) => {
-    if (lojistaFiltro) return x.lojista.id === lojistaFiltro
+    if (timeframeFiltro === 'todas') return true
     return !x.topSinal || x.topSinal.timeframe === timeframeFiltro
   })
 
@@ -145,151 +146,140 @@ export function RepRadar() {
       </div>
 
       <div className="web-main">
-        {/* Hierarquia entre os dois filtros (set/2026, pedido do usuário): loja é o filtro
-            primário — chip maior, preenchido quando selecionado — porque escolher uma loja
-            específica tem precedência sobre o período (ver `visiveis` acima: selecionar uma loja
-            ignora a aba de período ativa). Período fica como filtro secundário, só links de texto
-            sem fundo, pra não competir visualmente com o filtro que realmente manda. */}
-        <div className="radar-filterlabel">Loja</div>
-        <div className="tl-filters radar-filter-primary">
-          <div className={`chip ${!lojistaFiltro ? 'selected' : ''}`} style={{ cursor: 'pointer' }} onClick={() => setLojistaFiltro(null)}>
-            Todas
-          </div>
-          {lojistas.map((l) => (
-            <div
-              key={l.id}
-              className={`chip ${lojistaFiltro === l.id ? 'selected' : ''}`}
-              style={{ cursor: 'pointer' }}
-              onClick={() => setLojistaFiltro(l.id)}
-            >
-              {l.name}
-            </div>
-          ))}
-        </div>
-        <div className="radar-filterlabel" style={{ marginTop: 16 }}>
-          Período
-        </div>
-        <div className="tl-filters radar-filter-secondary">
-          {timeframeOrder.map((tf) => (
-            <div
-              key={tf}
-              className={`chip ${timeframeFiltro === tf && !lojistaFiltro ? 'selected' : ''}`}
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                setLojistaFiltro(null)
-                setTimeframeFiltro(tf)
-              }}
-            >
-              {timeframeLabel[tf]} <span className="n">{porPeriodo(tf).length}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Banner de lote (nov/2026) — mesmo `.bulkbar`/`.bulkrow`/`.bbtn` que Meus Carrinhos já usa
-            pra "X pedidos já batem a grade mínima"/"Ana sugeriu N pedidos", reaproveitado aqui pra
-            cobrir a carteira inteira de uma vez (ver `pendenciasAprovacao` acima). */}
-        {pendenciasAprovacao.length > 0 && (
-          <div className="bulkbar">
-            <div className="bulkrow review">
-              <div className="bicon">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4">
-                  <path d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <div className="btext">
-                <b>
-                  {pendenciasAprovacao.length} pedido{pendenciasAprovacao.length > 1 ? 's' : ''} aguardando sua aprovação
-                </b>{' '}
-                — {pendenciasAprovacao[0].lojista.name}
-                {pendenciasAprovacao.length > 1 ? ` e mais ${pendenciasAprovacao.length - 1}` : ''}
-              </div>
-              <div className="bbtn" onClick={aprovarTodasPendencias}>
-                Aprovar tod{pendenciasAprovacao.length > 1 ? 'os' : 'o'}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Oportunidade de carteira (set/2026) — banner de largura total, fora da grade de cards.
-            Reaproveita a cor tone-black
-            do Radar do lojista (mesma natureza "Oportunidade"), só em layout horizontal (ver
-            .opp-banner em mockup.css). Um só por vez (o produto de maior crescimento que bate o
-            critério — ver carteiraOportunidade em store.ts), não uma lista, pra não virar
-            propaganda. Some sozinho depois de sugerir: os lojistas contemplados passam a ter o
-            produto, então `carteiraOportunidade` para de encontrá-los como "sem produto". */}
-        {oportunidade && (
-          <div className="web-icard tone-black opp-banner">
-            <div className="kicon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l2.9 6.9 7.4.6-5.6 4.9 1.7 7.3L12 17.9 5.6 21.7l1.7-7.3-5.6-4.9 7.4-.6L12 2z" />
-              </svg>
-            </div>
-            <div>
-              <div className="eyebrow">Oportunidade na carteira</div>
-              <h3>{oportunidade.product.name}</h3>
-              <p>
-                Alta demanda — {oportunidade.lojistasSemProduto.length} loja{oportunidade.lojistasSemProduto.length > 1 ? 's' : ''} da sua carteira
-                ainda não {oportunidade.lojistasSemProduto.length > 1 ? 'têm' : 'tem'} esse produto
-              </p>
-              <div className="opp-lojas">
-                {oportunidade.lojistasSemProduto.map((l) => (
-                  <span className="opp-lojapill" key={l.id}>
-                    {l.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <div className="opp-cta" onClick={sugerirOportunidadeParaCarteira}>
-              Sugerir pras {oportunidade.lojistasSemProduto.length} lojas →
-            </div>
-          </div>
-        )}
-
-        {/* Cards reaproveitam literalmente `.web-icard`/`.kicon`/`.eyebrow`/`.cta` do Radar do
-            lojista (set/2026, pedido do usuário: "o radar do rep deveria estar mais parecido com o
-            do lojista") — mesmo ritmo visual (ícone primeiro, depois um rótulo pequeno, título,
-            descrição, link de texto colorido no rodapé em vez da pílula sólida que existia antes).
-            `eyebrow` leva a info que só o representante precisa (de qual loja é — o lojista não
-            precisa disso, só tem uma loja), `h3`/`p` carregam o que o card é "sobre" e o sinal. */}
-        <div className="radar-grid">
-            {visiveis.map(({ lojista, sinais, topSinal }) => (
-              // Corpo do card abre a loja direto (set/2026, achado testando: clicar achando que ia
-              // só "ver a loja" disparava a ação do sinal de estoque sem avisar — criava e já
-              // enviava um carrinho de reposição). Agora só o `.cta`, com texto explícito do que vai
-              // fazer ("Sugerir reposição →"), executa a ação; o resto do card é só navegação, sem
-              // efeito colateral nenhum — mesmo padrão "linha abre, botão age" de listas clicáveis.
-              <div
-                className={`web-icard ${topSinal ? `tone-${topSinal.tone}` : 'tone-positive'}`}
-                key={lojista.id}
-                style={{ cursor: 'pointer' }}
-                onClick={() => abrirLoja(lojista.id)}
-              >
-                <div className="kicon">
-                  <SinalIcon kind={topSinal?.kind ?? 'empty'} />
+        {/* "Aguardando você" + "Oportunidade na carteira" (nov/2026, "Radar em widgets" — testado
+            antes como protótipo visual, pedido do usuário, aprovado) — substituem os banners de
+            largura total de antes (`.bulkbar`/`.opp-banner`) por 2 widgets lado a lado, mais
+            contidos. Só 1 coluna quando só 1 dos dois existe, pra não esticar sozinho numa grade de
+            2 colunas. */}
+        {(pendenciasAprovacao.length > 0 || oportunidade) && (
+          <div
+            className={`radar-widgets ${pendenciasAprovacao.length > 0 && oportunidade ? 'two-col' : ''}`}
+            style={!(pendenciasAprovacao.length > 0 && oportunidade) ? { gridTemplateColumns: '1fr' } : undefined}
+          >
+            {pendenciasAprovacao.length > 0 && (
+              <div className="radar-widget">
+                <div className="radar-widget-head">
+                  <span className="rw-title">Aguardando você</span>
+                  <span className="rw-count tone-info">{pendenciasAprovacao.length}</span>
                 </div>
-                <div className="eyebrow">
-                  {lojista.city} · {lojista.contactName}
-                </div>
-                <h3>{lojista.name}</h3>
-                <p>{topSinal ? topSinal.text : 'Tudo em dia — nenhuma pendência agora'}</p>
-                {topSinal && sinais.length > 1 && (
-                  <div className="radar-more">
-                    + {sinais.length - 1} outra{sinais.length - 1 > 1 ? 's' : ''} pendência{sinais.length - 1 > 1 ? 's' : ''}
+                {/* Ação por linha LEVA pro carrinho (mesma coisa que o corpo da linha já faz, ver
+                    `executarSinal`), não aprova direto — ela só deve aprovar sem olhar o pedido
+                    pelo atalho explícito de baixo ("Aprovar todos", em lote, pensado pra quando ela
+                    já confia e só quer liberar tudo de uma vez). Aprovar 1 de cada vez sem entrar no
+                    pedido não fazia sentido como ação individual (nov/2026, pedido do usuário). */}
+                {pendenciasAprovacao.map(({ lojista, sinal }) => (
+                  <div className="radar-widget-row" key={sinal.cartId} onClick={() => executarSinal(lojista.id, sinal)}>
+                    <div className="radar-widget-icon tone-info" style={{ width: 30, height: 30, borderRadius: 7 }}>
+                      <SinalIcon kind="revisao" />
+                    </div>
+                    <div className="rw-info">
+                      <div className="rw-name">{sinal.text}</div>
+                      <div className="rw-meta">{lojista.name}</div>
+                    </div>
+                    <span
+                      className="rw-action"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        executarSinal(lojista.id, sinal)
+                      }}
+                    >
+                      Revisar pedido →
+                    </span>
                   </div>
-                )}
-                <div
-                  className="cta"
-                  style={{ cursor: 'pointer' }}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    topSinal ? executarSinal(lojista.id, topSinal) : abrirLoja(lojista.id)
-                  }}
-                >
-                  {topSinal ? sinalCta[topSinal.kind] : 'Atender esta loja'} →
+                ))}
+                <div className="radar-widget-footer-cta" onClick={aprovarTodasPendencias}>
+                  Aprovar tod{pendenciasAprovacao.length > 1 ? 'os' : 'o'} →
                 </div>
               </div>
-            ))}
+            )}
+
+            {/* Produto de maior crescimento que bate o critério (ver `carteiraOportunidade` em
+                store.ts) — some sozinho depois de sugerir, os lojistas contemplados passam a ter o
+                produto num carrinho. */}
+            {oportunidade && (
+              <div className="radar-widget tone-black">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="#fff">
+                    <path d="M12 2l2.9 6.9 7.4.6-5.6 4.9 1.7 7.3L12 17.9 5.6 21.7l1.7-7.3-5.6-4.9 7.4-.6L12 2z" />
+                  </svg>
+                  <span style={{ fontFamily: 'var(--mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em', color: 'rgba(255,255,255,.6)' }}>
+                    Oportunidade na carteira
+                  </span>
+                </div>
+                <div style={{ fontFamily: 'var(--display)', fontSize: 16, fontWeight: 700 }}>{oportunidade.product.name}</div>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,.72)', marginTop: 6 }}>
+                  Alta demanda — {oportunidade.lojistasSemProduto.length} loja{oportunidade.lojistasSemProduto.length > 1 ? 's' : ''} da sua carteira
+                  ainda não {oportunidade.lojistasSemProduto.length > 1 ? 'têm' : 'tem'} esse produto
+                </p>
+                <div className="opp-lojas" style={{ marginTop: 12 }}>
+                  {oportunidade.lojistasSemProduto.map((l) => (
+                    <span className="opp-lojapill" key={l.id}>
+                      {l.name}
+                    </span>
+                  ))}
+                </div>
+                <div className="radar-widget-footer-cta" style={{ color: '#fff' }} onClick={sugerirOportunidadeParaCarteira}>
+                  Sugerir pras {oportunidade.lojistasSemProduto.length} lojas →
+                </div>
+              </div>
+            )}
           </div>
+        )}
+
+        {/* Widget "Carteira" — a lista inteira de lojas, filtro de período embutido no próprio
+            cabeçalho em vez de uma barra de filtro à parte (nov/2026, "Radar em widgets"). Cada
+            linha reaproveita `SinalIcon` (mesmo ícone por tipo de sinal que `LojistaGate.tsx` já
+            usava) — mesma informação dos cards cheios de antes, só compacta. */}
+        <div className="radar-widget" style={{ marginTop: 16 }}>
+          <div className="radar-widget-head">
+            <span className="rw-title">Carteira</span>
+            <div className="rw-filters">
+              <span
+                className={`chip ${timeframeFiltro === 'todas' ? 'selected' : ''}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setTimeframeFiltro('todas')}
+              >
+                Todas
+              </span>
+              {timeframeOrder.map((tf) => (
+                <span
+                  key={tf}
+                  className={`chip ${timeframeFiltro === tf ? 'selected' : ''}`}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setTimeframeFiltro(tf)}
+                >
+                  {timeframeLabel[tf]} <span className="n">{porPeriodo(tf).length}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {visiveis.map(({ lojista, topSinal }) => (
+            // Linha abre a loja direto, botão de ação executa o sinal (set/2026, achado testando:
+            // clicar achando que ia só "ver a loja" disparava a ação do sinal de estoque sem avisar)
+            // — mesmo padrão "linha abre, botão age" de sempre.
+            <div className="radar-widget-row" key={lojista.id} onClick={() => abrirLoja(lojista.id)}>
+              <div className={`radar-widget-icon tone-${topSinal ? topSinal.tone : 'positive'}`} style={{ width: 30, height: 30, borderRadius: 7 }}>
+                <SinalIcon kind={topSinal?.kind ?? 'empty'} />
+              </div>
+              <div className="rw-info">
+                <div className="rw-name">{lojista.name}</div>
+                <div className="rw-meta">
+                  {lojista.city} · {topSinal ? topSinal.text : 'Tudo em dia — nenhuma pendência agora'}
+                </div>
+              </div>
+              <span
+                className="rw-action"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  topSinal ? executarSinal(lojista.id, topSinal) : abrirLoja(lojista.id)
+                }}
+              >
+                {topSinal ? sinalCta[topSinal.kind] : 'Atender esta loja'} →
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {oportunidadeToast && (
