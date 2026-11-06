@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
-import { WebTopNav } from '../../components/desktop/WebTopNav'
+import { PersonaTopNav } from '../../components/desktop/PersonaTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { useAppStore, buildTrackingSteps } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
@@ -9,21 +9,34 @@ export function Tracking() {
   const navigate = useNavigate()
   const { cartId } = useParams()
   const carrinhos = useAppStore((s) => s.carrinhos)
+  const persona = useAppStore((s) => s.persona)
+  const lojistas = useAppStore((s) => s.lojistas)
+  const activeLojistaId = useAppStore((s) => s.activeLojistaId)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
   const pedido = cart.pedido
   const conditionLabel = pedido.paymentCondition === 'a-vista' ? 'Boleto à vista −3%' : '30/60/90 dias'
   const trackingSteps = buildTrackingSteps(pedido, cart.updatedAt)
+  const lojistaAtivo = lojistas.find((l) => l.id === activeLojistaId)
 
   return (
     <DesktopPage>
-      <WebTopNav />
+      <PersonaTopNav />
       <Breadcrumb
-        items={[
-          { label: 'Radar', to: '/radar' },
-          { label: 'Meus Carrinhos', to: '/carrinhos' },
-          { label: cart.name, to: `/carrinhos/${cart.id}` },
-          { label: `${pedido.label} — Acompanhamento` },
-        ]}
+        items={
+          persona === 'representante'
+            ? [
+                { label: 'Radar', to: '/rep/radar' },
+                { label: lojistaAtivo?.name ?? 'Carrinhos', to: '/carrinhos' },
+                { label: cart.name, to: `/carrinhos/${cart.id}` },
+                { label: `${pedido.label} — Acompanhamento` },
+              ]
+            : [
+                { label: 'Radar', to: '/radar' },
+                { label: 'Meus Carrinhos', to: '/carrinhos' },
+                { label: cart.name, to: `/carrinhos/${cart.id}` },
+                { label: `${pedido.label} — Acompanhamento` },
+              ]
+        }
       />
       <div className="web-app-layout">
         <div className="web-content">
@@ -75,11 +88,13 @@ export function Tracking() {
           <div className="stotal">{pedido.items.length} itens</div>
           <div className="ssub">Único pedido do carrinho</div>
           <div className="bubble">
-            {cart.representative} também está acompanhando este pedido em tempo real
+            {persona === 'representante'
+              ? `${lojistaAtivo?.contactName ?? 'O lojista'} também está acompanhando este pedido em tempo real`
+              : `${cart.representative} também está acompanhando este pedido em tempo real`}
           </div>
           <div className="sbtns">
             <div className="btn-secondary" style={{ cursor: 'pointer' }} onClick={() => navigate(`/carrinhos/${cart.id}/${pedido.id}/chat`)}>
-              Falar com {cart.representative}
+              Falar com {persona === 'representante' ? (lojistaAtivo?.contactName ?? 'o lojista') : cart.representative}
             </div>
             <a
               href="#"

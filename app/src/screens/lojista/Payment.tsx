@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
-import { WebTopNav } from '../../components/desktop/WebTopNav'
+import { PersonaTopNav } from '../../components/desktop/PersonaTopNav'
 import { Breadcrumb } from '../../components/desktop/Breadcrumb'
 import { Toast } from '../../components/desktop/Toast'
 import { useAppStore } from '../../lib/store'
@@ -35,9 +35,15 @@ export function Payment() {
   const navigate = useNavigate()
   const { cartId } = useParams()
   const carrinhos = useAppStore((s) => s.carrinhos)
+  const persona = useAppStore((s) => s.persona)
+  const lojistas = useAppStore((s) => s.lojistas)
+  const activeLojistaId = useAppStore((s) => s.activeLojistaId)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
   const pedido = cart.pedido
   const confirmarPagamento = useAppStore((s) => s.confirmarPagamento)
+  // Mesmo critério de CarrinhoDetail.tsx: em "modo loja" o lojista só existe em `s.lojistas`,
+  // não em `cart.representative` (que guarda o nome DELA, igual nos dois lados).
+  const lojistaAtivo = lojistas.find((l) => l.id === activeLojistaId)
 
   const [condition, setCondition] = useState<PaymentCondition>(pedido.paymentCondition ?? '30')
   // Formas de pagamento ativas pro pedido — dividir o valor entre mais de uma (ex: parte no
@@ -87,14 +93,23 @@ export function Payment() {
 
   return (
     <DesktopPage>
-      <WebTopNav />
+      <PersonaTopNav />
       <Breadcrumb
-        items={[
-          { label: 'Radar', to: '/radar' },
-          { label: 'Meus Carrinhos', to: '/carrinhos' },
-          { label: cart.name, to: `/carrinhos/${cart.id}` },
-          { label: `${pedido.label} — Pagamento` },
-        ]}
+        items={
+          persona === 'representante'
+            ? [
+                { label: 'Radar', to: '/rep/radar' },
+                { label: lojistaAtivo?.name ?? 'Carrinhos', to: '/carrinhos' },
+                { label: cart.name, to: `/carrinhos/${cart.id}` },
+                { label: `${pedido.label} — Pagamento` },
+              ]
+            : [
+                { label: 'Radar', to: '/radar' },
+                { label: 'Meus Carrinhos', to: '/carrinhos' },
+                { label: cart.name, to: `/carrinhos/${cart.id}` },
+                { label: `${pedido.label} — Pagamento` },
+              ]
+        }
       />
       <div className="web-app-layout">
         <div className="web-content">
@@ -446,7 +461,15 @@ export function Payment() {
             </div>
           )}
           <div className="bubble">
-            Compartilhado com <b>{cart.representative}</b> — ela já aprovou este pedido
+            {persona === 'representante' ? (
+              <>
+                Você está fechando esse pedido por <b>{lojistaAtivo?.contactName ?? 'o lojista'}</b> — ele vai receber uma notificação assim que confirmar
+              </>
+            ) : (
+              <>
+                Compartilhado com <b>{cart.representative}</b> — ela já aprovou este pedido
+              </>
+            )}
           </div>
         </div>
       </div>

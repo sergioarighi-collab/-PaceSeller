@@ -247,20 +247,21 @@ export function CarrinhoDetail() {
                 Subtotal: {formatBRL(pedido.total)}
                 {pedido.discount > 0 && <span style={{ color: 'var(--positive)', fontWeight: 500 }}> (−3%)</span>}
               </span>
-              {/* Pagar é ação do lojista, não da representante (ela só aprova — ver aprovarPedido em
-                  store.ts) — sem isso, o "modo loja" deixava a Ana pagar pedido do próprio lojista
-                  sem querer, pela mesma tela reaproveitada. Chegou a existir um botão "Gerar link de
-                  pagamento" aqui (set/2026) pra ela mandar um link pro lojista pagar sozinho —
-                  removido (out/2026, pedido do usuário: "não preciso encaminhar pra ele um link, é
-                  mais uma etapa... é só compartilhar o carrinho e avisar o lojista pra fechar").
-                  Investigando o pedido, o link nunca foi necessário: o lojista, logado na própria
-                  conta (fora de "modo loja"), sempre teve "Ir para pagamento" direto — o link só
-                  existia pra essa trava de UI do lado dela. Com o carrinho compartilhado e a tag
-                  "Aguardando o cliente" (ver `clienteTag` em MeusCarrinhos.tsx) já avisando que é a
-                  vez dele, sobra só um texto — sem ação nenhuma, ela não tem o que fazer aqui além de
-                  falar com ele se quiser (CTA ao lado, "Falar com {lojista}"). Pedido já `pago` não
-                  mostra nada (bug relatado pelo usuário, ver nota na `.grademin` logo abaixo —
-                  mesma causa). */}
+              {/* Pagar é ação do lojista por padrão — a representante só aprova (ver aprovarPedido
+                  em store.ts), pra não deixar a Ana pagar o pedido do próprio lojista sem querer
+                  pela mesma tela reaproveitada. Chegou a existir um botão "Gerar link de pagamento"
+                  aqui (set/2026) pra ela mandar um link pro lojista pagar sozinho — removido
+                  (out/2026, pedido do usuário: "não preciso encaminhar pra ele um link, é mais uma
+                  etapa... é só compartilhar o carrinho e avisar o lojista pra fechar"). Depois disso
+                  o usuário pediu de volta a opção dela fechar direto (nov/2026: "caso o cliente
+                  quiser que ele faça ele poderá fechar o carrinho para o lojista que recebe uma
+                  notificação") — por isso o CTA "Fechar pedido pro lojista" abaixo, do lado do texto:
+                  é uma ação explícita e avulsa (ela precisa clicar de novo, não é automático),
+                  reservada pra quando o lojista já pediu por fora (telefone, WhatsApp) pra ela
+                  fechar — ela passa pelo MESMO fluxo de pagamento (Payment.tsx, condição + split),
+                  não é um atalho de 1 clique, e o lojista é avisado por notificação (ver
+                  `confirmarPagamento` em store.ts). Pedido já `pago` não mostra nada (bug relatado
+                  pelo usuário, ver nota na `.grademin` logo abaixo — mesma causa). */}
               {pedido.status !== 'pago' &&
                 (persona !== 'representante' ? (
                   <div
@@ -276,9 +277,17 @@ export function CarrinhoDetail() {
                     const fecharCartaoPropria = pedido.suggestedBy === 'representante' && pedido.status === 'aguardando'
                     if (!gradeOk || (!jaAprovado && !fecharCartaoPropria)) return null
                     return (
-                      <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>
-                        Aguardando {lojistaAtivo?.contactName ?? 'o lojista'} pagar
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500 }}>
+                          Aguardando {lojistaAtivo?.contactName ?? 'o lojista'} pagar
+                        </span>
+                        <span
+                          style={{ fontSize: 13, color: 'var(--info)', fontWeight: 600, cursor: 'pointer' }}
+                          onClick={() => navigate(`/carrinhos/${cart.id}/${pedido.id}/pagamento`)}
+                        >
+                          Fechar pedido pro lojista →
+                        </span>
+                      </div>
                     )
                   })()
                 ))}

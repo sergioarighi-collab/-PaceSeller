@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { DesktopPage } from '../../components/desktop/DesktopPage'
-import { WebTopNav } from '../../components/desktop/WebTopNav'
+import { PersonaTopNav } from '../../components/desktop/PersonaTopNav'
 import { useAppStore } from '../../lib/store'
 import { formatBRL } from '../../lib/format'
 
@@ -8,12 +8,16 @@ export function OrderConfirmed() {
   const navigate = useNavigate()
   const { cartId } = useParams()
   const carrinhos = useAppStore((s) => s.carrinhos)
+  const persona = useAppStore((s) => s.persona)
+  const lojistas = useAppStore((s) => s.lojistas)
+  const activeLojistaId = useAppStore((s) => s.activeLojistaId)
   const cart = carrinhos.find((c) => c.id === cartId) ?? carrinhos[0]
   const pedido = cart.pedido
+  const lojistaAtivo = lojistas.find((l) => l.id === activeLojistaId)
 
   return (
     <DesktopPage>
-      <WebTopNav />
+      <PersonaTopNav />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 600, padding: 40 }}>
         <div style={{ width: 440, textAlign: 'center' }}>
           <div
@@ -37,7 +41,15 @@ export function OrderConfirmed() {
             {pedido.label} confirmado
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 10, lineHeight: 1.6 }}>
-            Esse pedido está com a Tesla agora — já saiu da sua mão e da {cart.representative}. Assim que passar pela análise e entrar em produção, você acompanha tudo por aqui.
+            {persona === 'representante' ? (
+              <>
+                Esse pedido está com a Tesla agora — {lojistaAtivo?.contactName ?? 'o lojista'} já foi avisado que você fechou por ele. Assim que passar pela análise e entrar em produção, dá pra acompanhar tudo por aqui.
+              </>
+            ) : (
+              <>
+                Esse pedido está com a Tesla agora — já saiu da sua mão e da {cart.representative}. Assim que passar pela análise e entrar em produção, você acompanha tudo por aqui.
+              </>
+            )}
           </p>
 
           <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 6, padding: 20, marginTop: 26, textAlign: 'left' }}>
@@ -58,7 +70,11 @@ export function OrderConfirmed() {
           </div>
 
           <div style={{ display: 'flex', gap: 12, marginTop: 26 }}>
-            <div className="btn-secondary" style={{ flex: 1, cursor: 'pointer' }} onClick={() => navigate('/radar')}>
+            <div
+              className="btn-secondary"
+              style={{ flex: 1, cursor: 'pointer' }}
+              onClick={() => navigate(persona === 'representante' ? '/rep/radar' : '/radar')}
+            >
               Voltar ao radar
             </div>
             <div

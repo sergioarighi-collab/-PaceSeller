@@ -677,17 +677,27 @@ export const useAppStore = create<AppState>((set, get) => ({
     }))
   },
   confirmarPagamento: (carrinhoId, pedidoId, condition, split) =>
-    set((s) => ({
-      carrinhos: s.carrinhos.map((c) => {
-        if (c.id !== carrinhoId || c.pedido.id !== pedidoId || c.pedido.status === 'pago') return c
-        return {
-          ...c,
-          updatedAt: 'agora',
-          daysSinceActivity: 0,
-          pedido: { ...c.pedido, status: 'pago', paymentCondition: condition, paymentSplit: split },
-        }
-      }),
-    })),
+    set((s) => {
+      const alvo = s.carrinhos.find((c) => c.id === carrinhoId)
+      const jaPago = !alvo || alvo.pedido.id !== pedidoId || alvo.pedido.status === 'pago'
+      return {
+        carrinhos: s.carrinhos.map((c) => {
+          if (c.id !== carrinhoId || c.pedido.id !== pedidoId || c.pedido.status === 'pago') return c
+          return {
+            ...c,
+            updatedAt: 'agora',
+            daysSinceActivity: 0,
+            pedido: { ...c.pedido, status: 'pago', paymentCondition: condition, paymentSplit: split },
+          }
+        }),
+        // Ana só fecha o pedido pelo lojista quando ele pede por fora (telefone, WhatsApp) — avisa
+        // ele aqui porque, diferente da aprovação, ele não vai estar olhando a tela nesse momento.
+        notifications:
+          s.persona === 'representante' && alvo && !jaPago
+            ? withNotification(s.notifications, `Ana fechou o pedido do carrinho "${alvo.name}" — pagamento confirmado`, carrinhoId)
+            : s.notifications,
+      }
+    }),
   adicionarComentario: (carrinhoId, text) => {
     const trimmed = text.trim()
     if (!trimmed) return
